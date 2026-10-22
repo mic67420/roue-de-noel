@@ -235,7 +235,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.1';
+const VERSION='3.3';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -2058,7 +2058,8 @@ $('videoFile').addEventListener('change',e=>{
 
 /* ============ APPLICATION INSTALLABLE (PWA) ============ */
 let installEv=null,wakeLock=null;
-const isStandalone=()=>(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: fullscreen)').matches);
+const IN_APP=/RoueNoelApp/.test(navigator.userAgent);
+const isStandalone=()=>IN_APP||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: fullscreen)').matches);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e});
 window.addEventListener('appinstalled',()=>{installEv=null;try{toast('✅ Application installée')}catch(e){}});
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}   // fonctionnement hors ligne
