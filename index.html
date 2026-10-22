@@ -235,7 +235,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.0';
+const VERSION='3.1';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -2064,6 +2064,14 @@ window.addEventListener('appinstalled',()=>{installEv=null;try{toast('✅ Applic
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}   // fonctionnement hors ligne
 async function keepAwake(){try{if('wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch(e){}}  // l'écran ne s'éteint pas pendant la partie
 document.addEventListener('pointerdown',keepAwake,{capture:true,passive:true});
+// Plein écran automatique (utile quand le jeu est ouvert dans Chrome et non en application) + verrouillage en paysage
+let fsTried=false;
+function goFull(){
+  if(fsTried||isStandalone()||document.fullscreenElement)return;fsTried=true;
+  const el=document.documentElement;
+  try{if(el.requestFullscreen){el.requestFullscreen({navigationUI:'hide'}).then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}}).catch(()=>{})}}catch(e){}
+}
+['pointerup','touchend','click'].forEach(ev=>document.addEventListener(ev,goFull,{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')keepAwake()});
 
 /* ============ BOUCLE PRINCIPALE ============ */

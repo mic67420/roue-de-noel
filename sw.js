@@ -1,6 +1,6 @@
 // Service worker de « La Roue de Noël » : l'application fonctionne entièrement hors ligne.
 // À chaque nouvelle version du jeu, changer le numéro ci-dessous (ex. v3.1) : les téléphones se mettent à jour tout seuls.
-const CACHE='roue-noel-cache-v3.0';
+const CACHE='roue-noel-cache-v3.1';
 const FICHIERS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./icon-maskable-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FICHIERS)).then(()=>self.skipWaiting()));
