@@ -4,8 +4,8 @@
    Objectif : attraper assez de cadeaux avant la fin du temps. Alix : version lente, peu de mauvais objets, objectif plus petit. */
 const MJC_BONS=['B2_cadeau_rouge','B2_cadeau_bleu','B2_cadeau_vert','B2_cadeau_dore','B2_boule_rouge'];
 const MJC_MAUVAIS=['B2_charbon'];
-// météorites : h = hauteur (part de l'écran), hx/hy = position de la roche dans l'image, dx = dérive latérale (elles tombent en diagonale, flammes derrière)
-const MJC_METEO={B9_meteo_roche:{h:.14,hx:.62,hy:.64,dx:1},B9_meteo_noire:{h:.21,hx:.6,hy:.64,dx:1},B9_meteo_glace:{h:.17,hx:.6,hy:.64,dx:1},B9_meteo_lave:{h:.17,hx:.6,hy:.64,dx:1},B9_meteo_cristal:{h:.16,hx:.32,hy:.7,dx:-1}};
+// météorites (tombent à la verticale) : h = hauteur (part de l'écran), hx/hy = position de la roche dans l'image
+const MJC_METEO={B9_meteo_roche:{h:.14,hx:.62,hy:.64,rot:.72},B9_meteo_noire:{h:.21,hx:.6,hy:.64,rot:.72},B9_meteo_glace:{h:.17,hx:.6,hy:.64,rot:.72},B9_meteo_lave:{h:.17,hx:.6,hy:.64,rot:.72},B9_meteo_cristal:{h:.16,hx:.32,hy:.7,rot:-.75}};   // rot : on redresse l'image pour que la météorite tombe bien droit
 const MJC_SOL=.93;                   // hauteur du sol (part de l'écran) où les météorites explosent
 const MJC_ECL=['B8_eclair_epais'];
 const MJC_SHOCK=1.5;                // durée du coup de foudre (secondes)
@@ -26,10 +26,8 @@ function mjcSpawn(s){
   if(r<s.pBon){kind='bon';k=MJC_BONS[Math.floor(R()*MJC_BONS.length)]}
   else if(r<s.pBon+s.pCoeur){kind='coeur';k='B2_sucre_orge'}
   else if(r<s.pBon+s.pCoeur+s.pEcl){kind='eclair';k=MJC_ECL[Math.floor(R()*MJC_ECL.length)]}
-  else if(R()<s.pMet){kind='meteo';const ks=Object.keys(MJC_METEO);k=ks[Math.floor(R()*ks.length)]}
-  else{kind='mauvais';k=MJC_MAUVAIS[Math.floor(R()*MJC_MAUVAIS.length)]}
+  else{kind='meteo';const ks=Object.keys(MJC_METEO);k=ks[Math.floor(R()*ks.length)]}
   const ob={k,kind,x:.06+R()*.88,y:-.08,rot:kind==='eclair'||kind==='meteo'?0:R()*6.28,spin:kind==='eclair'||kind==='meteo'?0:(R()-.5)*3,done:false,dx:0};
-  if(kind==='meteo'){const d=MJC_METEO[k].dx;ob.dx=d*(.10+Math.random()*.08);ob.x=d>0?.05+R()*.72:.23+R()*.72}
   s.obj.push(ob);
 }
 function mjcUpdate(s,dt){
@@ -80,7 +78,7 @@ function mjcDraw(g,s,W,H,tm){
   for(const o of s.obj){
     const i=im[o.k];if(!i||!i.naturalWidth)continue;
     const M=o.kind==='meteo'?MJC_METEO[o.k]:null,hh=(M?M.h:o.kind==='coeur'?.15:o.kind==='mauvais'?.115:o.kind==='eclair'?.2:.13)*H,ww=hh*i.naturalWidth/i.naturalHeight;
-    if(M){g.drawImage(i,o.x*W-ww*M.hx,o.y*H-hh*M.hy,ww,hh);continue}
+    if(M){g.save();g.translate(o.x*W,o.y*H);g.rotate(M.rot);g.drawImage(i,-ww*M.hx,-hh*M.hy,ww,hh);g.restore();continue}
     g.save();if(o.kind==='eclair'){g.shadowColor='#ffe94a';g.shadowBlur=H*.05}g.translate(o.x*W,o.y*H);g.rotate(Math.sin(o.rot)*.35);g.drawImage(i,-ww/2,-hh/2,ww,hh);g.restore();
   }
   // explosions des météorites (au sol, ou sur le Père Noël)
@@ -162,6 +160,6 @@ function mjCadeaux(me){
       else if(e.k==='coeur')AE.bells&&AE.bells();
       else AE.pops&&AE.pops(3,.5);
     },
-    intro:['Attrape les cadeaux !','Glisse ton doigt pour déplacer le Père Noël.','Évite les éclairs ⚡, les météorites ☄️ et le charbon !']
+    intro:['Attrape les cadeaux !','Glisse ton doigt pour déplacer le Père Noël.','Évite les éclairs ⚡ et les météorites ☄️ !']
   });
 }

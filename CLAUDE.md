@@ -118,3 +118,6 @@ Les bandes claires/sombres dures de la v3.19 faisaient « strobe » (repliement 
 
 ## v3.22 : météorites dans les cadeaux qui tombent (planche B9)
 Les pierres et glaçons sont remplacés par 5 météorites (`MJC_METEO` : roche, noire, glace, lave, cristal violet) qui tombent en diagonale (dérive `dx`, la roche est la « tête » : position `hx/hy` dans l'image). Le charbon reste (`MJC_MAUVAIS`). Une météorite qui rate le Père Noël explose au sol (`MJC_SOL`) : état `s.fxs` dessiné dans `mjcDraw` (anneau de choc procédural, expl1→expl4, débris, cratère qui s'estompe). Attrapée : −1 cœur, explosion sur le Père Noël, son `AE.boom`. Adultes : 85 % des mauvais objets, Alix 70 %. Images B9 embarquées sauf l'anneau (rempli en blanc par le détourage, dessiné en code). Le bot du test prévoit la dérive `dx`.
+
+## v3.23 : météorites verticales, plus de charbon
+Les météorites tombent à la verticale (images redressées par `rot` dans `MJC_METEO`, plus de dérive `dx`). Le charbon est supprimé : les mauvais objets sont uniquement les météorites (`pMet` n'est plus utilisé) et les éclairs. (Les notes « diagonale » et « le charbon reste » de la v3.22 sont périmées.)
