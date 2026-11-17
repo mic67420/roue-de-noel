@@ -97,3 +97,6 @@ Ne jamais modifier à la main `index.html` ni le numéro de cache dans `sw.js` :
 
 ## Mini-jeu 2 : cadeaux qui tombent (v3.13)
 `src/2-minijeu-cadeaux.js` (mjcNew/mjcUpdate/mjCadeaux), images B2 embarquées. Adultes (v3.14, durci) : 28 cadeaux en 30 s, très rapide ; Alix : 7 en 40 s, lent. En mode test (menu des réglages), une croix rouge ✕ à gauche ferme le jeu (MJ.test). Testé dans tools/test-minijeu.js.
+
+## v3.15 : tous les mini-jeux durent 30 s (adultes et Alix), avec compte à rebours
+Compte à rebours rond au centre haut (rouge et qui pulse sous 5 s), dessiné par `mjRunner` pour tous les jeux. Cadeaux qui tombent : gagné si le quota est atteint à la fin des 30 s. Victoire (dans `mjRunner`) : flash, rayons, onde de choc, cadeau qui jaillit avec rebond, confettis en 2 explosions (`boom`), 3,6 s. Tout nouveau mini-jeu en profite automatiquement (`s.D` = 30, `s.t` = temps écoulé).

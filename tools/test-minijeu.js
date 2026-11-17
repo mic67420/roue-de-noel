@@ -63,5 +63,5 @@ for (const easy of [false, true]) {
   if (!bon) ok = false;
 }
 const s = jouer(false, true);
-console.log('Durée adultes', s.D, 's, cœurs', s.max, '| Alix durée 16 s, cœurs 3');
+console.log('Durée adultes', s.D, 's, cœurs', s.max, '| Alix durée 30 s, cœurs 3');
 if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }

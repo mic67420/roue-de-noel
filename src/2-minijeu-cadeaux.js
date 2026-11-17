@@ -8,7 +8,7 @@ const MJC_CATCH=.76;                 // hauteur (part de l'écran) à laquelle l
 function mjcNew(easy){
   const e=!!easy;
   return{
-    easy:e,t:0,D:e?40:30,need:e?7:28,got:0,lives:3,max:3,inv:0,
+    easy:e,t:0,D:30,need:e?7:28,got:0,lives:3,max:3,inv:0,
     x:.5,tx:.5,vel:0,hw:e?.075:.038,maxV:e?3.5:1.3,   // x = position du Père Noël (0 à 1 sur la largeur de l'écran)
     vy0:e?.30:1.05,i0:e?1.0:.34,i1:e?.75:.18,nextSpawn:.5,
     pBon:e?.74:.40,pCoeur:e?.08:.05,
@@ -45,9 +45,8 @@ function mjcUpdate(s,dt){
     }
   }
   s.obj=s.obj.filter(o=>o.y<1.15&&!o.got);
-  if(s.got>=s.need)s.done='win';
-  else if(s.lives<=0)s.done='lose';
-  else if(s.t>=s.D)s.done='temps';
+  if(s.lives<=0)s.done='lose';
+  else if(s.t>=s.D)s.done=s.got>=s.need?'win':'temps';
 }
 function mjcDraw(g,s,W,H,tm){
   const im=MJ.img,u=H/720;
