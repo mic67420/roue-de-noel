@@ -1,0 +1,13 @@
+{
+  "name": "roue-de-noel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "La Roue de Noël - jeu de distribution des cadeaux (application web installable + APK Android)",
+  "scripts": {
+    "build": "node tools/build.js",
+    "test": "node tools/test-logique.js && node tools/test-roue.js && node tools/test-minijeu.js",
+    "tout": "npm run build && npm test",
+    "captures": "node tools/capture.js",
+    "detourage": "node tools/test-detourage.js"
+  }
+}

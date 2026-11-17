@@ -1,0 +1,99 @@
+# CLAUDE.md — La Roue de Noël
+
+## Qui est l'utilisateur et comment lui parler
+- Mic est **novice total en code** : il attend des explications **ultra détaillées, étape par étape**, en français, sans rien présumer de ses connaissances techniques (où cliquer, quoi taper, ce qu'il doit voir à l'écran).
+- **Après chaque modification : une seule phrase de résumé, juste l'essentiel** (consigne de Mic). Les explications pas à pas de ce qu'il doit faire (installer, vérifier sur le téléphone) restent détaillées.
+- **Annonce et confirme** ce que tu vas changer avant les gros changements (règles du jeu, apparence, nouvelles fonctions). Pour un petit réglage demandé clairement, fais-le directement.
+- **Chaque modification augmente le numéro de version**, affiché en bas de l'écran du jeu (ex. v3.4).
+- Il joue sur un **téléphone Android (Xiaomi)** branché sur une télé, en famille (Mic, Caroline, Arley 18 ans, Axel 14 ans, Alix 5 ans, un garçon). Le jeu doit rester **lisible de loin** et utilisable par un enfant de 5 ans (icônes, grosses animations).
+- Dis-lui toujours **comment vérifier sur son téléphone** après un envoi (voir « Vérifier sur le téléphone »).
+
+## Règle d'or : à CHAQUE changement
+1. Modifier les fichiers de `src/` (jamais `index.html` à la main : il est **généré**).
+2. Augmenter `const VERSION='x.y'` dans `src/1-donnees-audio-roue.js` (une seule ligne).
+3. Lancer `npm run tout` (assemble `index.html`, met `sw.js` au même numéro, lance les tests). **Ne rien envoyer si un test échoue.**
+4. Si le changement touche l'apparence : lancer `npm run captures` (nécessite Playwright, voir plus bas), regarder les images et vérifier.
+   Si le changement touche le **Père Noël vidéo ou son détourage** : lancer aussi `npm run detourage` (simule un téléphone dont les premières images de la vidéo sont vides ; le fond doit rester transparent).
+5. `git add -A`, `git commit -m "vX.Y : description courte en français"`, `git push`.
+6. Expliquer à Mic ce qui a changé et comment le vérifier.
+
+Ne jamais modifier à la main `index.html` ni le numéro de cache dans `sw.js` : `tools/build.js` s'en charge. Si `sw.js` n'est pas à jour avec le numéro de version, **les téléphones gardent l'ancienne version**.
+
+## Architecture
+- Un jeu **mono-fichier autonome** : `index.html` contient tout (code, vidéos du Père Noël, icônes en base64). Il fonctionne **hors ligne**.
+- `src/0-entete.html` (HTML + CSS) puis `src/1-…js`, `2-…js`, `3-…js` (concaténés dans l'ordre par `tools/build.js`) :
+  - `1-donnees-audio-roue.js` : version, joueurs, cases spéciales, bibliothèque d'icônes (dessin vectoriel de secours + images), moteur audio (Web Audio synthétisé), classe `Roue` (dessin de la roue chromée, languette, clics, zoom, tirage).
+  - `2-regles-lumieres-effets.js` : fond étoilé, neige, lumières (2 lyres), confettis, état de la partie, tirage des cases, règles de chaque case spéciale.
+  - `3-interface-video-sauvegarde.js` : écrans (intro, réglages, jeu, fin), vidéo du Père Noël (détourage du fond vert), sauvegarde, application installable (PWA), boucle principale, initialisation.
+- `assets/` : vidéos `santa_attente.*` et `santa_lancer.*` (MP4 + WebM, recadrées 640×720), `icones.json` (20 images 192 px en base64), sources originales dans `sources-originales/`, découpes PNG dans `icones-decoupees/`.
+- `tools/` : `build.js` (assemblage + contrôles), `test-logique.js` (règles, 200 parties simulées), `test-roue.js` (la roue s'arrête sur la case tirée), `capture.js` (captures, facultatif).
+- Fichiers de l'application web : `index.html`, `manifest.json`, `sw.js`, `icon-*.png`, `apple-touch-icon.png`.
+- `android/` : source de l'application Android (APK), **pour mémoire**. Elle n'est pas reconstruite ici.
+
+## Publication et application
+- Site : GitHub Pages, compte `mic67420`, dépôt `roue-de-noel` → **https://mic67420.github.io/roue-de-noel/**. Mise en ligne ≈ 2 minutes après un `git push`.
+- **L'application Android (APK `fr.mic.rouedenoel`) est une fenêtre sur cette adresse** (`https://mic67420.github.io/roue-de-noel/index.html`). Elle charge toujours la dernière version publiée, garde le jeu en mémoire (service worker) pour jouer hors ligne, et ouvre une copie embarquée si le site est inaccessible au premier lancement. **Donc un `git push` suffit : aucun nouvel APK n'est nécessaire** pour changer le jeu.
+- **Ne jamais renommer le dépôt, ni déplacer/renommer `index.html`**, sinon l'application ne trouve plus le jeu.
+- Un nouvel APK n'est nécessaire que si on change l'application elle-même (icône du téléphone, nom, orientation). La clé de signature (`.keystore`) n'est **pas** dans ce dépôt : Mic la garde de son côté.
+- Le service worker (`sw.js`) est **« réseau d'abord »** (v3.11) : avec internet, la dernière version publiée s'ouvre au lancement suivant ; sans internet ou si le réseau dépasse 8 s, il ouvre la copie gardée en mémoire. Le passage de l'ancien service worker au nouveau demande **2 lancements** avec internet (une seule fois).
+- **Attention : Mic a un autre projet sur le même domaine** (OVERBOLT, `mic67420.github.io/OVERBOLT/`). Ne jamais toucher à ce dépôt. Le stockage des navigateurs est partagé par domaine : ne jamais conseiller d'effacer les « données du site » `mic67420.github.io` (il perdrait les données et la licence d'OVERBOLT).
+
+## Vérifier sur le téléphone (à expliquer à Mic)
+1. Attendre 2 minutes après le push.
+2. Ouvrir l'application « Roue de Noël » **avec internet**, attendre ~10 secondes, la fermer complètement (applis récentes, glisser vers le haut) puis la rouvrir.
+3. Le numéro de version en bas au centre de l'écran doit correspondre à celui annoncé.
+
+## Les règles du jeu (état actuel, ne pas changer sans demande)
+- 5 joueurs : Mic 🎅, Caroline 🤶, Arley 🦌 (18 ans, ne pas écrire « Harley »), Axel ⛄ (14 ans), Alix 🧝 (5 ans).
+- **Petite roue** (désigne le joueur) : 5 parts égales à l'écran, tirage **pondéré en secret** (Alix 25, Arley 20, Axel 20, Mic 15, Caroline 15 ; la somme fait 95, normalisée). **Ne jamais afficher ces pourcentages.**
+- **Grande roue fixe : 13 cases qui ne disparaissent jamais, SANS DOUBLON** (v3.6, décidé par Mic pour plus de lisibilité) : 7 cases spéciales, une seule de chaque sorte (vol, échange, bouclier, cadeau pour un autre, pas de chance, double cadeau, cadeau au choix) + 5 cases cadeaux + 1 cadeau mystère. L'ordre est mélangé à chaque partie, les cases cadeaux ne sont jamais côte à côte (cases spéciales intercalées).
+- Case cadeau : tire au hasard un numéro parmi les cadeaux restants. Case mystère : donne le cadeau mystère (qui ne s'ouvre qu'à la fin), puis devient une case cadeau normale. Quand la réserve de cadeaux numérotés est vide, n'importe quelle case cadeau donne le mystère.
+- Vol : le joueur touche directement un cadeau non protégé d'un autre joueur. Échange : il choisit un de ses cadeaux non protégés puis un cadeau non protégé d'un autre. Bouclier : protège un de ses cadeaux jusqu'à la fin (même le mystère). Au choix : grille des numéros restants. Pour un autre : cadeau au hasard offert à un joueur de son choix. Double : 2 cadeaux. Pas de chance : passe son tour.
+- Si une case est impossible (rien à voler, à protéger, plus de cadeaux…), la roue est **relancée automatiquement** pour le même joueur.
+- Fin de partie : tous les cadeaux numérotés **et** le mystère sont donnés → écran final festif, ouverture du mystère.
+- Réglages avant la partie : nombre de cadeaux (défaut 25 = 24 numérotés + mystère), seuil « fin chaude » (défaut 3), multiplicateur des cases spéciales dans ce cas (défaut ×2). Bouton « Annuler le dernier lancer » (historique), récapitulatif, sauvegarde automatique, nouvelle partie.
+- La grande roue tourne dans le **sens anti-horaire** (le Père Noël la lance de haut en bas). Le tirage est décidé **avant** la rotation ; la physique (voir plus bas) est ensuite calculée pour que la roue s'arrête exactement sur la case tirée.
+- Le **numéro de version est toujours visible en haut au centre** de l'écran (déplacé en v3.10 : le coin haut droit est masqué par le téléphone de Mic) (`#ver`, au-dessus de tout, y compris des écrans de réglages et de fin).
+
+## Physique de la roue, des picots et de l'aiguille (v3.5, voulue par Mic : « vraiment réaliste, pas fake »)
+- **Principe** : chaque picot est un disque rigide sur la jante ; l'aiguille est une tige à ressort pivotant au-dessus de la roue, sa pointe est un petit disque posé sur l'anneau des picots. Un picot **pousse** la pointe, l'aiguille est déviée (jusqu'à ~30°), monte par-dessus le picot puis **claque** en revenant. En échange chaque choc **freine** la roue : c'est ce frein qui ralentit la roue, la fait hésiter sur le dernier picot et, parfois, la fait **reculer**. Rien n'est écrit à l'avance : tout vient des contacts.
+- **Code** : `PHB` (constantes) et `physSim()` dans `src/1-donnees-audio-roue.js`, avant la classe `Roue`. Unités : rayon de la roue = 1, radians, secondes ; pas de calcul `dt = 1/800` s.
+- **Le tirage reste décidé avant** : `Roue.plan(T, {dur})` cherche (en arrière-plan, par petites tranches, pendant l'élan du Père Noël) la force de lancement pour laquelle la simulation s'arrête dans la case T, puis enregistre la trajectoire ; `Roue.spin()` la **rejoue** en temps réel (position de la roue, angle de l'aiguille, un son par choc). Si le calcul échoue, `spinLegacy()` (ancienne animation scriptée) prend le relais : ne pas la supprimer.
+- **Réglages** : grande roue `mu=.62` (≈ 8,5 s, ≈ 6 tours, un recul d'environ 6° sur 25–35 % des lancers) ; petite roue `mu=2.3` (≈ 5,2 s, ≈ 4,5 tours, presque jamais de recul). L'aiguille : `k=.8`. Les reculs visés font 2 à 7° et ne doivent **jamais** osciller en pendule.
+- **Pièges rencontrés (ne pas refaire)** : (1) un pas de calcul de 1/500 s est trop gros, les résultats deviennent erratiques au-dessus de ~15 rad/s ; (2) le frottement doit être appliqué **après** les chocs, sinon la roue « glisse » sans fin à très faible vitesse sur un picot ; (3) la correction de pénétration ne déplace que l'aiguille (légère), jamais la roue, sinon même glissement parasite ; (4) l'arrêt se détecte quand la roue n'a pas bougé pendant 0,4 s ; (5) les positions d'arrêt « posée sur un picot » (aiguille pliée contre un picot) sont exclues : l'arrêt visé est toujours dans l'espace libre entre deux picots.
+- **Tests** : `npm run test` (inclut `tools/test-roue.js` : arrêt dans la bonne case, durée, reculs, secours) ; `ESSAIS=8 node tools/test-roue.js` pour 1600 lancers. Toute modification de `PHB`, de la géométrie (aiguille, picots) ou de `physSim` doit repasser ces tests **et** une vérification à l'œil (`npm run captures`).
+- **Dessin** : picots = dômes chromés (`R*PHB.pr`) dessinés dans la roue (`build()`), aiguille plus courte (`R*PHB.L`) à pointe ronde dessinée dans `draw()` avec l'angle physique `this.th`.
+
+## Mini-jeux sur les cases cadeau (v3.7, en cours)
+- **Principe voulu par Mic** : rendre la partie plus longue et plus palpitante ; chaque case cadeau devient « sous condition » : le joueur doit réussir un mini-jeu tactile pour gagner le cadeau. 5 mini-jeux prévus : (1) **traîneau** (fait, v3.7), (2) cadeaux qui tombent, (3) cibles à boules de neige, (4) lutins farceurs qui sortent de trous, (5) pont de glace. Alix (5 ans) a toujours une version lente et facile ; Mic, Caroline, Arley et Axel jouent en difficulté élevée (vitesses plus rapides). Réglage final à faire sur le téléphone de Mic.
+- **Traîneau** : `src/2-minijeu-traineau.js` (`mjNew`/`mjUpdate` = règles testables sans écran, `mjDraw` = dessin, `mjTraineau(joueur)` = la partie, `mjCase(joueur)` = 2 essais). Le joueur glisse le doigt (ou flèches du clavier) ; 3 cœurs ; cadeaux rouges = points, étoiles = +1 cœur ; adultes 22 s, Alix 16 s plus lent et obstacles plus petits. Test : `tools/test-minijeu.js` (un robot qui esquive gagne, un joueur immobile perd).
+- Branché dans `resolveSeg` (case `gift` normale). **Le cadeau mystère, le double cadeau et les autres cases spéciales n'ont pas encore de mini-jeu.** Après 2 échecs : « Pas de cadeau », le joueur passe son tour et le cadeau reste dans la pile.
+- **Images** : planches Gemini dans `assets/planches-sources/B1…B7.jpg` (B7 = rennes et pingouins qui traversent la piste du traîneau) (12 objets, 4×3, fond blanc, contour foncé) ; `python3 tools/detourage-planches.py` les découpe en PNG transparents dans `assets/mini-jeux/` (fond blanc retiré depuis les bords, légendes de texte supprimées) ; `python3 tools/preparer-mini-jeux.py` fabrique `assets/mini-jeux.json` (images allégées intégrées par `build.js`). **Seules les images listées dans `EMBARQUE` sont intégrées** : en ajouter quand on code un nouveau mini-jeu.
+- Pour tester un mini-jeu : bouton **« 🎮 Tester les mini-jeux »** dans l'écran des réglages (v3.8, `mjMenu()` ; y ajouter chaque nouveau mini-jeu). En console : `window.MJ_TEST.mjTraineau(0)`.
+
+## Apparence et animations (décisions prises avec Mic)
+- Ambiance Noël **réaliste, pas kitsch** : roue laquée à jante chromée, ampoules en chenillard, nuit étoilée, neige en vrais cristaux (4 plans + gros flocons flous au premier plan), pas de sapin.
+- **Zoom sur l'aiguille 3 secondes après le début du lancer** (mesuré dans le temps de l'animation, pas l'horloge), maintenu jusqu'à l'arrêt, puis retour au plan large avant le résultat.
+- **Lumières : deux lyres** suspendues en haut, faisceaux **coniques à base elliptique** posée au sol (raccord validé : ne pas y toucher), diffus et bicolores, taches au sol avec motifs tournants, clignotements. **Allumées seulement pendant le lancer jusqu'au résultat**, flash de la couleur du résultat, puis éteintes. Niveaux réglables dans le menu 🔊 (💡 Lumières : éteintes / faisceaux seuls / légères (défaut) / complètes).
+- **Père Noël en vidéo** (plus de dessin vectoriel) : une vidéo d'**attente** (bras croisés, tape du pied) en boucle fondue, une vidéo de **lancer** déclenchée au toucher ; la roue du jeu démarre à **2,2 s** (moment de la traction), fondu de 0,3 s entre les deux. Réglages mémorisés (menu 🔊 → 🎬) : poussée 2,2 s, taille 66 %, position de la main 75 %, hauteur 18 %, détourage 3. Détourage du fond vert en direct (démélange du vert, contour resserré d'environ 1 px), limité à la zone du personnage pour la fluidité.
+- **Icônes de la roue** : 20 images (planche générée avec Gemini, découpée dans `assets/icones-decoupees/`). Correspondance (clés dans `icones.json`) : `vol` (voleur qui court avec un cadeau), `echange`, `double`, `bouclier` (cadenas-bouclier doré), `choix` (pile de cadeaux), `autre` (cadeau + cœur), `pas` (bonhomme de neige qui fond), `mystery` (boîte noire, « ? » cyan), puis `g0…g11` = sapin, étoile, canne, cloche, chaussette, moufle, pain d'épice, couronne, houx, flocon, renne, boule (`g11`, utilisée quand le mystère a été donné). Le dessin vectoriel de secours reste dans le code si une image manque. Pour changer une icône : redécouper depuis une nouvelle planche, régénérer `icones.json` (PNG 192 px, palette 220 couleurs, base64), reconstruire.
+- Sons : tout est **synthétisé** (Web Audio) ; musique de fond = fichier choisi par Mic sur son téléphone (bouton 🎵 ; à re-choisir à chaque ouverture, impossible à mémoriser).
+
+## Pièges déjà rencontrés (historique des bugs, à ne pas refaire)
+- **v1.6** : la conversion des unités `vh` avait corrompu les vidéos en base64 intégrées (le Père Noël n'apparaissait pas). `tools/build.js` ne convertit que le code, et vérifie que les données intégrées sont intactes. **Ne jamais convertir ni modifier les données base64.**
+- Les unités d'écran passent par `--v` (hauteur réelle de l'écran) car `vh` est faux dans Chrome mobile paysage.
+- Le Chromium de test n'a pas H.264 : les vidéos existent en **MP4 et WebM**, le jeu choisit selon `canPlayType`. Sur iPhone/Safari, les vidéos sont « amorcées » au premier toucher.
+- Fluidité sur téléphone : lumières dessinées en demi-résolution, détourage vidéo limité à la zone utile et recalculé seulement quand l'image change, Père Noël/neige en images mises en cache. Si une nouvelle fonction ralentit le jeu, la mesurer avant de l'envoyer.
+- Ne pas utiliser `localStorage` pour les gros fichiers : la musique/vidéo personnalisées sont des fichiers choisis à chaque ouverture.
+- **v3.4 : rectangle turquoise semi-transparent autour du Père Noël sur le téléphone.** Cause : la couleur du fond vert était mesurée une seule fois, sur la toute première image ; sur le téléphone cette image n'était pas encore prête (vide), le jeu retombait sur un « vert pur » et gardait cette valeur pour toute la partie, donc le vrai fond (≈ 52,177,75) n'était effacé qu'à ~25 %. Correction : mesure sur 6 points du bord, répétée tant que l'image n'est pas valide, séparée pour chaque vidéo, avec la vraie couleur du fond en valeur de secours. Les tests sur ordinateur ne voyaient pas ce défaut (première image toujours prête) : **toujours tester le détourage avec `npm run detourage`**.
+- Dans l'application Android, le jeu détecte `RoueNoelApp` dans l'agent utilisateur (`IN_APP`) et ne demande ni plein écran ni installation.
+- Chrome sur le Xiaomi de Mic refusait d'installer le site comme application (« déjà installée » puis « impossible d'ouvrir ») : c'est pourquoi il y a un APK.
+
+## Outils : première utilisation
+- `node --version` doit répondre (Node.js 18 ou plus). Sinon l'installer depuis nodejs.org (version LTS).
+- `npm run tout` : assemble et teste. Aucune installation supplémentaire nécessaire.
+- Captures (facultatif) : une fois `npm install --save-dev playwright` puis `npx playwright install chromium`, `npm run captures` crée `captures/attente.png` et `captures/lancer.png`.
+- Ne jamais mettre dans Git : la clé de signature Android, les mots de passe, le dossier `captures/`.
+
+## Mini-jeu 2 : cadeaux qui tombent (v3.13)
+`src/2-minijeu-cadeaux.js` (mjcNew/mjcUpdate/mjCadeaux), images B2 embarquées. Adultes : 15 cadeaux en 30 s ; Alix : 7 en 40 s, lent. Testé dans tools/test-minijeu.js.
