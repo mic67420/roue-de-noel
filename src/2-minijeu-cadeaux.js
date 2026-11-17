@@ -4,14 +4,16 @@
    Objectif : attraper assez de cadeaux avant la fin du temps. Alix : version lente, peu de mauvais objets, objectif plus petit. */
 const MJC_BONS=['B2_cadeau_rouge','B2_cadeau_bleu','B2_cadeau_vert','B2_cadeau_dore','B2_boule_rouge'];
 const MJC_MAUVAIS=['B2_pierre','B2_glacon','B2_charbon'];
+const MJC_ECL=['B8_eclair_long','B8_eclair_epais','B8_eclair_ramifie'];
+const MJC_SHOCK=1.5;                // durée du coup de foudre (secondes)
 const MJC_CATCH=.76;                 // hauteur (part de l'écran) à laquelle les objets arrivent dans le sac
 function mjcNew(easy){
   const e=!!easy;
   return{
-    easy:e,t:0,D:30,need:e?7:28,got:0,lives:3,max:3,inv:0,
+    easy:e,t:0,D:30,need:e?10:30,got:0,lives:3,max:3,inv:0,
     x:.5,tx:.5,vel:0,hw:e?.075:.038,maxV:e?3.5:1.3,   // x = position du Père Noël (0 à 1 sur la largeur de l'écran)
     vy0:e?.30:1.05,i0:e?1.0:.34,i1:e?.75:.18,nextSpawn:.5,
-    pBon:e?.74:.40,pCoeur:e?.08:.05,
+    pBon:e?.74:.40,pCoeur:e?.08:.05,pEcl:e?.05:.22,shock:0,
     obj:[],ev:[],face:'B2_pere_sac_neutre',faceT:0,done:null,hits:0
   };
 }
@@ -20,14 +22,16 @@ function mjcSpawn(s){
   let k,kind;
   if(r<s.pBon){kind='bon';k=MJC_BONS[Math.floor(R()*MJC_BONS.length)]}
   else if(r<s.pBon+s.pCoeur){kind='coeur';k='B2_sucre_orge'}
+  else if(r<s.pBon+s.pCoeur+s.pEcl){kind='eclair';k=MJC_ECL[Math.floor(R()*MJC_ECL.length)]}
   else{kind='mauvais';k=MJC_MAUVAIS[Math.floor(R()*MJC_MAUVAIS.length)]}
-  s.obj.push({k,kind,x:.06+R()*.88,y:-.08,rot:R()*6.28,spin:(R()-.5)*3,done:false});
+  s.obj.push({k,kind,x:.06+R()*.88,y:-.08,rot:kind==='eclair'?0:R()*6.28,spin:kind==='eclair'?0:(R()-.5)*3,done:false});
 }
 function mjcUpdate(s,dt){
   if(s.done)return;
   s.t+=dt;const prog=Math.min(1,s.t/s.D);
   const vy=s.vy0*(1+.45*prog);
-  const ox=s.x,want=(s.tx-s.x)*Math.min(1,dt*14),mv=Math.max(-s.maxV*dt,Math.min(s.maxV*dt,want));
+  if(s.shock>0)s.shock=Math.max(0,s.shock-dt);
+  const ox=s.x,want=s.shock>0?0:(s.tx-s.x)*Math.min(1,dt*14),mv=Math.max(-s.maxV*dt,Math.min(s.maxV*dt,want));
   s.x=Math.max(.04,Math.min(.96,s.x+mv));s.vel+=((s.x-ox)/Math.max(dt,1e-3)-s.vel)*Math.min(1,dt*10);
   if(s.inv>0)s.inv-=dt;
   if(s.faceT>0){s.faceT-=dt;if(s.faceT<=0)s.face='B2_pere_sac_neutre'}
@@ -39,6 +43,7 @@ function mjcUpdate(s,dt){
       if(Math.abs(o.x-s.x)<s.hw+.025){
         if(o.kind==='bon'){s.got++;s.face='B2_pere_sac_content';s.faceT=.6;s.ev.push({k:'bon',x:o.x});o.got=true}
         else if(o.kind==='coeur'){if(s.lives<s.max)s.lives++;s.ev.push({k:'coeur'});o.got=true}
+        else if(o.kind==='eclair'){if(s.inv<=0){s.lives--;s.hits++;s.inv=2.6;s.shock=MJC_SHOCK;s.ev.push({k:'foudre',x:o.x})}o.got=true}
         else if(s.inv<=0){s.lives--;s.hits++;s.inv=1.2;s.face='B2_pere_sac_grimace';s.faceT=.9;s.ev.push({k:'mal',x:o.x});o.got=true}
         else o.got=true;
       }
@@ -49,7 +54,8 @@ function mjcUpdate(s,dt){
   else if(s.t>=s.D)s.done=s.got>=s.need?'win':'temps';
 }
 function mjcDraw(g,s,W,H,tm){
-  const im=MJ.img,u=H/720;
+  const im=MJ.img,u=H/720,t0=MJC_SHOCK-s.shock,ch=s.shock>0;
+  g.save();if(ch&&t0<1)g.translate((Math.random()-.5)*H*.03*(1-t0),(Math.random()-.5)*H*.02*(1-t0));
   if(!MJ.bgC||MJ.bgC.width!==W||MJ.bgC.height!==H){
     const c=document.createElement('canvas');c.width=W;c.height=H;const k=c.getContext('2d');
     let gr=k.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#070d2e');gr.addColorStop(.7,'#2b4a8c');gr.addColorStop(1,'#4a6aa8');
@@ -64,19 +70,43 @@ function mjcDraw(g,s,W,H,tm){
   // objets qui tombent
   for(const o of s.obj){
     const i=im[o.k];if(!i||!i.naturalWidth)continue;
-    const hh=(o.kind==='coeur'?.15:o.kind==='mauvais'?.115:.13)*H,ww=hh*i.naturalWidth/i.naturalHeight;
-    g.save();g.translate(o.x*W,o.y*H);g.rotate(Math.sin(o.rot)*.35);g.drawImage(i,-ww/2,-hh/2,ww,hh);g.restore();
+    const hh=(o.kind==='coeur'?.15:o.kind==='mauvais'?.115:o.kind==='eclair'?.2:.13)*H,ww=hh*i.naturalWidth/i.naturalHeight;
+    g.save();if(o.kind==='eclair'){g.shadowColor='#ffe94a';g.shadowBlur=H*.05}g.translate(o.x*W,o.y*H);g.rotate(Math.sin(o.rot)*.35);g.drawImage(i,-ww/2,-hh/2,ww,hh);g.restore();
   }
   // Père Noël et son sac
-  const f=im[s.face];
-  if(f&&f.naturalWidth&&!(s.inv>0&&Math.floor(tm*14)%2)){
+  let fk=s.face;
+  if(ch){fk=t0<.12?'B8_pere_electrocute':s.shock<.3?'B8_pere_carbonise':(Math.floor(tm*13)%2?'B8_pere_squelette':'B8_pere_squelette_etoile')}
+  const f=im[fk];
+  if(ch){ // lueur électrique derrière le Père Noël
+    const cx=s.x*W,cy=H*.78,gr=g.createRadialGradient(cx,cy,0,cx,cy,H*.45);gr.addColorStop(0,'rgba(190,230,255,'+(.85*Math.min(1,s.shock*2))+')');gr.addColorStop(1,'rgba(120,180,255,0)');
+    g.fillStyle=gr;g.fillRect(cx-H*.5,cy-H*.5,H,H);
+  }
+  if(f&&f.naturalWidth&&!(!ch&&s.inv>0&&Math.floor(tm*14)%2)){
     const h=H*.36,w=h*f.naturalWidth/f.naturalHeight,x=s.x*W,y=H*.985;
     g.fillStyle='rgba(60,80,130,.25)';g.beginPath();g.ellipse(x,y-4,w*.5,h*.05,0,0,6.283);g.fill();
     g.save();g.translate(x,y);g.rotate(Math.max(-.12,Math.min(.12,s.vel*.03)));g.drawImage(f,-w/2,-h,w,h);g.restore();
   }
+  // coup de foudre : éclair du ciel jusqu'au Père Noël, étincelles, flash blanc
+  if(ch){
+    const cx=s.x*W,seed=Math.floor(tm*25);
+    if(t0<.45){
+      for(let pass=0;pass<2;pass++){
+        g.strokeStyle=pass?'#fff':'rgba(120,190,255,.9)';g.lineWidth=(pass?H*.012:H*.04)*(1-t0*1.4);g.lineJoin='round';g.shadowColor='#9fd2ff';g.shadowBlur=H*.06;
+        g.beginPath();let x=cx+(Math.sin(seed)*H*.1),y=0;g.moveTo(x,y);
+        for(let k=1;k<=9;k++){const r=Math.sin(seed*7.3+k*12.9898)*43758.5453,rr=r-Math.floor(r);x+=(cx-x)*.25+(rr-.5)*H*.16;y=H*.78*k/9;g.lineTo(x,y)}
+        g.lineTo(cx,H*.8);g.stroke();
+      }
+      g.shadowBlur=0;
+    }
+    g.strokeStyle='#dff3ff';g.lineWidth=3*u;
+    for(let i=0;i<9;i++){const a=Math.random()*6.283,r1=H*.1+Math.random()*H*.1,r2=r1+H*(.05+Math.random()*.12);g.beginPath();g.moveTo(cx+Math.cos(a)*r1,H*.74+Math.sin(a)*r1);g.lineTo(cx+Math.cos(a+.3)*r2,H*.74+Math.sin(a+.3)*r2);g.stroke()}
+    const fl=t0<.1?1:Math.max(0,1-(t0-.1)/.35)*.9;
+    if(fl>0){g.fillStyle='rgba(235,245,255,'+fl+')';g.fillRect(0,0,W,H)}
+  }
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.7)';
   for(let i=0;i<40;i++){const x=((i*131.7+Math.sin(tm*.8+i)*30)%W+W)%W,y=((i*83.1+tm*(50+i%5*15))%H),r=1+i%3;g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
+  g.restore();
 }
 function mjcHud(g,s,W,H,me,tm){
   const im=MJ.img,p=PLAYERS[me],u=H/720;
@@ -104,10 +134,11 @@ function mjCadeaux(me){
     pointeur:(s,f)=>{s.tx=Math.max(.04,Math.min(.96,f))},
     cle:(s,d)=>{s.tx=Math.max(.04,Math.min(.96,s.tx+d*.12))},
     evenement:(e,s,fx,cv)=>{
-      if(e.k==='mal'){AE.nope&&AE.nope();fx.push({t:0,x:s.x,y:.74});cv.style.transform='translate('+(Math.random()*16-8)+'px,'+(Math.random()*10-5)+'px)'}
+      if(e.k==='foudre'){AE.boom&&AE.boom();AE.nope&&AE.nope();cv.style.transform=''}
+      else if(e.k==='mal'){AE.nope&&AE.nope();fx.push({t:0,x:s.x,y:.74});cv.style.transform='translate('+(Math.random()*16-8)+'px,'+(Math.random()*10-5)+'px)'}
       else if(e.k==='coeur')AE.bells&&AE.bells();
       else AE.pops&&AE.pops(3,.5);
     },
-    intro:['Attrape les cadeaux !','Glisse ton doigt pour déplacer le Père Noël.','Évite les pierres, les glaçons et le charbon !']
+    intro:['Attrape les cadeaux !','Glisse ton doigt pour déplacer le Père Noël.','Évite les éclairs ⚡, les pierres et le charbon !']
   });
 }

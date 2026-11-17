@@ -100,3 +100,6 @@ Ne jamais modifier à la main `index.html` ni le numéro de cache dans `sw.js` :
 
 ## v3.15 : tous les mini-jeux durent 30 s (adultes et Alix), avec compte à rebours
 Compte à rebours rond au centre haut (rouge et qui pulse sous 5 s), dessiné par `mjRunner` pour tous les jeux. Cadeaux qui tombent : gagné si le quota est atteint à la fin des 30 s. Victoire (dans `mjRunner`) : flash, rayons, onde de choc, cadeau qui jaillit avec rebond, confettis en 2 explosions (`boom`), 3,6 s. Tout nouveau mini-jeu en profite automatiquement (`s.D` = 30, `s.t` = temps écoulé).
+
+## v3.16 : éclairs dans les cadeaux qui tombent (planche B8)
+Des éclairs jaunes tombent avec les cadeaux (adultes 22 % des objets, Alix 5 %). Attraper un éclair = coup de foudre (`MJC_SHOCK` 1,5 s) : flash blanc, éclair du ciel au Père Noël, squelette lumineux (B8_pere_squelette / _etoile qui clignotent), puis Père Noël noirci ; −1 cœur, Père Noël immobilisé, invulnérable 2,6 s, son `AE.boom`. Objectif adultes 30 cadeaux, Alix 10. Images B8 embarquées : seulement eclair_*, pere_* (les autres B8, étincelles et cercle d'arc, sont inutilisables : halos flous). Le glaçon est encore présent (à remplacer, thème Noël, choix de Mic en attente).
