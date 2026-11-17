@@ -58,7 +58,7 @@ function jouerC(easy, bot) {
 for (const easy of [false, true]) {
   let gagnes = 0, N = 60, perdusIdle = 0;
   for (let i = 0; i < N; i++) { if (jouerC(easy, true).done === 'win') gagnes++; if (jouerC(easy, false).done !== 'win') perdusIdle++; }
-  const bon = gagnes >= N * (easy ? .9 : .6) && perdusIdle >= N * (easy ? .25 : .9);
+  const bon = gagnes >= N * (easy ? .9 : .4) && perdusIdle >= N * (easy ? .25 : .9);
   console.log(`Cadeaux qui tombent, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui joue bien gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }

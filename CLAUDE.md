@@ -96,4 +96,4 @@ Ne jamais modifier à la main `index.html` ni le numéro de cache dans `sw.js` :
 - Ne jamais mettre dans Git : la clé de signature Android, les mots de passe, le dossier `captures/`.
 
 ## Mini-jeu 2 : cadeaux qui tombent (v3.13)
-`src/2-minijeu-cadeaux.js` (mjcNew/mjcUpdate/mjCadeaux), images B2 embarquées. Adultes : 15 cadeaux en 30 s ; Alix : 7 en 40 s, lent. Testé dans tools/test-minijeu.js.
+`src/2-minijeu-cadeaux.js` (mjcNew/mjcUpdate/mjCadeaux), images B2 embarquées. Adultes (v3.14, durci) : 28 cadeaux en 30 s, très rapide ; Alix : 7 en 40 s, lent. En mode test (menu des réglages), une croix rouge ✕ à gauche ferme le jeu (MJ.test). Testé dans tools/test-minijeu.js.

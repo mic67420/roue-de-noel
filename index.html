@@ -238,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.13';
+const VERSION='3.14';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1264,10 +1264,10 @@ const MJC_CATCH=.76;                 // hauteur (part de l'écran) à laquelle l
 function mjcNew(easy){
   const e=!!easy;
   return{
-    easy:e,t:0,D:e?40:30,need:e?7:15,got:0,lives:3,max:3,inv:0,
-    x:.5,tx:.5,vel:0,hw:e?.075:.05,maxV:e?3.5:1.9,   // x = position du Père Noël (0 à 1 sur la largeur de l'écran)
-    vy0:e?.30:.55,i0:e?1.0:.62,i1:e?.75:.34,nextSpawn:.5,
-    pBon:e?.74:.50,pCoeur:e?.08:.06,
+    easy:e,t:0,D:e?40:30,need:e?7:28,got:0,lives:3,max:3,inv:0,
+    x:.5,tx:.5,vel:0,hw:e?.075:.038,maxV:e?3.5:1.3,   // x = position du Père Noël (0 à 1 sur la largeur de l'écran)
+    vy0:e?.30:1.05,i0:e?1.0:.34,i1:e?.75:.18,nextSpawn:.5,
+    pBon:e?.74:.40,pCoeur:e?.08:.05,
     obj:[],ev:[],face:'B2_pere_sac_neutre',faceT:0,done:null,hits:0
   };
 }
@@ -1539,6 +1539,8 @@ function mjRunner(me,cfg){
     const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(e.key==='ArrowLeft')cfg.cle(s,-1);else if(e.key==='ArrowRight')cfg.cle(s,1)};
     window.addEventListener('keydown',key);
     AE.init&&AE.init();
+    let croix=null;
+    if(MJ.test){croix=document.createElement('button');croix.textContent='✕';croix.setAttribute('aria-label','Fermer');croix.style.cssText='position:absolute;left:1.2%;top:24%;width:56px;height:56px;border-radius:50%;border:3px solid #fff;background:rgba(190,30,30,.9);color:#fff;font:bold 30px sans-serif;z-index:5;cursor:pointer';croix.addEventListener('pointerdown',e=>{e.stopPropagation()});croix.addEventListener('click',e=>{e.stopPropagation();finish('x')});el.appendChild(croix)}
     const finish=ok=>{MJ.active=false;document.body.classList.remove('mjOn');cancelAnimationFrame(raf);window.removeEventListener('keydown',key);res(ok)};
     function txt(t,y,size,col){g.textAlign='center';g.textBaseline='middle';g.font=`italic 900 ${size}px Georgia,serif`;g.lineWidth=size*.12;g.strokeStyle='#6b3d00';g.strokeText(t,W/2,y);g.fillStyle=col||'#ffe48a';g.fillText(t,W/2,y)}
     function loop(now){
@@ -1621,11 +1623,12 @@ async function mjMenu(){
     clearUI();
     if(t==='x')return;
     const [id,pl]=t.split(':'),jeu=L.find(j=>j.id===id);
-    const ok=await jeu.fn(+pl);clearUI();
+    MJ.test=true;const ok=await jeu.fn(+pl);MJ.test=false;clearUI();
+    if(ok==='x'){msg='Choisis un mini-jeu à essayer';continue}
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjNew,mjUpdate,mjTraineau,mjCadeaux};
+window.MJ_TEST={mjNew,mjUpdate,mjTraineau,mjCadeaux,mjMenu};
 
 /* ============ FOND ETOILE, NEIGE, CONFETTIS ============ */
 const lc=$('lights'),lg=lc.getContext('2d'),bgc=$('bg'),bg=bgc.getContext('2d'),fxc=$('fx'),fg=fxc.getContext('2d');

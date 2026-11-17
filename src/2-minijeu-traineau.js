@@ -169,6 +169,8 @@ function mjRunner(me,cfg){
     const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(e.key==='ArrowLeft')cfg.cle(s,-1);else if(e.key==='ArrowRight')cfg.cle(s,1)};
     window.addEventListener('keydown',key);
     AE.init&&AE.init();
+    let croix=null;
+    if(MJ.test){croix=document.createElement('button');croix.textContent='✕';croix.setAttribute('aria-label','Fermer');croix.style.cssText='position:absolute;left:1.2%;top:24%;width:56px;height:56px;border-radius:50%;border:3px solid #fff;background:rgba(190,30,30,.9);color:#fff;font:bold 30px sans-serif;z-index:5;cursor:pointer';croix.addEventListener('pointerdown',e=>{e.stopPropagation()});croix.addEventListener('click',e=>{e.stopPropagation();finish('x')});el.appendChild(croix)}
     const finish=ok=>{MJ.active=false;document.body.classList.remove('mjOn');cancelAnimationFrame(raf);window.removeEventListener('keydown',key);res(ok)};
     function txt(t,y,size,col){g.textAlign='center';g.textBaseline='middle';g.font=`italic 900 ${size}px Georgia,serif`;g.lineWidth=size*.12;g.strokeStyle='#6b3d00';g.strokeText(t,W/2,y);g.fillStyle=col||'#ffe48a';g.fillText(t,W/2,y)}
     function loop(now){
@@ -251,8 +253,9 @@ async function mjMenu(){
     clearUI();
     if(t==='x')return;
     const [id,pl]=t.split(':'),jeu=L.find(j=>j.id===id);
-    const ok=await jeu.fn(+pl);clearUI();
+    MJ.test=true;const ok=await jeu.fn(+pl);MJ.test=false;clearUI();
+    if(ok==='x'){msg='Choisis un mini-jeu à essayer';continue}
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjNew,mjUpdate,mjTraineau,mjCadeaux};
+window.MJ_TEST={mjNew,mjUpdate,mjTraineau,mjCadeaux,mjMenu};
