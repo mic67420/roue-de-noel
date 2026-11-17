@@ -238,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.18';
+const VERSION='3.19';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1489,23 +1489,55 @@ function mjUpdate(s,dt){
 /* ---- dessin ---- */
 function mjDraw(g,s,W,H,tm){
   const im=MJ.img,hy=H*.30,roadHalf=W*.42,gy=z=>hy+(H*1.0-hy)*z,px=(wx,z)=>W/2+wx*roadHalf*z,P=u=>MJ_ZS*Math.pow(Math.max(u,0)/MJ_ZS,1.5);   // P : effet de perspective, ce qui est proche défile plus vite
-  // ciel + neige du fond : dessinés une seule fois puis recopiés (plus fluide sur téléphone)
+  // ciel, collines lointaines, brume et neige du fond : dessinés une seule fois puis recopiés (plus fluide sur téléphone)
   if(!MJ.bg||MJ.bg.width!==W||MJ.bg.height!==H){
     const c=document.createElement('canvas');c.width=W;c.height=H;const k=c.getContext('2d');
-    let gr=k.createLinearGradient(0,0,0,hy);gr.addColorStop(0,'#070d2e');gr.addColorStop(1,'#2b4a8c');
+    let gr=k.createLinearGradient(0,0,0,hy);gr.addColorStop(0,'#070d2e');gr.addColorStop(.7,'#243f80');gr.addColorStop(1,'#3d5fa3');
     k.fillStyle=gr;k.fillRect(0,0,W,hy+2);k.fillStyle='#fff';
-    for(let i=0;i<46;i++){k.globalAlpha=.45+.45*((i*37)%10)/10;k.beginPath();k.arc(i*173.7%W,i*97.3%(hy*.9),i%3?1.2:2,0,6.283);k.fill()}
+    for(let i=0;i<60;i++){k.globalAlpha=.45+.45*((i*37)%10)/10;k.beginPath();k.arc(i*173.7%W,i*97.3%(hy*.8),i%3?1.2:2,0,6.283);k.fill()}
     k.globalAlpha=1;
-    gr=k.createLinearGradient(0,hy,0,H);gr.addColorStop(0,'#aebfe0');gr.addColorStop(.35,'#e4edfb');gr.addColorStop(1,'#ffffff');
-    k.fillStyle=gr;k.fillRect(0,hy,W,H-hy);MJ.bg=c;
+    // deux rangées de collines enneigées (plus claires et plus bleues au loin)
+    const colline=(col,amp,fr,ph,base)=>{k.fillStyle=col;k.beginPath();k.moveTo(0,hy+3);for(let x=0;x<=W;x+=8){const y=hy-base-amp*(.55+.45*Math.sin(x/W*fr+ph))-amp*.35*Math.sin(x/W*fr*2.7+ph*2);k.lineTo(x,y)}k.lineTo(W,hy+3);k.fill()};
+    colline('#4a6bad',H*.075,9,1.2,H*.01);colline('#6784c0',H*.05,14,3.1,0);
+    // brume à l'horizon
+    gr=k.createLinearGradient(0,hy-H*.07,0,hy+H*.07);gr.addColorStop(0,'rgba(190,210,245,0)');gr.addColorStop(.55,'rgba(205,222,250,.75)');gr.addColorStop(1,'rgba(205,222,250,0)');
+    k.fillStyle=gr;k.fillRect(0,hy-H*.07,W,H*.14);
+    // neige : sombre et bleutée au loin, blanche près de nous
+    gr=k.createLinearGradient(0,hy,0,H);gr.addColorStop(0,'#a9bde3');gr.addColorStop(.25,'#cddcf5');gr.addColorStop(.6,'#eaf1fc');gr.addColorStop(1,'#ffffff');
+    k.fillStyle=gr;k.fillRect(0,hy+2,W,H-hy);
+    gr=k.createLinearGradient(0,hy-4,0,hy+H*.05);gr.addColorStop(0,'rgba(205,222,250,.8)');gr.addColorStop(1,'rgba(205,222,250,0)');k.fillStyle=gr;k.fillRect(0,hy-4,W,H*.05+4);
+    MJ.bg=c;
   }
   g.drawImage(MJ.bg,0,0);
-  // piste un peu plus claire + traces qui défilent
-  g.fillStyle='rgba(255,255,255,.55)';g.beginPath();g.moveTo(W/2-W*.04,hy);g.lineTo(W/2+W*.04,hy);g.lineTo(W/2+roadHalf*1.12,H);g.lineTo(W/2-roadHalf*1.12,H);g.fill();
-  const N=9,ph=(s.dist*1.0)%(1/N);
-  g.strokeStyle='rgba(120,150,205,.30)';
-  for(let i=0;i<N;i++){const z=P(i/N+ph),y=gy(z);g.lineWidth=1+4*z;g.beginPath();g.moveTo(W/2-roadHalf*1.12*z,y);g.lineTo(W/2+roadHalf*1.12*z,y);g.stroke()}
-  for(const sd of [-1,1]){g.lineWidth=3;g.beginPath();g.moveTo(px(sd*1.12,.02),gy(.02));g.lineTo(px(sd*1.12,1.1),gy(1.1));g.stroke()}
+  const N=9,ph=(s.dist*1.0)%(1/N),dt=Math.min(.05,Math.max(0,tm-(MJ.lastTm||tm)));MJ.lastTm=tm;
+  // piste : un peu plus claire, bords en congères
+  g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.moveTo(W/2-W*.03,hy);g.lineTo(W/2+W*.03,hy);g.lineTo(W/2+roadHalf*1.12,H);g.lineTo(W/2-roadHalf*1.12,H);g.fill();
+  // bandes qui défilent (alternance claire/sombre en perspective : on sent la vitesse)
+  for(let i=-1;i<N;i++){
+    const u0=i/N+ph,u1=(i+1)/N+ph;if(u1<=0)continue;
+    const z0=P(Math.max(u0,0)),z1=P(u1),y0=gy(z0),y1=gy(z1);
+    g.fillStyle=(i&1)?'rgba(120,150,205,.13)':'rgba(255,255,255,.12)';
+    g.beginPath();g.moveTo(px(-1.12,z0),y0);g.lineTo(px(1.12,z0),y0);g.lineTo(px(1.12,z1),y1);g.lineTo(px(-1.12,z1),y1);g.fill();
+  }
+  // ombre bleutée et bord clair des congères
+  for(const sd of [-1,1]){
+    g.fillStyle='rgba(95,125,185,.22)';g.beginPath();g.moveTo(px(sd*1.12,.02),gy(.02));g.lineTo(px(sd*1.34,.02),gy(.02));g.lineTo(px(sd*1.34,1.1),gy(1.1));g.lineTo(px(sd*1.12,1.1),gy(1.1));g.fill();
+    g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=4;g.beginPath();g.moveTo(px(sd*1.12,.02),gy(.02));g.lineTo(px(sd*1.12,1.1),gy(1.1));g.stroke();
+    // petites bosses de neige sur le bord, qui défilent
+    for(let i=0;i<N;i++){const u=i/N+ph,z=P(u);if(z<.04)continue;g.fillStyle='rgba(255,255,255,.95)';g.beginPath();g.ellipse(px(sd*1.2,z),gy(z),roadHalf*.12*z,H*.028*z,0,Math.PI,6.283);g.fill();g.fillStyle='rgba(95,125,185,.3)';g.beginPath();g.ellipse(px(sd*1.2,z),gy(z),roadHalf*.12*z,H*.007*z,0,0,6.283);g.fill()}
+  }
+  // traces de patins laissées par le traîneau (suivent ses déplacements)
+  const tr=MJ.trail||(MJ.trail=[]);
+  if(tr.length&&s.dist<tr[0].d)tr.length=0;
+  if(!tr.length||s.dist-tr[tr.length-1].d>.02)tr.push({d:s.dist,x:s.x});
+  while(tr.length&&s.dist-tr[0].d>.3)tr.shift();
+  g.strokeStyle='rgba(110,140,200,.5)';g.lineCap='round';
+  for(const off of [-.1,.1]){
+    g.beginPath();let first=true;
+    for(const t of tr){const z=P(MJ_ZS+(s.dist-t.d));g.lineWidth=1+3*z;const X=px(t.x+off,z),Y=gy(z);if(first){g.moveTo(X,Y);first=false}else g.lineTo(X,Y)}
+    g.stroke();
+  }
+  g.lineCap='butt';
   // objets triés du plus loin au plus proche, le traîneau s'intercale à sa profondeur
   const list=[];
   s.sc.forEach(o=>list.push({z:o.z,k:o.k,wx:o.wx,hf:o.hf,lift:0,a:1}));
@@ -1513,24 +1545,41 @@ function mjDraw(g,s,W,H,tm){
   list.push({z:MJ_ZS,sleigh:true});
   list.sort((a,b)=>a.z-b.z);
   for(const o of list){
-    if(o.sleigh){mjSleigh(g,s,W,H,gy,px,tm);continue}
+    if(o.sleigh){mjSleigh(g,s,W,H,gy,px,tm,dt);continue}
     const i=im[o.k];if(!i||!i.naturalWidth)continue;
-    const z=P(o.z),h=H*o.hf*z,w=h*i.naturalWidth/i.naturalHeight,x=px(o.wx,z),y=gy(z)-H*o.lift*z+(o.bob?Math.sin(tm*5+o.wx*7)*H*.008*z:0);
-    g.globalAlpha=Math.min(1,z*8)*o.a;
+    const z=P(o.z),h=H*o.hf*z,w=h*i.naturalWidth/i.naturalHeight,x=px(o.wx,z),yb=gy(z),y=yb-H*o.lift*z+(o.bob?Math.sin(tm*5+o.wx*7)*H*.008*z:0);
+    const al=Math.min(1,z*8)*o.a;
+    // ombre portée au sol (reste au sol quand l'objet saute)
+    g.globalAlpha=al*Math.max(.35,1-o.lift*3);g.fillStyle='rgba(70,95,160,.32)';g.beginPath();g.ellipse(x+w*.08,yb,w*.4,Math.max(2,h*.07),0,0,6.283);g.fill();
+    g.globalAlpha=al;
     if(o.flip){g.save();g.translate(x,0);g.scale(-1,1);g.drawImage(i,-w/2,y-h,w,h);g.restore()}else g.drawImage(i,x-w/2,y-h,w,h);
+  }
+  g.globalAlpha=1;
+  // flocons qui filent vers nous depuis l'horizon (sensation de vitesse)
+  g.strokeStyle='rgba(255,255,255,.7)';
+  for(let i=0;i<34;i++){
+    const ang=(i*2.399)%1,sd=ang<.5?-1:1,wx=sd*(1.25+((i*0.6180339)%1)*2.4),u=((i*0.37)%1+s.dist*1.7)%1,z0=P(u),z1=P(Math.min(1.2,u+.06));
+    if(z0<.03)continue;g.globalAlpha=Math.min(1,z0*5)*.75;g.lineWidth=1+2*z1;g.beginPath();g.moveTo(px(wx,z0),gy(z0)-H*(.02+.1*((i*.77)%1))*z0);g.lineTo(px(wx,z1),gy(z1)-H*(.02+.1*((i*.77)%1))*z1);g.stroke();
   }
   g.globalAlpha=1;
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.8)';
   for(let i=0;i<60;i++){const x=((i*131.7+Math.sin(tm*.8+i)*30)%W+W)%W,y=((i*83.1+tm*(60+i%5*18))%H),r=1+i%3;g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
 }
-function mjSleigh(g,s,W,H,gy,px,tm){
+function mjSleigh(g,s,W,H,gy,px,tm,dt){
   const im=MJ.img,k=s.vel<-.35?'B1_traineau_gauche':s.vel>.35?'B1_traineau_droite':'B1_traineau_droit',i=im[k];
   if(!i||!i.naturalWidth)return;
-  if(s.inv>0&&Math.floor(tm*14)%2)return;                       // clignote quand il vient d'être touché
   const h=H*.30,w=h*i.naturalWidth/i.naturalHeight,x=px(s.x,MJ_ZS),y=gy(MJ_ZS)+Math.sin(tm*14)*H*.004;
+  // poudreuse soulevée par les patins (plus forte quand on tourne)
+  const sp=MJ.spray||(MJ.spray=[]);
+  if(dt>0){const n=2+Math.min(3,Math.abs(s.vel)*2);for(let q=0;q<n;q++){const sd=Math.random()<.5?-1:1;sp.push({x:x+sd*w*.28,y:y-h*.03,vx:sd*(20+Math.random()*60)*H/720-s.vel*40*H/720,vy:(80+Math.random()*140)*H/720,r:(3+Math.random()*5)*H/720,l:0,L:.45+Math.random()*.3})}}
+  for(const q of sp){q.l+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy-=60*dt*H/720*0}
+  MJ.spray=sp.filter(q=>q.l<q.L);
   g.fillStyle='rgba(60,80,130,.25)';g.beginPath();g.ellipse(x,y,w*.5,h*.07,0,0,6.283);g.fill();
-  g.drawImage(i,x-w/2,y-h*.95,w,h);
+  if(!(s.inv>0&&Math.floor(tm*14)%2)){                           // clignote quand il vient d'être touché
+    g.save();g.translate(x,y);g.rotate(Math.max(-.1,Math.min(.1,s.vel*.035)));g.drawImage(i,-w/2,-h*.95,w,h);g.restore();
+  }
+  for(const q of MJ.spray){const a=1-q.l/q.L;g.fillStyle='rgba(255,255,255,'+(.85*a)+')';g.beginPath();g.arc(q.x,q.y,q.r*(1+q.l*1.6),0,6.283);g.fill()}
 }
 function mjHud(g,s,W,H,me,tm){
   const im=MJ.img,p=PLAYERS[me],u=H/720;

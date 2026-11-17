@@ -106,3 +106,6 @@ Des éclairs jaunes tombent avec les cadeaux (adultes 22 % des objets, Alix 5 %)
 
 ## v3.18 : règle « jamais le même mini-jeu deux fois de suite pour un même joueur »
 `mjChoisir(me)` (dans `2-minijeu-traineau.js`) tire au hasard parmi les jeux de `mjListe()` sauf le dernier joué par ce joueur (`mjDernier[me]`). La deuxième chance après un échec change aussi de jeu. Avec 2 jeux ils alternent ; plus il y en a, plus c'est aléatoire.
+
+## v3.19 : piste du traîneau plus 3D (`mjDraw`, `mjSleigh`)
+Collines et brume à l'horizon (fond mis en cache), bandes claires/sombres qui défilent en perspective, congères et bosses de neige sur les bords, ombres portées sous tous les objets, traces de patins qui suivent le traîneau (`MJ.trail`), flocons qui filent depuis l'horizon, poudreuse derrière le traîneau (`MJ.spray`), léger penchement du traîneau. Idée non faite : virages et bosses de la piste (option D).
