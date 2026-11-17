@@ -237,7 +237,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.7';
+const VERSION='3.8';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1460,6 +1460,21 @@ async function mjCase(me){
   }
   return false;
 }
+/* Menu de test (écran des réglages) : lancer un mini-jeu sans tourner la roue */
+async function mjMenu(){
+  const alix=PLAYERS.findIndex(p=>p.name==='Alix');
+  let msg='Choisis un mini-jeu à essayer';
+  while(true){
+    const el=ov(`<h2>🎮 Tester les mini-jeux</h2><div class="sub s">${msg}</div>
+      <div class="btnRow"><button class="btn g" data-t="0">🛷 Traîneau · version adultes</button><button class="btn g" data-t="${alix}">🛷 Traîneau · version Alix (facile)</button></div>
+      <div class="btnRow"><button class="btn r" data-t="x">↩️ Retour aux réglages</button></div>`);
+    const t=await new Promise(r=>el.addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(b)r(b.dataset.t)}));
+    clearUI();
+    if(t==='x')return;
+    const ok=await mjTraineau(+t);clearUI();
+    msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
+  }
+}
 window.MJ_TEST={mjNew,mjUpdate,mjTraineau};
 
 /* ============ FOND ETOILE, NEIGE, CONFETTIS ============ */
@@ -2065,7 +2080,8 @@ function showSettings(){
       <div class="setRow"><div>Fin de partie « chaude » à partir de<small>cadeaux restants (les cases spéciales deviennent plus fréquentes)</small></div><div class="step"><button data-k="thr" data-d="-1">−</button><b>${cfg.thr}</b><button data-k="thr" data-d="1">+</button></div></div>
       <div class="setRow"><div>Multiplicateur des cases spéciales<small>1 = aucun changement</small></div><div class="step"><button data-k="boost" data-d="-1">−</button><b>×${cfg.boost}</b><button data-k="boost" data-d="1">+</button></div></div>
       ${installEv&&!isStandalone()?'<div class="btnRow"><button class="btn r" id="sInstall">📲 Installer l’application</button></div>':''}${(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!isStandalone())?'<div class="sub s">📲 iPhone : touche Partager, puis « Sur l’écran d’accueil »</div>':''}
-      <div class="btnRow"><button class="btn g" id="sMus">🎵 Musique</button><button class="btn g" id="sVid">🎬 Père Noël (vidéo)</button><button class="btn" id="sGo">🎄 Lancer la partie</button></div></div>`;
+      <div class="btnRow"><button class="btn g" id="sMus">🎵 Musique</button><button class="btn g" id="sVid">🎬 Père Noël (vidéo)</button><button class="btn" id="sGo">🎄 Lancer la partie</button></div>
+      <div class="btnRow"><button class="btn g" id="sMJ">🎮 Tester les mini-jeux</button></div></div>`;
   };
   draw();
   el.onclick=e=>{
@@ -2074,6 +2090,7 @@ function showSettings(){
     if(b.id==='sMus'){$('musicFile').click();return}
     if(b.id==='sInstall'){if(installEv){installEv.prompt();installEv.userChoice.finally(()=>{installEv=null;draw()})}return}
     if(b.id==='sVid'){videoPanel();return}
+    if(b.id==='sMJ'){mjMenu();return}
     if(b.id==='sGo'){store.set(KEYCFG,cfg);startNew(cfg)}
   };
 }
