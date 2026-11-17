@@ -81,7 +81,7 @@ function showSettings(){
       <div class="setRow"><div>Multiplicateur des cases spéciales<small>1 = aucun changement</small></div><div class="step"><button data-k="boost" data-d="-1">−</button><b>×${cfg.boost}</b><button data-k="boost" data-d="1">+</button></div></div>
       ${installEv&&!isStandalone()?'<div class="btnRow"><button class="btn r" id="sInstall">📲 Installer l’application</button></div>':''}${(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!isStandalone())?'<div class="sub s">📲 iPhone : touche Partager, puis « Sur l’écran d’accueil »</div>':''}
       <div class="btnRow"><button class="btn g" id="sMus">🎵 Musique</button><button class="btn g" id="sVid">🎬 Père Noël (vidéo)</button><button class="btn" id="sGo">🎄 Lancer la partie</button></div>
-      <div class="btnRow"><button class="btn g" id="sMJ">🎮 Tester les mini-jeux</button></div></div>`;
+      <div class="btnRow"><button class="btn g" id="sMJ">🎮 Tester les mini-jeux</button><button class="btn g" id="sMaj">🔄 Mettre à jour</button></div></div>`;
   };
   draw();
   el.onclick=e=>{
@@ -91,6 +91,7 @@ function showSettings(){
     if(b.id==='sInstall'){if(installEv){installEv.prompt();installEv.userChoice.finally(()=>{installEv=null;draw()})}return}
     if(b.id==='sVid'){videoPanel();return}
     if(b.id==='sMJ'){mjMenu();return}
+    if(b.id==='sMaj'){b.textContent='⏳ Recherche…';majVerifier(true).then(r=>{if(r==='aucune'){b.textContent='✅ Déjà à jour (v'+VERSION+')'}else if(r==='erreur'){b.textContent='⚠️ Pas de connexion'}});return}
     if(b.id==='sGo'){store.set(KEYCFG,cfg);startNew(cfg)}
   };
 }
@@ -501,6 +502,35 @@ const isStandalone=()=>IN_APP||(window.matchMedia&&window.matchMedia('(display-m
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e});
 window.addEventListener('appinstalled',()=>{installEv=null;try{toast('✅ Application installée')}catch(e){}});
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}   // fonctionnement hors ligne
+/* ---- mise à jour sans fermer l'application ----
+   On lit sw.js (petit fichier) directement sur internet : son numéro de cache = la dernière version publiée. */
+const majNum=v=>v.split('.').map(Number);
+const majPlusRecent=(a,b)=>{const x=majNum(a),y=majNum(b);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
+let majBandeauEl=null;
+function majAppliquer(){
+  try{navigator.serviceWorker&&navigator.serviceWorker.getRegistration().then(r=>{if(r)return r.update()}).catch(()=>{})}catch(e){}
+  setTimeout(()=>location.reload(),700);
+}
+function majBandeau(nv){
+  if(majBandeauEl||MJ.active)return;
+  const d=document.createElement('div');majBandeauEl=d;
+  d.style.cssText='position:fixed;left:50%;bottom:2.5vh;transform:translateX(-50%);z-index:99998;background:#c8102e;color:#fff;font:700 3vh Georgia,serif;padding:1.4vh 3vh;border-radius:4vh;border:.4vh solid #fff;box-shadow:0 0 3vh rgba(255,255,255,.6);cursor:pointer;text-align:center';
+  d.textContent='🔄 Nouvelle version v'+nv+' : touche ici pour mettre à jour';
+  d.onclick=majAppliquer;document.body.appendChild(d);
+}
+async function majVerifier(force){
+  try{
+    const r=await fetch('sw.js?maj='+Date.now(),{cache:'no-store'});if(!r.ok)return'erreur';
+    const m=(await r.text()).match(/cache-v([\d.]+)/);if(!m)return'erreur';
+    if(majPlusRecent(m[1],VERSION)){if(force)majAppliquer();else majBandeau(m[1]);return'nouvelle'}
+    return'aucune';
+  }catch(e){return'erreur'}
+}
+if(typeof location!=='undefined'&&/^https?:$/.test(location.protocol)){
+  setTimeout(()=>majVerifier(false),6000);
+  setInterval(()=>majVerifier(false),120000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')majVerifier(false)});
+}
 async function keepAwake(){try{if('wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch(e){}}  // l'écran ne s'éteint pas pendant la partie
 document.addEventListener('pointerdown',keepAwake,{capture:true,passive:true});
 // Plein écran automatique (utile quand le jeu est ouvert dans Chrome et non en application) + verrouillage en paysage

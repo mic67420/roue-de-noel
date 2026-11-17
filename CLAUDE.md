@@ -112,3 +112,6 @@ Collines et brume à l'horizon (fond mis en cache), bandes claires/sombres qui d
 
 ## v3.20 : fin du clignotement de la piste du traîneau
 Les bandes claires/sombres dures de la v3.19 faisaient « strobe » (repliement temporel : elles défilent trop vite vers l'horizon). Remplacées dans `mjDraw` par 40 tranches à variation sinusoïdale très douce (alpha ≤ .07). Règle : jamais de motif dur et répétitif qui défile vite sur le sol.
+
+## v3.21 : mise à jour sans fermer l'application
+`majVerifier()` (dans `3-interface-video-sauvegarde.js`) lit `sw.js?maj=…` directement sur internet (le SW ne l'intercepte pas : ligne `searchParams.has('maj')` dans `sw.js`), compare son numéro `cache-vX.Y` à `VERSION`. Vérification 6 s après l'ouverture, toutes les 2 min, et au retour sur l'application. Version plus récente : bandeau rouge en bas « touche ici pour mettre à jour » (pas pendant un mini-jeu) qui recharge la page. Bouton « 🔄 Mettre à jour » dans les réglages : vérifie et recharge tout de suite. Ne fonctionne qu'à partir de la v3.21 (une fois installée, les suivantes se proposent toutes seules).
