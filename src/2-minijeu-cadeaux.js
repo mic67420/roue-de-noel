@@ -4,7 +4,7 @@
    Objectif : attraper assez de cadeaux avant la fin du temps. Alix : version lente, peu de mauvais objets, objectif plus petit. */
 const MJC_BONS=['B2_cadeau_rouge','B2_cadeau_bleu','B2_cadeau_vert','B2_cadeau_dore','B2_boule_rouge'];
 const MJC_MAUVAIS=['B2_pierre','B2_glacon','B2_charbon'];
-const MJC_ECL=['B8_eclair_long','B8_eclair_epais','B8_eclair_ramifie'];
+const MJC_ECL=['B8_eclair_epais'];
 const MJC_SHOCK=1.5;                // durée du coup de foudre (secondes)
 const MJC_CATCH=.76;                 // hauteur (part de l'écran) à laquelle les objets arrivent dans le sac
 function mjcNew(easy){
