@@ -109,3 +109,6 @@ Des éclairs jaunes tombent avec les cadeaux (adultes 22 % des objets, Alix 5 %)
 
 ## v3.19 : piste du traîneau plus 3D (`mjDraw`, `mjSleigh`)
 Collines et brume à l'horizon (fond mis en cache), bandes claires/sombres qui défilent en perspective, congères et bosses de neige sur les bords, ombres portées sous tous les objets, traces de patins qui suivent le traîneau (`MJ.trail`), flocons qui filent depuis l'horizon, poudreuse derrière le traîneau (`MJ.spray`), léger penchement du traîneau. Idée non faite : virages et bosses de la piste (option D).
+
+## v3.20 : fin du clignotement de la piste du traîneau
+Les bandes claires/sombres dures de la v3.19 faisaient « strobe » (repliement temporel : elles défilent trop vite vers l'horizon). Remplacées dans `mjDraw` par 40 tranches à variation sinusoïdale très douce (alpha ≤ .07). Règle : jamais de motif dur et répétitif qui défile vite sur le sol.

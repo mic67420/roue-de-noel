@@ -112,13 +112,13 @@ function mjDraw(g,s,W,H,tm){
   const N=9,ph=(s.dist*1.0)%(1/N),dt=Math.min(.05,Math.max(0,tm-(MJ.lastTm||tm)));MJ.lastTm=tm;
   // piste : un peu plus claire, bords en congères
   g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.moveTo(W/2-W*.03,hy);g.lineTo(W/2+W*.03,hy);g.lineTo(W/2+roadHalf*1.12,H);g.lineTo(W/2-roadHalf*1.12,H);g.fill();
-  // bandes qui défilent (alternance claire/sombre en perspective : on sent la vitesse)
-  for(let i=-1;i<N;i++){
-    const u0=i/N+ph,u1=(i+1)/N+ph;if(u1<=0)continue;
-    const z0=P(Math.max(u0,0)),z1=P(u1),y0=gy(z0),y1=gy(z1);
-    g.fillStyle=(i&1)?'rgba(120,150,205,.13)':'rgba(255,255,255,.12)';
-    g.beginPath();g.moveTo(px(-1.12,z0),y0);g.lineTo(px(1.12,z0),y0);g.lineTo(px(1.12,z1),y1);g.lineTo(px(-1.12,z1),y1);g.fill();
-  }
+  // relief doux de la neige qui défile (dégradé lissé, pas de bandes dures : évite l'effet de clignotement)
+  {const M=40;
+    for(let j=0;j<M;j++){
+      const u0=j/M,u1=(j+1)/M,um=(u0+u1)/2,v=Math.sin(6.283*N*(um-ph)),z0=P(u0),z1=P(u1),y0=gy(z0),y1=gy(z1);
+      g.fillStyle=v>0?'rgba(255,255,255,'+(.07*v)+')':'rgba(120,150,205,'+(-.07*v)+')';
+      g.beginPath();g.moveTo(px(-1.12,z0),y0);g.lineTo(px(1.12,z0),y0);g.lineTo(px(1.12,z1),y1+1);g.lineTo(px(-1.12,z1),y1+1);g.fill();
+    }}
   // ombre bleutée et bord clair des congères
   for(const sd of [-1,1]){
     g.fillStyle='rgba(95,125,185,.22)';g.beginPath();g.moveTo(px(sd*1.12,.02),gy(.02));g.lineTo(px(sd*1.34,.02),gy(.02));g.lineTo(px(sd*1.34,1.1),gy(1.1));g.lineTo(px(sd*1.12,1.1),gy(1.1));g.fill();
