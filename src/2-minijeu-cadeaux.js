@@ -3,7 +3,10 @@
    Il faut éviter les pierres, les glaçons et le charbon (un cœur perdu). Les sucres d'orge redonnent un cœur.
    Objectif : attraper assez de cadeaux avant la fin du temps. Alix : version lente, peu de mauvais objets, objectif plus petit. */
 const MJC_BONS=['B2_cadeau_rouge','B2_cadeau_bleu','B2_cadeau_vert','B2_cadeau_dore','B2_boule_rouge'];
-const MJC_MAUVAIS=['B2_pierre','B2_glacon','B2_charbon'];
+const MJC_MAUVAIS=['B2_charbon'];
+// météorites : h = hauteur (part de l'écran), hx/hy = position de la roche dans l'image, dx = dérive latérale (elles tombent en diagonale, flammes derrière)
+const MJC_METEO={B9_meteo_roche:{h:.14,hx:.62,hy:.64,dx:1},B9_meteo_noire:{h:.21,hx:.6,hy:.64,dx:1},B9_meteo_glace:{h:.17,hx:.6,hy:.64,dx:1},B9_meteo_lave:{h:.17,hx:.6,hy:.64,dx:1},B9_meteo_cristal:{h:.16,hx:.32,hy:.7,dx:-1}};
+const MJC_SOL=.93;                   // hauteur du sol (part de l'écran) où les météorites explosent
 const MJC_ECL=['B8_eclair_epais'];
 const MJC_SHOCK=1.5;                // durée du coup de foudre (secondes)
 const MJC_CATCH=.76;                 // hauteur (part de l'écran) à laquelle les objets arrivent dans le sac
@@ -13,7 +16,7 @@ function mjcNew(easy){
     easy:e,t:0,D:30,need:e?10:30,got:0,lives:3,max:3,inv:0,
     x:.5,tx:.5,vel:0,hw:e?.075:.038,maxV:e?3.5:1.3,   // x = position du Père Noël (0 à 1 sur la largeur de l'écran)
     vy0:e?.30:1.05,i0:e?1.0:.34,i1:e?.75:.18,nextSpawn:.5,
-    pBon:e?.74:.40,pCoeur:e?.08:.05,pEcl:e?.05:.22,shock:0,
+    pBon:e?.74:.40,pCoeur:e?.08:.05,pEcl:e?.05:.22,pMet:e?.7:.85,shock:0,fxs:[],
     obj:[],ev:[],face:'B2_pere_sac_neutre',faceT:0,done:null,hits:0
   };
 }
@@ -23,8 +26,11 @@ function mjcSpawn(s){
   if(r<s.pBon){kind='bon';k=MJC_BONS[Math.floor(R()*MJC_BONS.length)]}
   else if(r<s.pBon+s.pCoeur){kind='coeur';k='B2_sucre_orge'}
   else if(r<s.pBon+s.pCoeur+s.pEcl){kind='eclair';k=MJC_ECL[Math.floor(R()*MJC_ECL.length)]}
+  else if(R()<s.pMet){kind='meteo';const ks=Object.keys(MJC_METEO);k=ks[Math.floor(R()*ks.length)]}
   else{kind='mauvais';k=MJC_MAUVAIS[Math.floor(R()*MJC_MAUVAIS.length)]}
-  s.obj.push({k,kind,x:.06+R()*.88,y:-.08,rot:kind==='eclair'?0:R()*6.28,spin:kind==='eclair'?0:(R()-.5)*3,done:false});
+  const ob={k,kind,x:.06+R()*.88,y:-.08,rot:kind==='eclair'||kind==='meteo'?0:R()*6.28,spin:kind==='eclair'||kind==='meteo'?0:(R()-.5)*3,done:false,dx:0};
+  if(kind==='meteo'){const d=MJC_METEO[k].dx;ob.dx=d*(.10+Math.random()*.08);ob.x=d>0?.05+R()*.72:.23+R()*.72}
+  s.obj.push(ob);
 }
 function mjcUpdate(s,dt){
   if(s.done)return;
@@ -37,18 +43,21 @@ function mjcUpdate(s,dt){
   if(s.faceT>0){s.faceT-=dt;if(s.faceT<=0)s.face='B2_pere_sac_neutre'}
   while(s.t>=s.nextSpawn&&s.t<s.D-1.5){mjcSpawn(s);s.nextSpawn+=s.i0+(s.i1-s.i0)*prog}
   for(const o of s.obj){
-    o.y+=vy*dt;o.rot+=o.spin*dt;
+    o.y+=vy*dt;o.rot+=o.spin*dt;o.x+=o.dx*dt;
     if(!o.done&&o.y>=MJC_CATCH){
       o.done=true;
       if(Math.abs(o.x-s.x)<s.hw+.025){
         if(o.kind==='bon'){s.got++;s.face='B2_pere_sac_content';s.faceT=.6;s.ev.push({k:'bon',x:o.x});o.got=true}
         else if(o.kind==='coeur'){if(s.lives<s.max)s.lives++;s.ev.push({k:'coeur'});o.got=true}
         else if(o.kind==='eclair'){if(s.inv<=0){s.lives--;s.hits++;s.inv=2.6;s.shock=MJC_SHOCK;s.ev.push({k:'foudre',x:o.x})}o.got=true}
+        else if(o.kind==='meteo'){if(s.inv<=0){s.lives--;s.hits++;s.inv=1.4;s.face='B2_pere_sac_grimace';s.faceT=.9;s.ev.push({k:'meteo',x:o.x});s.fxs.push({x:s.x,y:.9,t:0,hit:true,g:Math.random()})}o.got=true}
         else if(s.inv<=0){s.lives--;s.hits++;s.inv=1.2;s.face='B2_pere_sac_grimace';s.faceT=.9;s.ev.push({k:'mal',x:o.x});o.got=true}
         else o.got=true;
       }
     }
   }
+  for(const o of s.obj)if(!o.got&&o.kind==='meteo'&&o.y>=MJC_SOL){o.got=true;s.fxs.push({x:o.x,y:MJC_SOL+.01,t:0,g:Math.random(),big:o.k==='B9_meteo_noire'});s.ev.push({k:'sol',x:o.x})}
+  for(const f of s.fxs)f.t+=dt;s.fxs=s.fxs.filter(f=>f.t<2.8);
   s.obj=s.obj.filter(o=>o.y<1.15&&!o.got);
   if(s.lives<=0)s.done='lose';
   else if(s.t>=s.D)s.done=s.got>=s.need?'win':'temps';
@@ -70,8 +79,20 @@ function mjcDraw(g,s,W,H,tm){
   // objets qui tombent
   for(const o of s.obj){
     const i=im[o.k];if(!i||!i.naturalWidth)continue;
-    const hh=(o.kind==='coeur'?.15:o.kind==='mauvais'?.115:o.kind==='eclair'?.2:.13)*H,ww=hh*i.naturalWidth/i.naturalHeight;
+    const M=o.kind==='meteo'?MJC_METEO[o.k]:null,hh=(M?M.h:o.kind==='coeur'?.15:o.kind==='mauvais'?.115:o.kind==='eclair'?.2:.13)*H,ww=hh*i.naturalWidth/i.naturalHeight;
+    if(M){g.drawImage(i,o.x*W-ww*M.hx,o.y*H-hh*M.hy,ww,hh);continue}
     g.save();if(o.kind==='eclair'){g.shadowColor='#ffe94a';g.shadowBlur=H*.05}g.translate(o.x*W,o.y*H);g.rotate(Math.sin(o.rot)*.35);g.drawImage(i,-ww/2,-hh/2,ww,hh);g.restore();
+  }
+  // explosions des météorites (au sol, ou sur le Père Noël)
+  for(const f of s.fxs){
+    const x=f.x*W,y=f.y*H,t=f.t,k=f.big||f.hit?1.25:.9,pos=(n,h,al)=>{const m=im[n];if(!m||!m.naturalWidth)return;const hh=h*H*k,ww=hh*m.naturalWidth/m.naturalHeight;g.globalAlpha=al;g.drawImage(m,x-ww/2,y-hh,ww,hh);g.globalAlpha=1};
+    if(t<.5){g.strokeStyle='rgba(255,255,255,'+(.8*(1-t/.5))+')';g.lineWidth=H*.012;g.beginPath();g.ellipse(x,y-H*.01,H*.06+t*H*.9,H*.02+t*H*.18,0,0,6.283);g.stroke()}
+    if(t>.35)pos('B9_cratere',.14,Math.max(0,Math.min(1,(2.6-t)/1.0)));
+    if(t<.12)pos('B9_expl1',.2*(.7+t*3),1);
+    else if(t<.3)pos('B9_expl2',.26,1);
+    else if(t<.65)pos('B9_expl3',.42,1);
+    else if(t<1.1)pos('B9_expl4',.42,Math.max(0,1-(t-.65)/.45));
+    if(t<.7){const m=im['B9_debris'];if(m&&m.naturalWidth){const hh=H*.3*k,ww=hh*m.naturalWidth/m.naturalHeight,up=Math.sin(Math.min(1,t/.7)*Math.PI)*H*.12;g.globalAlpha=Math.min(1,(.7-t)*3);g.drawImage(m,x-ww/2,y-hh-up,ww,hh);g.globalAlpha=1}}
   }
   // Père Noël et son sac
   let fk=s.face;
@@ -134,11 +155,13 @@ function mjCadeaux(me){
     pointeur:(s,f)=>{s.tx=Math.max(.04,Math.min(.96,f))},
     cle:(s,d)=>{s.tx=Math.max(.04,Math.min(.96,s.tx+d*.12))},
     evenement:(e,s,fx,cv)=>{
-      if(e.k==='foudre'){AE.boom&&AE.boom();AE.nope&&AE.nope();cv.style.transform=''}
+      if(e.k==='meteo'){AE.boom&&AE.boom();cv.style.transform='translate('+(Math.random()*22-11)+'px,'+(Math.random()*14-7)+'px)'}
+      else if(e.k==='sol'){AE.pops&&AE.pops(1,.4)}
+      else if(e.k==='foudre'){AE.boom&&AE.boom();AE.nope&&AE.nope();cv.style.transform=''}
       else if(e.k==='mal'){AE.nope&&AE.nope();fx.push({t:0,x:s.x,y:.74});cv.style.transform='translate('+(Math.random()*16-8)+'px,'+(Math.random()*10-5)+'px)'}
       else if(e.k==='coeur')AE.bells&&AE.bells();
       else AE.pops&&AE.pops(3,.5);
     },
-    intro:['Attrape les cadeaux !','Glisse ton doigt pour déplacer le Père Noël.','Évite les éclairs ⚡, les pierres et le charbon !']
+    intro:['Attrape les cadeaux !','Glisse ton doigt pour déplacer le Père Noël.','Évite les éclairs ⚡, les météorites ☄️ et le charbon !']
   });
 }

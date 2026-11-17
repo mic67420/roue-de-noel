@@ -4,7 +4,7 @@ import os, io, json, base64, glob
 from PIL import Image
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 SRC = os.path.join(ROOT, 'assets', 'mini-jeux')
-EMBARQUE = ['B1_*', 'B2_*', 'B8_eclair_epais', 'B8_pere_*', 'B7_*', 'B6_coeur_plein', 'B6_coeur_vide', 'B6_etoile_score', 'B6_doigt', 'B6_nuage']
+EMBARQUE = ['B1_*', 'B2_*', 'B8_eclair_epais', 'B8_pere_*', 'B9_meteo_*', 'B9_expl*', 'B9_cratere', 'B9_debris', 'B7_*', 'B6_coeur_plein', 'B6_coeur_vide', 'B6_etoile_score', 'B6_doigt', 'B6_nuage']
 out = {}
 for motif in EMBARQUE:
     for f in sorted(glob.glob(os.path.join(SRC, motif + '.png'))):

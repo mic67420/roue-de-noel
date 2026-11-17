@@ -37,17 +37,17 @@ function jouerC(easy, bot) {
       const vy = s.vy0 * (1 + .45 * Math.min(1, s.t / s.D));
       let cible = null, meilleur = 1e9;
       for (const o of s.obj) {
-        if (o.done || o.kind === 'mauvais' || o.kind === 'eclair') continue;
-        const ta = (CATCH - o.y) / vy, dx = Math.abs(o.x - s.x);
+        if (o.done || o.kind === 'mauvais' || o.kind === 'eclair' || o.kind === 'meteo') continue;
+        const ta = (CATCH - o.y) / vy, dx = Math.abs(o.x + (o.dx || 0) * ta - s.x);
         if (dx / s.maxV > ta + .02) continue;
         if (ta < meilleur) { meilleur = ta; cible = o; }
       }
       let tx = cible ? cible.x : s.x;
       // éviter les mauvais objets qui arrivent sur le sac
       for (const o of s.obj) {
-        if (o.done || (o.kind !== 'mauvais' && o.kind !== 'eclair')) continue;
+        if (o.done || (o.kind !== 'mauvais' && o.kind !== 'eclair' && o.kind !== 'meteo')) continue;
         const ta = (CATCH - o.y) / vy;
-        if (ta < .6 && Math.abs(o.x - tx) < s.hw + .05) { tx = o.x + (o.x > .5 ? -1 : 1) * (s.hw + .09); }
+        if (ta < .6 && Math.abs(o.x + (o.dx || 0) * ta - tx) < s.hw + .05) { tx = o.x + (o.dx || 0) * ta + (o.x > .5 ? -1 : 1) * (s.hw + .09); }
       }
       s.tx = Math.max(.04, Math.min(.96, tx));
     }
