@@ -22,6 +22,7 @@ button{font-family:inherit;cursor:pointer}
 #santa{position:fixed;left:0;top:0;width:100vw;height:100%;z-index:6;pointer-events:none;display:none}
 #bg,#fx{position:fixed;left:0;top:0;width:100vw;height:100%;pointer-events:none}
 #bg{z-index:0}#fx{z-index:90}
+body.mjOn #lights{display:none}
 #lights{position:fixed;left:0;top:0;width:100vw;height:100%;pointer-events:none;z-index:80}
 #ver{position:fixed;right:calc(var(--v)*1);top:calc(var(--v)*.8);font-size:calc(var(--v)*2.3);font-weight:700;z-index:99999;pointer-events:none;color:#ffe48a;background:rgba(7,13,42,.6);padding:calc(var(--v)*.2) calc(var(--v)*1);border-radius:calc(var(--v)*1);text-shadow:0 1px 2px #000}
 .screen{position:fixed;inset:0;display:none;z-index:10;flex-direction:column;align-items:center;justify-content:center}
@@ -237,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.8';
+const VERSION='3.9';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1258,7 +1259,7 @@ class Roue{
    Les cadeaux rouges font des points, les étoiles redonnent un cœur. Arrivé au bout sans perdre tous ses cœurs = cadeau gagné.
    Alix (5 ans) a une version lente et facile : plus de cœurs, plus court, obstacles plus petits.
    Le code est séparé en : mjNew/mjUpdate (règles, testables sans écran) et mjDraw (dessin). */
-const MJ={img:{},loaded:false};
+const MJ={img:{},loaded:false,active:false,bg:null};
 function mjLoad(){
   return new Promise(res=>{
     if(MJ.loaded)return res();
@@ -1329,21 +1330,23 @@ function mjUpdate(s,dt){
 }
 /* ---- dessin ---- */
 function mjDraw(g,s,W,H,tm){
-  const im=MJ.img,hy=H*.30,roadHalf=W*.42,gy=z=>hy+(H*1.0-hy)*z,px=(wx,z)=>W/2+wx*roadHalf*z;
-  // ciel de nuit
-  let gr=g.createLinearGradient(0,0,0,hy);gr.addColorStop(0,'#070d2e');gr.addColorStop(1,'#2b4a8c');
-  g.fillStyle=gr;g.fillRect(0,0,W,hy+2);
-  g.fillStyle='#fff';
-  for(let i=0;i<46;i++){const x=(i*173.7%W),y=(i*97.3%(hy*.9)),r=(i%3?1:1.8)*(.7+.3*Math.sin(tm*2+i));g.globalAlpha=.5+.5*Math.sin(tm*1.7+i*1.3)*.5;g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
-  g.globalAlpha=1;
-  // neige au sol
-  gr=g.createLinearGradient(0,hy,0,H);gr.addColorStop(0,'#aebfe0');gr.addColorStop(.35,'#e4edfb');gr.addColorStop(1,'#ffffff');
-  g.fillStyle=gr;g.fillRect(0,hy,W,H-hy);
+  const im=MJ.img,hy=H*.30,roadHalf=W*.42,gy=z=>hy+(H*1.0-hy)*z,px=(wx,z)=>W/2+wx*roadHalf*z,P=u=>MJ_ZS*Math.pow(Math.max(u,0)/MJ_ZS,1.5);   // P : effet de perspective, ce qui est proche défile plus vite
+  // ciel + neige du fond : dessinés une seule fois puis recopiés (plus fluide sur téléphone)
+  if(!MJ.bg||MJ.bg.width!==W||MJ.bg.height!==H){
+    const c=document.createElement('canvas');c.width=W;c.height=H;const k=c.getContext('2d');
+    let gr=k.createLinearGradient(0,0,0,hy);gr.addColorStop(0,'#070d2e');gr.addColorStop(1,'#2b4a8c');
+    k.fillStyle=gr;k.fillRect(0,0,W,hy+2);k.fillStyle='#fff';
+    for(let i=0;i<46;i++){k.globalAlpha=.45+.45*((i*37)%10)/10;k.beginPath();k.arc(i*173.7%W,i*97.3%(hy*.9),i%3?1.2:2,0,6.283);k.fill()}
+    k.globalAlpha=1;
+    gr=k.createLinearGradient(0,hy,0,H);gr.addColorStop(0,'#aebfe0');gr.addColorStop(.35,'#e4edfb');gr.addColorStop(1,'#ffffff');
+    k.fillStyle=gr;k.fillRect(0,hy,W,H-hy);MJ.bg=c;
+  }
+  g.drawImage(MJ.bg,0,0);
   // piste un peu plus claire + traces qui défilent
   g.fillStyle='rgba(255,255,255,.55)';g.beginPath();g.moveTo(W/2-W*.04,hy);g.lineTo(W/2+W*.04,hy);g.lineTo(W/2+roadHalf*1.12,H);g.lineTo(W/2-roadHalf*1.12,H);g.fill();
   const N=9,ph=(s.dist*1.0)%(1/N);
   g.strokeStyle='rgba(120,150,205,.30)';
-  for(let i=0;i<N;i++){const z=(i/N+ph);const y=gy(z);g.lineWidth=1+4*z;g.beginPath();g.moveTo(W/2-roadHalf*1.12*z,y);g.lineTo(W/2+roadHalf*1.12*z,y);g.stroke()}
+  for(let i=0;i<N;i++){const z=P(i/N+ph),y=gy(z);g.lineWidth=1+4*z;g.beginPath();g.moveTo(W/2-roadHalf*1.12*z,y);g.lineTo(W/2+roadHalf*1.12*z,y);g.stroke()}
   for(const sd of [-1,1]){g.lineWidth=3;g.beginPath();g.moveTo(px(sd*1.12,.02),gy(.02));g.lineTo(px(sd*1.12,1.1),gy(1.1));g.stroke()}
   // objets triés du plus loin au plus proche, le traîneau s'intercale à sa profondeur
   const list=[];
@@ -1354,7 +1357,7 @@ function mjDraw(g,s,W,H,tm){
   for(const o of list){
     if(o.sleigh){mjSleigh(g,s,W,H,gy,px,tm);continue}
     const i=im[o.k];if(!i||!i.naturalWidth)continue;
-    const z=o.z,h=H*o.hf*z,w=h*i.naturalWidth/i.naturalHeight,x=px(o.wx,z),y=gy(z)-H*o.lift*z+(o.bob?Math.sin(tm*5+o.wx*7)*H*.008*z:0);
+    const z=P(o.z),h=H*o.hf*z,w=h*i.naturalWidth/i.naturalHeight,x=px(o.wx,z),y=gy(z)-H*o.lift*z+(o.bob?Math.sin(tm*5+o.wx*7)*H*.008*z:0);
     g.globalAlpha=Math.min(1,z*8)*o.a;
     g.drawImage(i,x-w/2,y-h,w,h);
   }
@@ -1396,7 +1399,7 @@ function mjHud(g,s,W,H,me,tm){
 function mjTraineau(me){
   return new Promise(async res=>{
     await mjLoad();
-    const easy=PLAYERS[me].name==='Alix';
+    const easy=PLAYERS[me].name==='Alix';MJ.active=true;document.body.classList.add('mjOn');
     const el=ov('<canvas class="mjc"></canvas>','mj'),cv=el.querySelector('canvas'),g=cv.getContext('2d');
     const H=720,W=Math.round(H*Math.max(1.5,BW/BH));cv.width=W;cv.height=H;
     const s=mjNew(easy);
@@ -1407,7 +1410,7 @@ function mjTraineau(me){
     const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(e.key==='ArrowLeft')s.tx=Math.max(-1.05,s.tx-.35);else if(e.key==='ArrowRight')s.tx=Math.min(1.05,s.tx+.35)};
     window.addEventListener('keydown',key);
     AE.init&&AE.init();
-    const finish=ok=>{cancelAnimationFrame(raf);window.removeEventListener('keydown',key);res(ok)};
+    const finish=ok=>{MJ.active=false;document.body.classList.remove('mjOn');cancelAnimationFrame(raf);window.removeEventListener('keydown',key);res(ok)};
     function txt(t,y,size,col){g.textAlign='center';g.textBaseline='middle';g.font=`italic 900 ${size}px Georgia,serif`;g.lineWidth=size*.12;g.strokeStyle='#6b3d00';g.strokeText(t,W/2,y);g.fillStyle=col||'#ffe48a';g.fillText(t,W/2,y)}
     function loop(now){
       const dt=Math.min(.05,(now-last)/1000);last=now;tm+=dt;
@@ -2517,6 +2520,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 let last=performance.now();
 function loop(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;
+  if(MJ.active){fxStep(dt);requestAnimationFrame(loop);return}      // pendant un mini-jeu, le décor de la roue est mis en pause (plus de fluidité)
   lgtStep(dt);LV=LGT.lv;
   drawBg(dt);drawLights(dt);
   if(S&&$('game').classList.contains('on')){big.update(dt);big.draw(time);small.update(dt);small.draw(time)}
