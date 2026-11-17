@@ -238,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.17';
+const VERSION='3.18';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1667,15 +1667,17 @@ function mjListe(){return[
   {id:'traineau',nom:'🛷 Traîneau',fn:mjTraineau,emo:'🛷'},
   {id:'cadeaux',nom:'🎁 Cadeaux qui tombent',fn:mjCadeaux,emo:'🎁'}
 ]}
-let mjDernier='';
+const mjDernier={};   // dernier mini-jeu joué par chaque joueur (jamais deux fois de suite le même pour un joueur)
+function mjChoisir(me){const L=mjListe(),ch=L.length>1?L.filter(x=>x.id!==mjDernier[me]):L,jeu=ch[Math.floor(Math.random()*ch.length)];mjDernier[me]=jeu.id;return jeu}
 /* Cadeau « sous condition » : un mini-jeu au hasard (jamais deux fois le même d'affilée), 2 essais */
 async function mjCase(me){
-  const L=mjListe(),ch=L.filter(x=>x.id!==mjDernier),jeu=ch[Math.floor(Math.random()*ch.length)];mjDernier=jeu.id;
+    let jeu=mjChoisir(me);
   for(let essai=0;essai<2;essai++){
+    if(essai===1)jeu=mjChoisir(me);
     const ok=await jeu.fn(me);clearUI();
     if(ok)return true;
     if(essai===0){
-      const el=ov(`<div class="emo">${jeu.emo}</div><h2>Raté !</h2><div class="sub">${av(me)} ${nm(me)}, une deuxième chance !</div>${tapHint()}`,'light');
+      const el=ov(`<div class="emo">${jeu.emo}</div><h2>Raté !</h2><div class="sub">${av(me)} ${nm(me)}, une deuxième chance, avec un autre jeu !</div>${tapHint()}`,'light');
       await waitTap(el,700);clearUI();
     }
   }
@@ -1699,7 +1701,7 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjNew,mjUpdate,mjTraineau,mjCadeaux,mjMenu};
+window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjMenu};
 
 /* ============ FOND ETOILE, NEIGE, CONFETTIS ============ */
 const lc=$('lights'),lg=lc.getContext('2d'),bgc=$('bg'),bg=bgc.getContext('2d'),fxc=$('fx'),fg=fxc.getContext('2d');

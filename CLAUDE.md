@@ -103,3 +103,6 @@ Compte à rebours rond au centre haut (rouge et qui pulse sous 5 s), dessiné pa
 
 ## v3.16 : éclairs dans les cadeaux qui tombent (planche B8)
 Des éclairs jaunes tombent avec les cadeaux (adultes 22 % des objets, Alix 5 %). Attraper un éclair = coup de foudre (`MJC_SHOCK` 1,5 s) : flash blanc, éclair du ciel au Père Noël, squelette lumineux (B8_pere_squelette / _etoile qui clignotent), puis Père Noël noirci ; −1 cœur, Père Noël immobilisé, invulnérable 2,6 s, son `AE.boom`. Objectif adultes 30 cadeaux, Alix 10. Images B8 embarquées : seulement eclair_*, pere_* (les autres B8, étincelles et cercle d'arc, sont inutilisables : halos flous). Le glaçon est encore présent (à remplacer, thème Noël, choix de Mic en attente).
+
+## v3.18 : règle « jamais le même mini-jeu deux fois de suite pour un même joueur »
+`mjChoisir(me)` (dans `2-minijeu-traineau.js`) tire au hasard parmi les jeux de `mjListe()` sauf le dernier joué par ce joueur (`mjDernier[me]`). La deuxième chance après un échec change aussi de jeu. Avec 2 jeux ils alternent ; plus il y en a, plus c'est aléatoire.
