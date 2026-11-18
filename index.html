@@ -238,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.35';
+const VERSION='3.36';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1766,7 +1766,7 @@ function mjCadeaux(me){
 }
 /* ---- Mini-jeu : LA CATAPULTE À BOULES DE NEIGE (v3.35) ----
    Vue de côté. Catapulte en bas à gauche, grand sapin décoré à droite avec des cadeaux suspendus à ses branches.
-   Le joueur pose le doigt, le tire vers l'arrière (comme un lance-pierre) et lâche : la boule de neige part en cloche.
+   Le joueur maintient le doigt : une jauge de puissance monte et descend, glisser le doigt vers le haut/bas règle l'angle ; il lâche : la boule part en cloche.
    Une boule qui touche un cadeau le décroche : il tombe dans la neige. Une boule ne touche qu'un seul cadeau.
    Adultes : 60 s, 9 boules, cadeaux petits qui se balancent, il faut en décrocher 5 sur 7, trajectoire en pointillés courte.
    Alix : sans chrono, boules à volonté, 5 gros cadeaux presque immobiles, trajectoire complète visible, il faut tous les décrocher.
@@ -1789,12 +1789,18 @@ function mjkPos(s,g,t,W,H){
   const G=mjkGeo(W,H),th=g.amp*Math.sin(g.w*t+g.ph),L=G.th*.02+G.th*g.sz*.62,ax=G.tx+g.ax*G.tw,ay=G.tyTop+g.ay*G.th;
   return{x:ax+Math.sin(th)*L,y:ay+Math.cos(th)*L,th,ax,ay,L,r:G.th*g.sz*(s.easy?.42:.30)};
 }
-function mjkTir(s,dx,dy){    // (dx,dy) = déplacement du doigt, en px ; la boule part à l'opposé
+function mjkLance(s,vx,vy){
   if(s.done||s.ball||s.balls<=0)return false;
-  let m=Math.hypot(dx,dy);if(m<18)return false;if(m>MJK_R){dx*=MJK_R/m;dy*=MJK_R/m;m=MJK_R}
   const G=mjkGeo(s.W,s.H);
-  s.ball={x:G.Lx,y:G.Ly,vx:-dx*MJK_K,vy:-dy*MJK_K,rot:0,t:0};s.balls--;s.tirT=.3;s.ev.push({k:'tir'});return true;
+  s.ball={x:G.Lx,y:G.Ly,vx,vy,rot:0,t:0};s.balls--;s.tirT=.3;s.ev.push({k:'tir'});return true;
 }
+function mjkTir(s,dx,dy){    // (dx,dy) = déplacement « lance-pierre » en px ; la boule part à l'opposé (utilisé par les tests)
+  let m=Math.hypot(dx,dy);if(m<18)return false;if(m>MJK_R){dx*=MJK_R/m;dy*=MJK_R/m}
+  return mjkLance(s,-dx*MJK_K,-dy*MJK_K);
+}
+// jauge : va et vient entre 0 et 1 pendant que le doigt est posé ; l'angle se règle en glissant le doigt vers le haut / le bas
+function mjkPuiss(s,t){const per=s.easy?2.6:1.5,u=(t/per)%2;return u<1?u:2-u}
+function mjkVit(ang,pw){const v=MJK_K*MJK_R*Math.max(.12,pw);return[Math.cos(ang)*v,-Math.sin(ang)*v]}
 function mjkGift(s,g,hit,W,H){
   g.st='fall';const p=mjkPos(s,g,s.t,W,H);g.x=p.x;g.y=p.y;g.vx=hit.vx*.35+60;g.vy=hit.vy*.3-160;g.vr=(Math.random()-.3)*7;g.rot=p.th;g.fl=0;s.got++;
   s.fx.push({k:'puff',x:hit.x,y:hit.y,t:0});s.ev.push({k:'touche'});s.mood=1;s.moodT=1.2;
@@ -1803,6 +1809,7 @@ function mjkUpdate(s,dt){
   if(s.done)return;
   s.t+=dt;s.tirT=Math.max(0,s.tirT-dt);s.moodT=Math.max(0,s.moodT-dt);if(s.moodT<=0)s.mood=0;
   const W=s.W,H=s.H,G=mjkGeo(W,H);
+  if(s.pull){s.pull.t+=dt;s.pull.pw=mjkPuiss(s,s.pull.t)}
   const b=s.ball;
   if(b){
     for(let i=0;i<2;i++){
@@ -1825,9 +1832,9 @@ function mjkUpdate(s,dt){
   if(!s.ball&&s.balls<=0&&s.gifts.every(g=>g.st!=='fall'))s.done='lose';
   if(!s.done&&s.t>=s.D)s.done='temps';
 }
-function mjkDown(s,fx,fy,W,H){if(s.ball||s.balls<=0)return;s.pull={x0:fx*W,y0:fy*H,dx:0,dy:0}}
-function mjkDrag(s,fx,fy,W,H){const p=s.pull;if(!p)return;let dx=fx*W-p.x0,dy=fy*H-p.y0;const m=Math.hypot(dx,dy);if(m>MJK_R){dx*=MJK_R/m;dy*=MJK_R/m}p.dx=dx;p.dy=dy}
-function mjkUp(s){const p=s.pull;s.pull=null;if(p)mjkTir(s,p.dx,p.dy)}
+function mjkDown(s,fx,fy,W,H){if(s.ball||s.balls<=0)return;s.pull={y0:fy*H,a0:.8,ang:.8,t:0,pw:0}}
+function mjkDrag(s,fx,fy,W,H){const p=s.pull;if(!p)return;p.ang=Math.max(.2,Math.min(1.35,p.a0+(p.y0-fy*H)/H*2.4))}
+function mjkUp(s){const p=s.pull;s.pull=null;if(p&&p.t>.08){const v=mjkVit(p.ang,p.pw);mjkLance(s,v[0],v[1])}}
 /* ---- dessin ---- */
 function mjkFond(g,W,H){
   const im=MJ.img.fond_catapulte;if(!im||!im.naturalWidth){g.fillStyle='#24306a';g.fillRect(0,0,W,H);g.fillStyle='#e8eeff';g.fillRect(0,H*.72,W,H);return}
@@ -1835,8 +1842,8 @@ function mjkFond(g,W,H){
   g.drawImage(im,(W-w)/2,H-h,w,h);
 }
 function mjkTraj(s,G,W,H){
-  const p=s.pull;if(!p)return[];const m=Math.hypot(p.dx,p.dy);if(m<18)return[];
-  const vx=-p.dx*MJK_K,vy=-p.dy*MJK_K,pts=[],n=s.easy?40:6,dt=s.easy?.055:.07;
+  const p=s.pull;if(!p||p.t<.05)return[];
+  const v=mjkVit(p.ang,p.pw),vx=v[0],vy=v[1],pts=[],n=s.easy?40:6,dt=s.easy?.055:.07;
   for(let i=1;i<=n;i++){const t=i*dt,x=G.Lx+vx*t,y=G.Ly+vy*t+.5*MJK_G*t*t;if(y>G.gy||x>W)break;pts.push([x,y,i])}
   return pts;
 }
@@ -1865,10 +1872,18 @@ function mjkDraw(g,s,W,H,tm){
   // visée
   const bl=im.B20_boule;
   if(s.pull&&!s.ball&&s.balls>0){
-    const p=s.pull,bx=G.Lx+p.dx,by=G.Ly+p.dy;
-    g.strokeStyle='#5a3b1e';g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(G.Lx+G.cw*.06,G.Ly+G.cs*.12);g.lineTo(bx,by);g.lineTo(G.Lx-G.cw*.04,G.Ly+G.cs*.34);g.stroke();
+    const p=s.pull;
     for(const q of mjkTraj(s,G,W,H)){g.fillStyle='rgba(255,255,255,'+(.95-q[2]*(s.easy?.018:.1))+')';g.strokeStyle='rgba(20,30,90,.6)';g.lineWidth=2;g.beginPath();g.arc(q[0],q[1],6-(s.easy?q[2]*.05:q[2]*.3),0,6.283);g.fill();g.stroke()}
-    if(bl&&bl.naturalWidth)g.drawImage(bl,bx-H*.03,by-H*.03,H*.06,H*.06*bl.naturalHeight/bl.naturalWidth);
+    if(bl&&bl.naturalWidth)g.drawImage(bl,G.Lx-H*.03,G.Ly-H*.03,H*.06,H*.06*bl.naturalHeight/bl.naturalWidth);
+    // jauge de puissance sous la catapulte
+    const gw=Math.max(G.cw*1.5,260),gh=H*.045,gx=G.cx-gw*.45,gy=G.gy+H*.045;
+    g.fillStyle='rgba(8,14,46,.8)';rrect(g,gx-6,gy-6,gw+12,gh+12,gh*.6);g.fill();
+    const gr=g.createLinearGradient(gx,0,gx+gw,0);gr.addColorStop(0,'#4cc35b');gr.addColorStop(.55,'#ffd24a');gr.addColorStop(1,'#e8403a');
+    g.fillStyle=gr;rrect(g,gx,gy,gw*p.pw,gh,gh*.5);g.fill();
+    g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=2;rrect(g,gx,gy,gw,gh,gh*.5);g.stroke();
+    g.fillStyle='#fff';g.beginPath();g.moveTo(gx+gw*p.pw,gy-9);g.lineTo(gx+gw*p.pw-9,gy-22);g.lineTo(gx+gw*p.pw+9,gy-22);g.fill();
+    // angle : petite flèche
+    g.strokeStyle='#fff';g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(G.Lx,G.Ly);g.lineTo(G.Lx+Math.cos(p.ang)*H*.11,G.Ly-Math.sin(p.ang)*H*.11);g.stroke();
   }else if(s.balls>0&&!s.ball&&bl&&bl.naturalWidth&&s.tirT<=0)g.drawImage(bl,G.Lx-H*.03,G.Ly-H*.03,H*.06,H*.06);
   // boule en vol
   if(s.ball&&bl&&bl.naturalWidth){const b=s.ball;g.save();g.translate(b.x,b.y);g.rotate(b.rot);g.drawImage(bl,-H*.03,-H*.03,H*.06,H*.06*bl.naturalHeight/bl.naturalWidth);g.restore()}
@@ -1881,7 +1896,7 @@ function mjkDraw(g,s,W,H,tm){
     g.restore()}
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<40;i++){const x=((i*83.7+Math.sin(tm*.8+i)*18)%W+W)%W,y=((i*57.3+tm*(30+i%5*12))%H);g.beginPath();g.arc(x,y,1.3+i%3*.8,0,6.283);g.fill()}
-  if(s.t<6&&s.balls===(s.easy?999:9)&&!s.pull){g.save();g.globalAlpha=.75+.25*Math.sin(tm*5);g.textAlign='center';g.font=`bold ${H*.045}px Georgia,serif`;g.lineWidth=5;g.strokeStyle='#1a2a60';const m='Pose le doigt, tire vers l\'arrière et lâche !';g.strokeText(m,W*.5,H*.33);g.fillStyle='#fff';g.fillText(m,W*.5,H*.33);g.restore()}
+  if(s.t<6&&s.balls===(s.easy?999:9)&&!s.pull){g.save();g.globalAlpha=.75+.25*Math.sin(tm*5);g.textAlign='center';g.font=`bold ${H*.045}px Georgia,serif`;g.lineWidth=5;g.strokeStyle='#1a2a60';const m='Maintiens le doigt : la jauge monte. Glisse haut/bas pour l\'angle. Lâche !';g.strokeText(m,W*.5,H*.33);g.fillStyle='#fff';g.fillText(m,W*.5,H*.33);g.restore()}
 }
 function mjkHud(g,s,W,H,me,tm){
   const im=MJ.img,p=PLAYERS[me],u=H/720;
@@ -1904,7 +1919,7 @@ function mjCatapulte(me){
       else if(e.k==='touche'){AE.bells&&AE.bells();AE.pops&&AE.pops(2,.3)}
       else if(e.k==='rate'){AE.pops&&AE.pops(1,.08)}
     },
-    intro:['La catapulte à boules de neige !','Tire vers l\'arrière avec ton doigt, puis lâche.','Décroche les cadeaux du sapin !']
+    intro:['La catapulte à boules de neige !','Maintiens le doigt pour remplir la jauge, puis lâche.','Décroche les cadeaux du sapin !']
   });
 }
 /* ---- Mini-jeu 3 : lutins farceurs (v3.24) ----
@@ -2481,7 +2496,7 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkPos,mjkDraw,mjMenu};
+window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkLance,mjkPos,mjkDraw,mjMenu};
 /* ---- Mini-jeu : LA GRANDE TRAVERSÉE (v3.32) ----
    Type « Crossy Road », vue de dessus en 3/4 : le Père Noël est en bas au centre, l'écran défile du haut vers le bas.
    Toucher = un bond en avant ; glisser à gauche / droite = un bond sur le côté.
