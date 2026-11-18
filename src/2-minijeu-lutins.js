@@ -5,10 +5,10 @@
 const MJL_H=[{x:.07,y:.73,k:.85},{x:.23,y:.87,k:1.1},{x:.37,y:.67,k:.7},{x:.60,y:.71,k:.78},{x:.75,y:.89,k:1.1},{x:.91,y:.69,k:.82},{x:.47,y:.62,k:.6}],MJL_LANES=[.60,.69,.77];
 function mjlNew(easy){
   return{D:easy?99999:30,t:0,done:null,ev:[],easy,asp:2,
-    need:easy?8:20,notimer:easy,got:0,lives:3,max:3,
+    need:easy?20:30,notimer:easy,got:0,lives:3,max:3,
     el:[],balls:[],splash:[],tSp:.6,nSp:0,aim:-Math.PI/2,rec:0,
     // réglages
-    gap0:easy?2.0:.75,gap1:easy?1.7:.5,cross:easy?5.2:2.4,peek:easy?2.8:1.15,size:easy?.36:.24,pad:easy?.07:.025,
+    gap0:easy?1.7:.58,gap1:easy?1.3:.36,cross:easy?5.2:2.4,peek:easy?2.8:1.15,size:easy?.36:.24,pad:easy?.07:.025,
     pRed:easy?0:.25,pGold:easy?.08:.08,pPeek:easy?.4:.4,pHop:easy?.2:.4};
 }
 function mjlSpawn(s){
@@ -136,18 +136,58 @@ function mjlDraw(g,s,W,H,tm){
   mjlSpr(g,im.B3_tas_neige,W*.06,H*1.02,H*.2);mjlSpr(g,im.B3_tas_neige,W*.94,H*1.02,H*.2,true);
 }
 function mjlEtoiles(g,x,y,t,H){g.save();g.fillStyle='#ffe066';g.globalAlpha=Math.max(0,1-t/.7);for(let i=0;i<4;i++){const a=t*6+i*1.57,r=H*(.03+t*.05);g.beginPath();g.arc(x+Math.cos(a)*r*2,y+Math.sin(a)*r,H*.012,0,6.283);g.fill()}g.restore()}
-function mjlCanon(g,s,W,H,tm){
-  const cx=W*.5,cy=H*.93,u=H/720,a=Math.max(-Math.PI+.35,Math.min(-.35,s.aim)),rc=s.rec*12*u;
-  g.save();g.translate(cx,cy);
-  g.fillStyle='rgba(30,45,90,.35)';g.beginPath();g.ellipse(0,38*u,90*u,16*u,0,0,6.283);g.fill();
-  g.save();g.rotate(a+Math.PI/2);g.translate(0,rc);
-  const gr=g.createLinearGradient(-26*u,0,26*u,0);gr.addColorStop(0,'#8a1a1a');gr.addColorStop(.5,'#e23b3b');gr.addColorStop(1,'#7a1212');
-  g.fillStyle=gr;g.beginPath();g.moveTo(-22*u,0);g.lineTo(-30*u,-92*u);g.lineTo(30*u,-92*u);g.lineTo(22*u,0);g.fill();
-  g.fillStyle='#fff';g.fillRect(-27*u,-96*u,54*u,12*u);g.fillRect(-25*u,-60*u,50*u,8*u);
-  g.fillStyle='#17202e';g.beginPath();g.ellipse(0,-96*u,28*u,7*u,0,0,6.283);g.fill();
+function mjlRoue(g,x,y,r,u){ // roue de canon en bois cerclée de fer, vue de face légèrement tournée
+  g.save();g.translate(x,y);g.scale(.5,1);
+  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(6*u,r*.9,r*1.05,r*.22,0,0,6.283);g.fill();
+  g.fillStyle='#2b2f36';g.beginPath();g.arc(0,0,r,0,6.283);g.fill();
+  let gr=g.createRadialGradient(-r*.3,-r*.3,r*.1,0,0,r);gr.addColorStop(0,'#a9743c');gr.addColorStop(1,'#5a3515');g.fillStyle=gr;g.beginPath();g.arc(0,0,r*.88,0,6.283);g.fill();
+  g.strokeStyle='#3a2210';g.lineWidth=5*u;for(let i=0;i<8;i++){const an=i*Math.PI/4;g.beginPath();g.moveTo(Math.cos(an)*r*.22,Math.sin(an)*r*.22);g.lineTo(Math.cos(an)*r*.84,Math.sin(an)*r*.84);g.stroke()}
+  g.strokeStyle='#6f4a26';g.lineWidth=2*u;g.beginPath();g.arc(0,0,r*.55,0,6.283);g.stroke();
+  g.strokeStyle='#14161a';g.lineWidth=7*u;g.beginPath();g.arc(0,0,r*.95,0,6.283);g.stroke();
+  g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=2*u;g.beginPath();g.arc(0,0,r*.95,3.5,4.6);g.stroke();
+  gr=g.createRadialGradient(-3*u,-3*u,1,0,0,r*.24);gr.addColorStop(0,'#f2d38a');gr.addColorStop(1,'#7a5a1e');g.fillStyle=gr;g.beginPath();g.arc(0,0,r*.22,0,6.283);g.fill();
   g.restore();
-  g.fillStyle='#5a3a1c';g.beginPath();g.arc(0,12*u,40*u,0,6.283);g.fill();g.strokeStyle='#d8a85a';g.lineWidth=7*u;g.beginPath();g.arc(0,12*u,32*u,0,6.283);g.stroke();
-  g.fillStyle='#d8a85a';g.beginPath();g.arc(0,12*u,9*u,0,6.283);g.fill();
+}
+function mjlCanon(g,s,W,H,tm){
+  const cx=W*.5,cy=H*.93,u=H/720,a=Math.max(-Math.PI+.4,Math.min(-.4,s.aim)),rec=s.rec*16*u;
+  g.save();g.translate(cx,cy);
+  // ombre au sol
+  g.fillStyle='rgba(25,40,90,.38)';g.beginPath();g.ellipse(0,46*u,118*u,19*u,0,0,6.283);g.fill();
+  // affût en bois renforcé de fer
+  let gr=g.createLinearGradient(-60*u,0,60*u,0);gr.addColorStop(0,'#4d2c12');gr.addColorStop(.35,'#9a6330');gr.addColorStop(.6,'#7a4a20');gr.addColorStop(1,'#3d210c');
+  g.fillStyle=gr;g.beginPath();g.moveTo(-62*u,44*u);g.lineTo(-44*u,-10*u);g.lineTo(44*u,-10*u);g.lineTo(62*u,44*u);g.closePath();g.fill();
+  g.strokeStyle='#2a1608';g.lineWidth=3*u;g.stroke();
+  g.strokeStyle='rgba(255,220,160,.18)';g.lineWidth=2*u;for(let i=-2;i<=2;i++){g.beginPath();g.moveTo(i*17*u,-8*u);g.lineTo(i*21*u,42*u);g.stroke()}
+  g.fillStyle='#20242b';g.fillRect(-60*u,22*u,120*u,9*u);g.fillRect(-52*u,-6*u,104*u,7*u);
+  g.fillStyle='#9aa4b4';for(const x of[-52,-26,0,26,52]){g.beginPath();g.arc(x*u,26.5*u,2.6*u,0,6.283);g.fill()}
+  // roues
+  mjlRoue(g,-76*u,28*u,40*u,u);mjlRoue(g,76*u,28*u,40*u,u);
+  // tourillons (supports du canon)
+  g.fillStyle='#1c2027';g.beginPath();g.arc(0,-6*u,26*u,0,6.283);g.fill();
+  gr=g.createRadialGradient(-8*u,-14*u,2,0,-6*u,26*u);gr.addColorStop(0,'#d9dfe8');gr.addColorStop(.5,'#7d8796');gr.addColorStop(1,'#2d333d');g.fillStyle=gr;g.beginPath();g.arc(0,-6*u,22*u,0,6.283);g.fill();
+  // tube orientable
+  g.save();g.translate(0,-6*u);g.rotate(a+Math.PI/2);g.translate(0,rec);
+  const L=150*u,wr=22*u,wf=31*u; // largeur culasse -> bouche
+  // culasse arrondie
+  gr=g.createRadialGradient(-6*u,6*u,2,0,8*u,wr);gr.addColorStop(0,'#c8d0dc');gr.addColorStop(1,'#3a414d');g.fillStyle=gr;g.beginPath();g.arc(0,10*u,wr*.95,0,6.283);g.fill();
+  g.fillStyle='#262b33';g.beginPath();g.arc(0,20*u,8*u,0,6.283);g.fill();
+  // corps du tube conique, dégradé métal sombre/clair
+  gr=g.createLinearGradient(-wf,0,wf,0);gr.addColorStop(0,'#272d36');gr.addColorStop(.22,'#6e7a8c');gr.addColorStop(.4,'#d6dde8');gr.addColorStop(.55,'#8e9aab');gr.addColorStop(1,'#1f242c');
+  g.fillStyle=gr;g.beginPath();g.moveTo(-wr,6*u);g.lineTo(-wf,-L);g.lineTo(wf,-L);g.lineTo(wr,6*u);g.closePath();g.fill();
+  // anneaux de renfort en laiton
+  const ring=(y,w,h)=>{const g2=g.createLinearGradient(-w,0,w,0);g2.addColorStop(0,'#6d4a10');g2.addColorStop(.35,'#f6d681');g2.addColorStop(.6,'#b8862a');g2.addColorStop(1,'#573a0a');g.fillStyle=g2;g.fillRect(-w,y,2*w,h);g.fillStyle='rgba(0,0,0,.35)';g.fillRect(-w,y+h,2*w,2*u)};
+  ring(-18*u,wr+2*u+ (18/L)*(wf-wr),9*u);ring(-L*.52,wr+(L*.52/L)*(wf-wr)+2*u,8*u);
+  // bouche évasée
+  const gm=g.createLinearGradient(-wf-6*u,0,wf+6*u,0);gm.addColorStop(0,'#3a2c10');gm.addColorStop(.35,'#ffe9a0');gm.addColorStop(.6,'#c8952f');gm.addColorStop(1,'#4a3410');
+  g.fillStyle=gm;g.beginPath();g.moveTo(-wf,-L+4*u);g.lineTo(-wf-8*u,-L-14*u);g.lineTo(wf+8*u,-L-14*u);g.lineTo(wf,-L+4*u);g.fill();
+  g.fillStyle='#0c0f14';g.beginPath();g.ellipse(0,-L-14*u,wf+4*u,8*u,0,0,6.283);g.fill();
+  gr=g.createRadialGradient(0,-L-14*u,2,0,-L-14*u,wf);gr.addColorStop(0,'#000');gr.addColorStop(1,'#222a35');g.fillStyle=gr;g.beginPath();g.ellipse(0,-L-14*u,wf-3*u,6*u,0,0,6.283);g.fill();
+  // reflet et neige déposée sur le tube
+  g.strokeStyle='rgba(255,255,255,.45)';g.lineWidth=3*u;g.beginPath();g.moveTo(-wr*.35,0);g.lineTo(-wf*.35,-L+8*u);g.stroke();
+  g.fillStyle='#f4f8ff';g.beginPath();g.ellipse(8*u,-L*.3,10*u,4*u,0,0,6.283);g.fill();g.beginPath();g.ellipse(-12*u,-L*.74,8*u,3*u,.2,0,6.283);g.fill();
+  // fumée de neige à la bouche juste après le tir
+  if(s.rec>.15){g.fillStyle='rgba(255,255,255,'+s.rec*.8+')';for(let i=0;i<5;i++){g.beginPath();g.arc((i-2)*12*u,-L-26*u-(1-s.rec)*40*u-(i%2)*8*u,(10+s.rec*8)*u,0,6.283);g.fill()}}
+  g.restore();
   g.restore();
 }
 function mjlHud(g,s,W,H,me,tm){

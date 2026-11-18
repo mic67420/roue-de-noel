@@ -127,3 +127,6 @@ Canon à neige procédural en bas ; le joueur TOUCHE un lutin du doigt (hook `ta
 
 ## v3.25 : lutins farceurs refaits
 Décor riche (aurore, montagnes, chalet éclairé, sapins enneigés, guirlande, barrière, bonhomme de neige ; fond en cache `MJ.bgL`). 7 trous **non alignés** à tailles différentes (`MJL_H`). Plus de cœurs : un lutin échappé ne coûte rien. Adultes : **20 lutins en 30 s** (apparitions plus fréquentes, lutins plus lents). Alix : **8 lutins, sans chrono** (`s.notimer`, `D=99999` ; le compte à rebours de `mjRunner` est masqué si `s.notimer`).
+
+## v3.26 : canon réaliste + objectifs
+Canon redessiné en code (`mjlCanon`, `mjlRoue`) : affût en bois cerclé de fer, roues à rayons, tube métallique conique avec anneaux de laiton, bouche évasée, reflets, neige, recul et fumée au tir. Adultes : **30 lutins en 30 s** (apparitions plus rapides) ; Alix : **20 lutins sans chrono**.
