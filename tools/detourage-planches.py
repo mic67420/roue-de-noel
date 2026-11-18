@@ -24,11 +24,14 @@ NOMS = {
  'B13': ['mouton','mouton_court','vache','oie','lapin','cheval','tracteur','charrette_ane','botte','epouvantail','cloture','arbre_givre'],
  'B14': ['voiture','taxi','camionnette','bus','chat','chien','pigeon','cycliste','passant','lampadaire','boite_lettres','banc'],
  'B15': ['enfant_luge','enfant_court','chien','poule','cheval_traineau','charrette','bonhomme','tonneau','sapin_noel','lanterne','arche','maisonnette'],
+ 'B17': ['maison_rouge','maison_bleue','maison_colombages','maison_verte','boulangerie','marche','sapin_geant','lampadaire','fontaine','traineau','renne_lumineux','porte_cadeaux'],
+ 'B18': ['maison_finale','maison_finale2','cheminee','toit','cheminee_lutin','fenetre_enfant','bas_noel','couronne','tapis_neige','boite_lettres','sapin_pot','cadeau_geant'],
+ 'B19': ['p_accroupi','p_saut','p_atterrit','p_sac','p_penche','p_grimpe','p_tete','p_bonnet','p_mains','p_salut','p_pouce','p_sac_etoile'],
  'B16': ['immeuble_grand','immeuble_magasin','maison','eglise','grange','moulin','igloo','sapins3','rochers_glace','panneau','bosquet','lampadaire_village'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
 }
 LIGNES = {'B11': [5, 4, 4]}   # nombre d'objets par rangée quand ce n'est pas 4-4-4
-TROUS_TRANSPARENTS = {('B6','coeur_vide'),('B11','coeur_vide'),('B15','arche'),('B13','cloture')}   # l'intérieur blanc du cœur vide devient transparent
+TROUS_TRANSPARENTS = {('B6','coeur_vide'),('B11','coeur_vide'),('B15','arche'),('B13','cloture'),('B18','couronne')}   # l'intérieur blanc du cœur vide devient transparent
 
 def decouper(b):
     im = Image.open(os.path.join(SRC, b + '.jpg')).convert('RGB')

@@ -5,6 +5,7 @@
    Adultes et Alix : 60 s, même décor. Adultes : 3 cœurs, la rafale de neige rattrape celui qui reste immobile. Alix : sans cœurs, lent et facile.
    Colonnes : 0..6 (le Père Noël est entre 0 et 6) ; les rangées vont de 0 (départ) à N (arche d'arrivée). */
 const TV_DIM={"B11_santa_dos":[123,205],"B11_santa_saut":[136,193],"B11_santa_atterrit":[197,174],"B11_santa_gauche":[139,187],"B11_santa_droite":[157,182],"B11_santa_ecrase":[238,156],"B11_santa_etourdi1":[168,203],"B11_santa_etourdi2":[153,211],"B11_santa_content":[206,213],"B11_cadeau":[196,201],"B11_etoile":[163,156],"B11_coeur_plein":[181,161],"B11_coeur_vide":[181,160],"B12_renne_trot":[221,220],"B12_renne_galop":[240,206],"B12_pingouin_marche":[130,178],"B12_pingouin_ventre":[213,123],"B12_renard":[230,123],"B12_lievre":[182,159],"B12_ours":[255,167],"B12_boule_neige":[205,197],"B12_traineau_vide":[209,151],"B12_sapin":[155,184],"B12_sapin_neige":[188,251],"B12_rocher":[207,158],"B13_mouton":[202,174],"B13_mouton_court":[220,166],"B13_vache":[237,178],"B13_oie":[143,182],"B13_lapin":[192,169],"B13_cheval":[260,196],"B13_tracteur":[209,169],"B13_charrette_ane":[270,172],"B13_botte":[197,175],"B13_epouvantail":[176,213],"B13_cloture":[189,183],"B13_arbre_givre":[201,222],"B14_voiture":[234,151],"B14_taxi":[271,137],"B14_camionnette":[259,171],"B14_bus":[259,178],"B14_chat":[229,133],"B14_chien":[230,157],"B14_pigeon":[178,186],"B14_cycliste":[195,219],"B14_passant":[145,229],"B14_lampadaire":[96,247],"B14_boite_lettres":[100,210],"B14_banc":[234,183],"B15_enfant_luge":[169,189],"B15_enfant_court":[139,190],"B15_chien":[221,153],"B15_poule":[143,180],"B15_cheval_traineau":[288,169],"B15_charrette":[248,158],"B15_bonhomme":[147,205],"B15_tonneau":[137,177],"B15_sapin_noel":[184,248],"B15_lanterne":[108,207],"B15_arche":[223,236],"B15_maisonnette":[180,239],"B16_immeuble_grand":[269,246],"B16_immeuble_magasin":[180,206],"B16_maison":[200,213],"B16_eglise":[176,227],"B16_grange":[227,194],"B16_moulin":[156,215],"B16_igloo":[246,168],"B16_sapins3":[237,227],"B16_rochers_glace":[245,182],"B16_panneau":[147,220],"B16_bosquet":[269,226],"B16_lampadaire_village":[77,228]};
+const TV_DIM2={"B17_maison_rouge":[244,245],"B17_maison_bleue":[261,237],"B17_maison_colombages":[239,239],"B17_maison_verte":[247,248],"B17_boulangerie":[261,237],"B17_marche":[244,243],"B17_sapin_geant":[188,268],"B17_lampadaire":[96,264],"B17_fontaine":[246,236],"B17_traineau":[258,209],"B17_renne_lumineux":[160,245],"B17_porte_cadeaux":[248,231],"B18_maison_finale":[261,259],"B18_maison_finale2":[253,241],"B18_cheminee":[184,254],"B18_toit":[251,190],"B18_cheminee_lutin":[241,255],"B18_fenetre_enfant":[225,251],"B18_bas_noel":[212,224],"B18_couronne":[241,242],"B18_tapis_neige":[267,153],"B18_boite_lettres":[161,246],"B18_sapin_pot":[166,262],"B18_cadeau_geant":[254,223],"B19_p_accroupi":[258,209],"B19_p_saut":[258,251],"B19_p_atterrit":[258,226],"B19_p_sac":[259,246],"B19_p_penche":[258,227],"B19_p_grimpe":[258,249],"B19_p_tete":[258,193],"B19_p_bonnet":[258,190],"B19_p_mains":[258,179],"B19_p_salut":[257,208],"B19_p_pouce":[258,244],"B19_p_sac_etoile":[258,175]};Object.assign(TV_DIM,TV_DIM2);
 const TV_C=7,TV_CH=.13,TV_RH=.115,TV_HOP=.17,TV_P=24,TV_X0=-9;
 // [image, hauteur en rangées, vitesse min, vitesse max] (colonnes par seconde)
 const TV_BIO=[
@@ -17,9 +18,9 @@ const TV_BIO=[
  {nom:'🏙️ La ville',safe:['#cfcbc8','#c3bfbc'],lane:'#3b404c',ligne:'rgba(255,255,255,.75)',
   an:[['B14_voiture',.95,3,3.8],['B14_taxi',.95,3.8,4.6],['B14_camionnette',1.1,2.6,3.2],['B14_bus',1.35,2,2.6],['B14_chat',.6,2.8,3.6],['B14_chien',.8,3.2,3.8],['B14_pigeon',.7,1.4,1.9],['B14_cycliste',1.1,2.3,2.9],['B14_passant',1.2,1.1,1.5]],
   blocs:[['B14_lampadaire',2],['B14_boite_lettres',1.05],['B14_banc',.8]],marges:[['B16_immeuble_grand',3.2],['B16_immeuble_magasin',2.2],['B16_lampadaire_village',2.2]]},
- {nom:'🏘️ Le village',safe:['#eef3fb','#e0e9f6'],lane:'#8d6c4e',ligne:'rgba(255,255,255,.35)',
+ {nom:'🎄 Le village de Noël',safe:['#eef3fb','#e0e9f6'],lane:'#8d6c4e',ligne:'rgba(255,255,255,.35)',
   an:[['B15_enfant_luge',.9,2.8,3.4],['B15_enfant_court',1.1,2.4,3],['B15_chien',.8,3.2,3.8],['B15_poule',.7,1.4,1.9],['B15_cheval_traineau',1.3,3.2,3.9],['B15_charrette',1,1.5,1.9]],
-  blocs:[['B15_bonhomme',1.3],['B15_tonneau',.85],['B15_sapin_noel',1.7],['B15_lanterne',1.2]],marges:[['B16_maison',2],['B16_eglise',2.6],['B15_maisonnette',1.5],['B16_lampadaire_village',2.2]]}
+  blocs:[['B15_bonhomme',1.3],['B15_tonneau',.85],['B15_sapin_noel',1.7],['B17_lampadaire',2],['B17_porte_cadeaux',1.3]],marges:[['B17_maison_rouge',2.2],['B17_maison_bleue',2.2],['B17_maison_colombages',2.2],['B17_maison_verte',2.5],['B17_boulangerie',1.9],['B17_marche',1.8],['B17_sapin_geant',3],['B17_fontaine',1.6],['B16_eglise',2.8]]}
 ];
 const tvAsp=k=>{const d=TV_DIM[k];return d?d[0]/d[1]:1};
 const tvPick=a=>a[Math.floor(Math.random()*a.length)];
@@ -56,7 +57,7 @@ function mjtNew(easy){
 function mjtX(R,o,t){const p=(((o.x0+R.dir*o.v*t)%TV_P)+TV_P)%TV_P;return TV_X0+p}
 function mjtBlocked(s,r,c){const R=s.rows[r];return!!(R&&R.t==='safe'&&R.blk.some(b=>b.c===c))}
 function mjtHop(s,dc,dr){
-  if(s.done||s.stun>0)return false;
+  if(s.done||s.fin||s.stun>0)return false;
   if(s.hop){s.q=[dc,dr];return false}
   const tc=s.c+dc,tr=s.r+dr;
   if(tc<0||tc>=TV_C||tr<0||tr>s.N){s.ev.push({k:'bump'});return false}
@@ -85,15 +86,17 @@ function mjtHit(s,why){
   }
   if(!s.easy&&s.lives<=0)s.done='lose';
 }
+const TV_FIN=3.9,TV_VIDE={t:'safe',bio:3,blk:[],marg:[]};
 function mjtUpdate(s,dt){
   if(s.done)return;
+  if(s.fin){s.fin.t+=dt;s.t+=dt;if(s.fin.t>=TV_FIN)s.done='win';return}
   s.t+=dt;s.stun=Math.max(0,s.stun-dt);s.inv=Math.max(0,s.inv-dt);
   if(s.hop){
     s.hop.t+=dt;
     if(s.hop.t>=s.hop.dur){
       const h=s.hop;s.r=h.tr;s.c=h.tc;s.hop=null;
       if(!h.back){s.ev.push({k:'pose'});if(s.r>s.best){s.best=s.r;const b=s.rows[s.r].bio;if(b!==s.bio){s.bio=b;s.bioT=s.t;s.ev.push({k:'bio',b})}}}
-      if(s.r>=s.N){s.done='win';return}
+      if(s.r>=s.N){s.fin={t:0};s.ev.push({k:'fin'});return}
     }
   }
   if(!s.hop&&s.q&&s.stun<=0){const q=s.q;s.q=null;mjtHop(s,q[0],q[1])}
@@ -119,8 +122,28 @@ function mjtSpr(g,key,cx,by,h,flip,alpha,rot){
   g.save();if(alpha!=null)g.globalAlpha=alpha;g.translate(cx,by);if(rot)g.rotate(rot);if(flip)g.scale(-1,1);g.drawImage(im,-w/2,-h,w,h);g.restore();
 }
 function mjtHash(a,b){const x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x)}
+const TV_SEQ=[['B19_p_accroupi',0,.4,.55],['B19_p_saut',.4,.8,.55],['B19_p_atterrit',.8,1.2,.55],['B19_p_sac',1.2,1.65,.55],['B19_p_penche',1.65,2.05,.5],['B19_p_grimpe',2.05,2.45,.5],['B19_p_tete',2.45,2.85,.42],['B19_p_bonnet',2.85,3.15,.42],['B19_p_mains',3.15,3.4,.42],['B19_p_salut',3.4,3.65,.42],['B19_p_pouce',3.65,99,.42]];
+function mjtFinale(g,s,W,H,tm){
+  const t=s.fin.t,a=Math.min(1,t*2.5);
+  g.save();g.globalAlpha=a;
+  const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#050b2e');gr.addColorStop(.6,'#16286a');gr.addColorStop(1,'#3a4f9a');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  g.fillStyle='#fff';for(let i=0;i<70;i++){const x=mjtHash(i,1)*W,y=mjtHash(1,i)*H*.6,r=.8+mjtHash(i,i)*1.8;g.globalAlpha=a*(.5+.5*Math.sin(tm*2+i));g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
+  g.globalAlpha=a;g.fillStyle='#fff6c8';g.beginPath();g.arc(W*.82,H*.2,H*.07,0,6.283);g.fill();g.fillStyle='#16286a';g.beginPath();g.arc(W*.82+H*.025,H*.2-H*.01,H*.065,0,6.283);g.fill();
+  g.fillStyle='#eef3ff';g.beginPath();g.ellipse(W/2,H*.9,W*.55,H*.22,0,0,6.283);g.fill();
+  mjtSpr(g,'B17_maison_bleue',W*.13,H*.8,H*.34,false);mjtSpr(g,'B17_maison_rouge',W*.87,H*.82,H*.36,false);mjtSpr(g,'B17_sapin_geant',W*.27,H*.84,H*.42,false);mjtSpr(g,'B17_boulangerie',W*.73,H*.78,H*.3,false);
+  g.fillStyle='rgba(20,30,90,.18)';g.beginPath();g.ellipse(W/2,H*.86,H*.3,H*.05,0,0,6.283);g.fill();
+  let f=TV_SEQ[TV_SEQ.length-1];for(const q of TV_SEQ)if(t>=q[1]&&t<q[2]){f=q;break}
+  const lift=f[0]==='B19_p_saut'?Math.sin((t-f[1])/(f[2]-f[1])*Math.PI)*H*.12:0;
+  mjtSpr(g,f[0],W/2,H*.88-lift,H*f[3],false);
+  // fumée de cheminée et étincelles quand le Père Noël est entré
+  if(t>2.9){for(let i=0;i<14;i++){const u=((t*.7+i/14)%1),x=W/2+Math.sin(u*6+i)*H*.04+u*H*.05,y=H*.62-u*H*.3;g.globalAlpha=a*(1-u)*.55;g.fillStyle='#fff';g.beginPath();g.arc(x,y,H*(.015+u*.03),0,6.283);g.fill()}
+    for(let i=0;i<16;i++){const u=((t-2.9)*.8+i*.13)%1,an=i*2.4;g.globalAlpha=a*(1-u);g.fillStyle=i%2?'#ffe48a':'#fff';const x=W/2+Math.cos(an)*u*H*.35,y=H*.68-Math.abs(Math.sin(an))*u*H*.4;g.beginPath();g.arc(x,y,H*.008,0,6.283);g.fill()}}
+  g.globalAlpha=a;g.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<50;i++){const x=(mjtHash(i,3)*W+Math.sin(tm+i)*20)%W,y=((mjtHash(3,i)*H+tm*(50+i%5*20))%H);g.beginPath();g.arc(x,y,1.5+i%3,0,6.283);g.fill()}
+  g.restore();
+}
 function mjtDraw(g,s,W,H,tm){
   s.asp=W/H;
+  if(s.fin&&s.fin.t>.25){mjtFinale(g,s,W,H,tm);return}
   const ch=TV_CH*H,rh=TV_RH*H,colX=c=>W/2+(c-3)*ch,yb=r=>H*.86-(r-s.cam)*rh;
   const rTop=Math.min(s.N+3,Math.ceil(s.cam+(H*.86+rh)/rh)+4),rBot=Math.floor(s.cam-.25/TV_RH)-1;
   const rowVis=s.hop?s.hop.fr+(s.hop.tr-s.hop.fr)*Math.min(1,s.hop.t/s.hop.dur):s.r,rSan=Math.round(rowVis);
@@ -138,7 +161,7 @@ function mjtDraw(g,s,W,H,tm){
     mjtSpr(g,key,x,foot-lift,rh*1.45,flip,blink);
   };
   for(let r=rTop;r>=rBot;r--){
-    const R=s.rows[Math.max(0,Math.min(s.N,r))],b=TV_BIO[R.bio],y1=yb(r),y0=y1-rh;
+    const R=r>s.N?TV_VIDE:s.rows[Math.max(0,r)],b=TV_BIO[R.bio],y1=yb(r),y0=y1-rh;
     if(y0>H+4||y1<-rh*3)continue;
     const lane=R.t==='lane'&&r>0&&r<=s.N;
     g.fillStyle=lane?b.lane:b.safe[((r%2)+2)%2];g.fillRect(0,y0,W,rh+1);
@@ -155,7 +178,7 @@ function mjtDraw(g,s,W,H,tm){
       for(const m of R.marg){const x=m.side<0?W*.07:W*.93;mjtSpr(g,m.key,x,y1-rh*.1,m.h*rh,false);}
       for(const bl of R.blk)mjtSpr(g,bl.key,colX(bl.c),y1-rh*.22,bl.h*rh,false);
     }
-    if(R.t==='fin')mjtSpr(g,'B15_arche',colX(3),y1-rh*.1,rh*3.1,false);
+    if(R.t==='fin'){mjtSpr(g,'B18_maison_finale2',colX(3),y1-rh*.05,rh*4.2,false);mjtSpr(g,'B18_tapis_neige',colX(3),y1+rh*.35,rh*1.3,false)}
     if(lane){
       for(const o of R.objs){
         const x=colX(mjtX(R,o,s.t)+0)-0,cx=W/2+(mjtX(R,o,s.t)-3)*ch;
@@ -202,6 +225,7 @@ function mjTraversee(me){
       else if(e.k==='hit'){AE.nope&&AE.nope();cv.style.transform='translate('+(Math.random()*18-9)+'px,'+(Math.random()*10-5)+'px)'}
       else if(e.k==='rafale'){AE.boom&&AE.boom();AE.nope&&AE.nope();cv.style.transform='translate('+(Math.random()*14-7)+'px,'+(Math.random()*8-4)+'px)'}
       else if(e.k==='bio'){AE.bells&&AE.bells()}
+      else if(e.k==='fin'){AE.bells&&AE.bells()}
       else if(e.k==='bump'){AE.pops&&AE.pops(1,.1)}
     },
     intro:['La grande traversée !','Touche pour sauter en avant, glisse pour aller sur le côté.','Évite les animaux jusqu\'au village !']

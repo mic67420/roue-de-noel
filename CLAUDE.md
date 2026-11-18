@@ -151,3 +151,6 @@ Type Crossy Road, vue de dessus : le Père Noël en bas au centre, l'écran déf
 
 ## v3.33 : la grande traversée = 60 s pour tout le monde, même décor pour Alix
 Demande de Mic : limite de 1 minute pour adultes et Alix (Alix a donc un compte à rebours, `D:60`, et perd si le temps est écoulé) ; Alix a exactement le même décor (même longueur de parcours, mêmes obstacles sur les rangées sûres). Seules restent différentes ses voies (animaux plus lents ×.55, plus gros, plus espacés), l'absence de cœurs et de rafale de neige.
+
+## v3.34 : arrivée dans un village de Noël + cheminée (planches B17, B18, B19)
+Dernier environnement = « 🎄 Le village de Noël » (maisons B17 sur les bords, sapin géant, marché, boulangerie, fontaine). Rangée d'arrivée : grande maison B18 (`mjtDraw`, rangées au-delà de `s.N` = `TV_VIDE`). Atteindre la rangée N déclenche `s.fin={t:0}` : scène de nuit `mjtFinale` (3,9 s, `TV_FIN`, séquence `TV_SEQ` de poses B19 : accroupi → saut → atterrit → sac → penché → grimpe → tête → bonnet → mains → salut → pouce, fumée et étincelles), puis `s.done='win'` (cadeau du `mjRunner`). Pendant `s.fin`, plus de bonds ni de collisions. B17/B18/B19 découpées par `detourage-planches.py`, toutes embarquées.
