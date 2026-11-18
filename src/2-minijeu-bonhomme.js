@@ -185,9 +185,10 @@ function mjBonhomme(me){
   });
 }
 
-/* ---- Version d'Alix : on habille le bonhomme avec des pièces dessinées (planche B10), sans chrono ----
-   Les pièces attendent dans un plateau en bas à gauche ; Alix glisse une pièce du doigt jusqu'à sa place sur le bonhomme
-   (zones fantômes). 21 pièces : 3 boules, chapeau (ou bonnet, au hasard), carotte, 2 yeux, 5 pour la bouche, écharpe, nœud, 3 boutons, 2 bras, 2 moufles. */
+/* ---- Version d'Alix (v3.29) : sans chrono, tout est facile ----
+   1) 3 grosses boules à glisser sur le bonhomme (zones en pointillés).
+   2) Un TAS d'objets apparaît (planche B10) : Alix prend ce qu'il veut, dans l'ordre qu'il veut, et le dépose près du bonhomme :
+      l'objet se range tout seul au bon endroit (un simple toucher suffit aussi). Le bonhomme finit toujours par SOURIRE. */
 const MJBA_Z=['boule_bas','boule_milieu','boule_tete','branche','moufle','bouton','noeud','echarpe','carotte','charbon','chapeau','bonnet'];
 const MJBA_IMG={boule_bas:'B10_boule_bas',boule_milieu:'B10_boule_milieu',boule_tete:'B10_boule_tete',chapeau:'B10_haut_de_forme',bonnet:'B10_bonnet',carotte:'B10_carotte',charbon:'B10_charbon',echarpe:'B10_echarpe',branche:'B10_branche',moufle:'B10_moufle',bouton:'B10_bouton',noeud:'B10_noeud'};
 const MJBA_ASP={boule_bas:235/219,boule_milieu:202/196,boule_tete:1.01,chapeau:245/183,bonnet:232/160,carotte:194/84,charbon:163/143,echarpe:198/196,branche:224/171,moufle:156/192,bouton:1,noeud:203/114}; // largeur/hauteur
@@ -195,10 +196,10 @@ function mjbaSlots(hat){
   const G=mjbGeo(),[b1,b2,b3]=G,S=[];
   const add=(kind,x,y,w,flip)=>S.push({kind,x,y,w,flip:!!flip,placed:false,t:9});
   add('boule_bas',b1.x,b1.y,b1.r*2);add('boule_milieu',b2.x,b2.y,b2.r*2);add('boule_tete',b3.x,b3.y,b3.r*2);
-  {const w=b3.r*2.3,h=w/MJBA_ASP.chapeau;if(hat==='chapeau')add('chapeau',b3.x,b3.y-b3.r*.78-h/2,w);else{const w2=b3.r*2.2,h2=w2/MJBA_ASP.bonnet;add('bonnet',b3.x,b3.y-b3.r*.55-h2/2+h2*.1,w2)}}
+  for(const sg of[-1,1])add('charbon',b3.x+sg*b3.r*.38,b3.y-b3.r*.28,b3.r*.36);                       // yeux
+  for(let j=-2;j<=2;j++)add('charbon',b3.x+j*b3.r*.22,b3.y+b3.r*(.5-.04*(2-Math.abs(j))*0)+ (Math.abs(j)===2?-b3.r*.1:Math.abs(j)===1?-b3.r*.03:b3.r*.04),b3.r*.25); // bouche : sourire (les coins remontent)
   add('carotte',b3.x+b3.r*.62,b3.y+b3.r*.12,b3.r*1.3);
-  for(const sg of[-1,1])add('charbon',b3.x+sg*b3.r*.38,b3.y-b3.r*.28,b3.r*.36);
-  for(let j=-2;j<=2;j++)add('charbon',b3.x+j*b3.r*.22,b3.y+b3.r*.5+j*j*b3.r*.04,b3.r*.25);
+  {const w=b3.r*2.3,h=w/MJBA_ASP.chapeau;if(hat==='chapeau')add('chapeau',b3.x,b3.y-b3.r*.78-h/2,w);else{const w2=b3.r*2.2,h2=w2/MJBA_ASP.bonnet;add('bonnet',b3.x,b3.y-b3.r*.55-h2/2+h2*.1,w2)}}
   add('echarpe',b3.x,b3.y+b3.r*1.12,b3.r*2.3);
   add('noeud',b1.x,b1.y-b1.r*.5,b1.r*.5);
   for(let j=0;j<3;j++)add('bouton',b2.x,b2.y+(.2+j*.35)*b2.r,b2.r*.3);
@@ -207,26 +208,41 @@ function mjbaSlots(hat){
   return S;
 }
 function mjbaNew(){
-  const hat=Math.random()<.5?'chapeau':'bonnet',slots=mjbaSlots(hat);
-  // ordre de construction : on suit l'ordre des emplacements
-  const q=slots.map(s=>s.kind);
-  return{D:99999,t:0,done:null,ev:[],easy:true,notimer:true,asp:2,slots,queue:q,held:null,fx:[],need:slots.length,got:0};
+  const hat=Math.random()<.5?'chapeau':'bonnet',slots=mjbaSlots(hat),items=[];
+  // 3 boules posées au sol à gauche ; les autres objets forment un tas (positions mélangées mais fixes)
+  const bx=[.09,.26,.41];
+  ['boule_bas','boule_milieu','boule_tete'].forEach((k,i)=>items.push({kind:k,hx:bx[i],hy:.82,rot:0,placed:false,ball:true,n:i}));
+  const autres=slots.filter(x=>!x.kind.startsWith('boule')).map(x=>x.kind);
+  for(let i=autres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autres[i],autres[j]]=[autres[j],autres[i]]}
+  autres.forEach((k,i)=>{const c=i%6,r=Math.floor(i/6);items.push({kind:k,hx:.08+c*.075+(r%2)*.035+(Math.random()-.5)*.02,hy:.70+r*.075+(Math.random()-.5)*.03,rot:(Math.random()-.5)*.8,placed:false,ball:false,n:3+i})});
+  return{D:99999,t:0,done:null,ev:[],easy:true,notimer:true,asp:2,slots,items,held:null,fx:[],need:slots.length,got:0,t2:-1};
 }
-const mjbaTray=i=>({x:.07+i*.115,y:.875});
+const mjbaP2=s=>s.t2>=0;
+function mjbaPos(s,it,H){ // position d'affichage d'un objet du tas (avec chute d'arrivée)
+  let dy=0;if(!it.ball&&mjbaP2(s)){const k=Math.max(0,Math.min(1,(s.t-s.t2-(it.n-3)*.04)/.5));dy=-(1-k*k*(3-2*k))*.9;if(k<=0)dy=-2}
+  return{x:it.hx,y:it.hy+dy}
+}
 function mjbaTap(s,fx,fy){
   if(s.done||s.held)return;
-  const n=Math.min(4,s.queue.length);
-  for(let i=0;i<n;i++){const p=mjbaTray(i);if(Math.hypot((fx-p.x)*s.asp,fy-p.y)<.085){s.held={i,kind:s.queue[i],x:fx,y:fy,t:0};s.ev.push({k:'prend'});return}}
+  for(let i=s.items.length-1;i>=0;i--){
+    const it=s.items[i];if(it.placed)continue;
+    if(!it.ball&&!mjbaP2(s))continue;
+    const p=mjbaPos(s,it,1);if(p.y<0)continue;
+    const R=it.ball?(it.kind==='boule_bas'?.12:it.kind==='boule_milieu'?.1:.08):.085;
+    if(Math.hypot((fx-p.x)*s.asp,fy-p.y)<R){s.held={it,x:fx,y:fy,x0:fx,y0:fy,t:0,moved:0};s.ev.push({k:'prend'});return}
+  }
 }
-function mjbaMove(s,fx,fy){if(s.held&&!s.done){s.held.x=fx;s.held.y=fy}}
+function mjbaMove(s,fx,fy){const h=s.held;if(!h||s.done)return;h.x=fx;h.y=fy;h.moved=Math.max(h.moved,Math.hypot((fx-h.x0)*s.asp,fy-h.y0))}
 function mjbaUp(s){
   const h=s.held;if(!h)return;s.held=null;
-  let best=null,bd=1e9;
-  for(const sl of s.slots){if(sl.placed||sl.kind!==h.kind)continue;
-    const d=Math.hypot((h.x-sl.x)*s.asp,h.y-sl.y)-Math.min(.04,sl.w*.3);
-    if(d<bd){bd=d;best=sl}}
-  const tol=.1;
-  if(best&&bd<tol){best.placed=true;best.t=0;s.queue.splice(h.i,1);s.got++;s.fx.push({x:best.x,y:best.y,w:best.w,t:0});s.ev.push({k:'pose'})}
+  const it=h.it,libres=s.slots.filter(x=>!x.placed&&x.kind===it.kind);
+  let best=null;
+  if(libres.length){
+    if(h.moved<.03)best=libres[0];                       // un simple toucher suffit : l'objet va tout seul à sa place
+    else{let bd=1e9;for(const sl of libres){const d=Math.hypot((h.x-sl.x)*s.asp,h.y-sl.y);if(d<bd){bd=d;best=sl}}if(bd>.4)best=null}
+  }
+  if(best){best.placed=true;best.t=0;it.placed=true;s.got++;s.fx.push({x:best.x,y:best.y,w:best.w,t:0});s.ev.push({k:'pose'});
+    if(s.t2<0&&s.items.filter(x=>x.ball&&x.placed).length===3){s.t2=s.t+.7;s.ev.push({k:'tas'})}}
   else s.ev.push({k:'rate'});
 }
 function mjbaUpdate(s,dt){
@@ -242,42 +258,52 @@ function mjbaImg(g,kind,cx,cy,wpx,flip,rot,alpha){
   if(im&&im.naturalWidth)g.drawImage(im,-wpx/2,-h/2,wpx,h);else{g.fillStyle='#ddd';g.beginPath();g.arc(0,0,wpx/2,0,6.283);g.fill()}
   g.restore();
 }
+function mjbaBox(kind,H,ball){const a=MJBA_ASP[kind],b=ball?(kind==='boule_bas'?.2:kind==='boule_milieu'?.16:.12):.14;return(a>=1?b:b*a)*H}
 function mjbaDraw(g,s,W,H,tm){
   s.asp=W/H;
   g.drawImage(mjlFond(W,H,true),0,0);
-  const G=s.G||mjbGeo();
   g.fillStyle='rgba(30,45,90,.3)';g.beginPath();g.ellipse(MJB_X*W,MJB_GY*H+H*.01,MJB_TGT[0]*H*1.1,H*.03,0,0,6.283);g.fill();
-  const vis=new Set(s.queue.slice(0,4)),held=s.held?s.held.kind:null;
-  // emplacements fantômes (pièces visibles sur le plateau), plus forts pour la pièce tenue
+  const held=s.held?s.held.it.kind:null;
+  // zones en pointillés : les 3 boules au début, puis les places de l'objet qu'on tient
   for(const sl of s.slots){
-    if(sl.placed||!vis.has(sl.kind))continue;
-    const on=sl.kind===held,pul=on?.55+.25*Math.sin(tm*9):.28;
-    mjbaImg(g,sl.kind,sl.x*W,sl.y*H,sl.w*H,sl.flip,0,pul);
-    g.save();g.setLineDash([8,7]);g.lineWidth=on?4:2.5;g.strokeStyle=on?'#ffe066':'rgba(255,255,255,.65)';g.beginPath();g.arc(sl.x*W,sl.y*H,Math.max(H*.022,sl.w*H*.5*(sl.kind.startsWith('boule')?1:.62)),0,6.283);g.stroke();g.restore();
+    if(sl.placed)continue;
+    const bal=sl.kind.startsWith('boule'),on=sl.kind===held;
+    if(!(on||(bal&&!mjbaP2(s))))continue;
+    const pul=on?.55+.25*Math.sin(tm*9):.3;
+    if(on)mjbaImg(g,sl.kind,sl.x*W,sl.y*H,sl.w*H,sl.flip,0,pul);
+    g.save();g.setLineDash([9,8]);g.lineWidth=on?5:3;g.strokeStyle=on?'#ffe066':'rgba(255,255,255,.75)';g.beginPath();g.arc(sl.x*W,sl.y*H,Math.max(H*.024,sl.w*H*.5*(bal?1:.62)),0,6.283);g.stroke();g.restore();
   }
-  // pièces posées, dans l'ordre d'empilement
+  // pièces posées
   const poses=s.slots.filter(x=>x.placed).sort((a,b)=>MJBA_Z.indexOf(a.kind)-MJBA_Z.indexOf(b.kind));
   for(const sl of poses){const k=Math.min(1,sl.t/.3),pop=1+Math.sin(k*3.14)*.18;mjbaImg(g,sl.kind,sl.x*W,sl.y*H,sl.w*H*pop,sl.flip)}
-  // plateau
-  g.fillStyle='rgba(8,14,46,.55)';rrect(g,W*.012,H*.77,W*.5,H*.2,H*.04);g.fill();
-  const n=Math.min(4,s.queue.length);
-  for(let i=0;i<n;i++){
-    if(s.held&&s.held.i===i)continue;
-    const p=mjbaTray(i),k=s.queue[i],bob=Math.sin(tm*4+i)*H*.01,sz=Math.min(H*.17,H*.17*(MJBA_ASP[k]>1.4?1:MJBA_ASP[k]>1?1:1.0)),wpx=MJBA_ASP[k]>=1?H*.15:H*.15*MJBA_ASP[k];
-    g.fillStyle='rgba(255,255,255,.14)';g.beginPath();g.arc(p.x*W,p.y*H,H*.085,0,6.283);g.fill();
-    mjbaImg(g,k,p.x*W,p.y*H+bob,Math.min(wpx,H*(k.startsWith('boule')?.15:.14)),false);
+  // tas de neige où se trouvent les objets
+  if(mjbaP2(s)){
+    const gr=g.createRadialGradient(W*.27,H*.84,10,W*.27,H*.84,W*.3);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.7,'rgba(220,232,255,.9)');gr.addColorStop(1,'rgba(200,215,245,0)');
+    g.fillStyle=gr;g.beginPath();g.ellipse(W*.27,H*.85,W*.27,H*.19,0,0,6.283);g.fill();
   }
-  // pièce tenue : grandit jusqu'à sa vraie taille
+  // objets au repos (boules, puis tas)
+  for(const it of s.items){
+    if(it.placed||(s.held&&s.held.it===it))continue;
+    if(!it.ball&&!mjbaP2(s))continue;
+    const p=mjbaPos(s,it,H);if(p.y<-1)continue;
+    const bob=it.ball?Math.sin(tm*3+it.n)*H*.008:0;
+    if(it.ball){g.fillStyle='rgba(25,40,90,.25)';g.beginPath();g.ellipse(p.x*W,p.y*H+mjbaBox(it.kind,H,true)*.46,mjbaBox(it.kind,H,true)*.42,H*.012,0,0,6.283);g.fill()}
+    mjbaImg(g,it.kind,p.x*W,p.y*H+bob,mjbaBox(it.kind,H,it.ball),false,it.rot);
+  }
+  // objet tenu : il grossit jusqu'à sa taille sur le bonhomme
   if(s.held){
-    const h=s.held,sl=s.slots.find(x=>!x.placed&&x.kind===h.kind),tw=sl?sl.w*H:H*.14,k=Math.min(1,h.t/.2),w=H*.14+(tw-H*.14)*k;
-    g.fillStyle='rgba(25,40,90,.25)';g.beginPath();g.ellipse(h.x*W+6,h.y*H+w/MJBA_ASP[h.kind]*.5+8,w*.4,H*.015,0,0,6.283);g.fill();
-    mjbaImg(g,h.kind,h.x*W,h.y*H-H*.04,w,false);
+    const h=s.held,sl=s.slots.find(x=>!x.placed&&x.kind===h.it.kind),tw=sl?sl.w*H:H*.14,k=Math.min(1,h.t/.2),w=mjbaBox(h.it.kind,H,h.it.ball)+(tw-mjbaBox(h.it.kind,H,h.it.ball))*k;
+    g.fillStyle='rgba(25,40,90,.25)';g.beginPath();g.ellipse(h.x*W+6,h.y*H+w/MJBA_ASP[h.it.kind]*.5+8,w*.4,H*.015,0,0,6.283);g.fill();
+    mjbaImg(g,h.it.kind,h.x*W,h.y*H-H*.04,w,false);
   }
-  // étincelles de pose
   for(const f of s.fx){const k=f.t/.6;g.save();g.globalAlpha=1-k;g.strokeStyle='#fff6b0';g.lineWidth=4;g.beginPath();g.arc(f.x*W,f.y*H,H*.03+f.w*H*.5*k*1.4,0,6.283);g.stroke();
     g.fillStyle='#ffe066';for(let i=0;i<6;i++){const a=i*1.047+k,d=H*.04+f.w*H*.5*k*1.6;g.beginPath();g.arc(f.x*W+Math.cos(a)*d,f.y*H+Math.sin(a)*d,H*.01*(1-k),0,6.283);g.fill()}g.restore()}
-  if(s.got===0&&!s.held&&s.t<20){g.save();g.globalAlpha=.65+.35*Math.sin(tm*4);g.fillStyle='#fff';g.strokeStyle='#1a2a60';g.lineWidth=5;g.font=`bold ${H*.05}px Georgia,serif`;g.textAlign='center';
-    g.strokeText('Glisse la pièce sur le bonhomme',W*.34,H*.62);g.fillText('Glisse la pièce sur le bonhomme',W*.34,H*.62);g.restore()}
+  // consigne
+  let msg=null;
+  if(!mjbaP2(s))msg='Mets les 3 boules sur le bonhomme';
+  else if(s.got<=3+1&&!s.held)msg='Prends les objets du tas !';
+  if(msg){g.save();g.globalAlpha=.7+.3*Math.sin(tm*4);g.fillStyle='#fff';g.strokeStyle='#1a2a60';g.lineWidth=5;g.font=`bold ${H*.05}px Georgia,serif`;g.textAlign='center';
+    g.strokeText(msg,W*.3,H*.55);g.fillText(msg,W*.3,H*.55);g.restore()}
 }
 function mjbaHud(g,s,W,H,me,tm){
   const p=PLAYERS[me],u=H/720,pr=s.got/s.need;
@@ -292,10 +318,11 @@ function mjBonhommeAlix(me){
     nouveau:mjbaNew,maj:mjbaUpdate,dessin:mjbaDraw,hud:mjbaHud,
     tap:(s,fx,fy)=>mjbaTap(s,fx,fy),drag:(s,fx,fy)=>mjbaMove(s,fx,fy),up:s=>mjbaUp(s),
     evenement:(e,s,fx,cv)=>{
-      if(e.k==='pose'){AE.pops&&AE.pops(4,.6);AE.bells&&s.got%5===0&&AE.bells()}
+      if(e.k==='pose'){AE.pops&&AE.pops(4,.6);AE.bells&&s.got%6===0&&AE.bells()}
+      else if(e.k==='tas'){AE.bells&&AE.bells()}
       else if(e.k==='prend'){AE.pops&&AE.pops(1,.3)}
       else if(e.k==='rate'){AE.nope&&AE.nope()}
     },
-    intro:['Habille le bonhomme !','Prends une pièce en bas à gauche','et glisse-la à sa place sur le bonhomme']
+    intro:['Construis ton bonhomme !','Pose les 3 boules, puis prends les objets du tas','pour l\'habiller. Il va sourire !']
   });
 }

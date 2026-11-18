@@ -121,23 +121,29 @@ for (const easy of [false, true]) {
   if (!bon) ok = false;
 }
 
-// --- bonhomme de neige, version d'Alix (pièces à glisser) ---
+// --- bonhomme de neige, version d'Alix (3 boules puis tas d'objets) ---
 {
-  let g = 0, idle = 0, N = 20;
+  let g = 0, idle = 0, tapG = 0, N = 20;
   for (let i = 0; i < N; i++) {
-    const s = T.mjbaNew(); s.asp = 2; let n = 0;
-    while (!s.done && n++ < 60 * 90) {
-      if (!s.held && s.queue.length) {
-        const k = s.queue[0], sl = s.slots.find(x => !x.placed && x.kind === k);
-        T.mjbaTap(s, .07, .875); T.mjbaMove(s, sl.x, sl.y); T.mjbaUp(s);
+    for (const mode of ['glisse', 'touche']) {
+      const s = T.mjbaNew(); s.asp = 2; let n = 0;
+      while (!s.done && n++ < 60 * 120) {
+        if (!s.held) {
+          const it = s.items.find(x => !x.placed && (x.ball || s.t2 >= 0 && s.t >= s.t2 + 1.2));
+          if (it) {
+            const sl = s.slots.find(x => !x.placed && x.kind === it.kind);
+            T.mjbaTap(s, it.hx, it.hy);
+            if (s.held) { const s2 = s.slots.find(x => !x.placed && x.kind === s.held.it.kind); if (mode === 'glisse' && s2) { T.mjbaMove(s, s2.x + .01, s2.y + .01); } T.mjbaUp(s); }
+          }
+        }
+        T.mjbaUpdate(s, dt);
       }
-      T.mjbaUpdate(s, dt);
+      if (s.done === 'win') { if (mode === 'glisse') g++; else tapG++; }
     }
-    if (s.done === 'win') g++;
     const t2 = T.mjbaNew(); t2.asp = 2; for (let j = 0; j < 600; j++) T.mjbaUpdate(t2, dt); if (t2.done !== 'win') idle++;
   }
-  const bon = g === N && idle === N;
-  console.log(`Bonhomme d'Alix (pièces) : un joueur qui place tout gagne ${g}/${N} fois ; un joueur immobile perd ${idle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
+  const bon = g === N && tapG === N && idle === N;
+  console.log(`Bonhomme d'Alix (boules + tas) : en glissant ${g}/${N}, en touchant seulement ${tapG}/${N} ; un joueur immobile perd ${idle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }
 const s = jouer(false, true);
