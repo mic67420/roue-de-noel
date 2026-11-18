@@ -160,3 +160,6 @@ Les lutins farceurs ne sont plus dans `mjListe()` (code gardé dans `2-minijeu-l
 
 ## v3.36 : catapulte à jauge (demande de Mic)
 Plus de lance-pierre : le joueur **maintient** le doigt, une jauge de puissance (barre sous la catapulte) monte et descend en va-et-vient (`mjkPuiss` : période 1,5 s adultes, 2,6 s Alix), **glisser le doigt vers le haut/bas règle l'angle** (`mjkDrag`, 0,2 à 1,35 rad, flèche blanche), **lâcher** tire (`mjkUp` → `mjkLance`). Pointillés : mêmes règles qu'avant (courts adultes, complets Alix) mais calculés avec la puissance et l'angle du moment. `mjkTir(dx,dy)` reste pour le robot de test.
+
+## v3.37 : plus de puissance pour la catapulte
+Vitesse maximale (`mjkVmax`) = assez pour que la boule (tir à 45°) dépasse le sapin de 50 % quelle que soit la largeur de l'écran (avant : fixe 1140 px/s, insuffisant sur les téléphones allongés 20:9).

@@ -34,7 +34,9 @@ function mjkTir(s,dx,dy){    // (dx,dy) = déplacement « lance-pierre » en px 
 }
 // jauge : va et vient entre 0 et 1 pendant que le doigt est posé ; l'angle se règle en glissant le doigt vers le haut / le bas
 function mjkPuiss(s,t){const per=s.easy?2.6:1.5,u=(t/per)%2;return u<1?u:2-u}
-function mjkVit(ang,pw){const v=MJK_K*MJK_R*Math.max(.12,pw);return[Math.cos(ang)*v,-Math.sin(ang)*v]}
+// vitesse maxi : assez pour dépasser le sapin de 50 % (l'écran peut être plus large que 16:9)
+function mjkVmax(s){const G=mjkGeo(s.W,s.H);return Math.max(MJK_K*MJK_R,Math.sqrt(MJK_G*1.5*(G.tx-G.Lx)))}
+function mjkVit(ang,pw,s){const v=mjkVmax(s)*Math.max(.12,pw);return[Math.cos(ang)*v,-Math.sin(ang)*v]}
 function mjkGift(s,g,hit,W,H){
   g.st='fall';const p=mjkPos(s,g,s.t,W,H);g.x=p.x;g.y=p.y;g.vx=hit.vx*.35+60;g.vy=hit.vy*.3-160;g.vr=(Math.random()-.3)*7;g.rot=p.th;g.fl=0;s.got++;
   s.fx.push({k:'puff',x:hit.x,y:hit.y,t:0});s.ev.push({k:'touche'});s.mood=1;s.moodT=1.2;
@@ -68,7 +70,7 @@ function mjkUpdate(s,dt){
 }
 function mjkDown(s,fx,fy,W,H){if(s.ball||s.balls<=0)return;s.pull={y0:fy*H,a0:.8,ang:.8,t:0,pw:0}}
 function mjkDrag(s,fx,fy,W,H){const p=s.pull;if(!p)return;p.ang=Math.max(.2,Math.min(1.35,p.a0+(p.y0-fy*H)/H*2.4))}
-function mjkUp(s){const p=s.pull;s.pull=null;if(p&&p.t>.08){const v=mjkVit(p.ang,p.pw);mjkLance(s,v[0],v[1])}}
+function mjkUp(s){const p=s.pull;s.pull=null;if(p&&p.t>.08){const v=mjkVit(p.ang,p.pw,s);mjkLance(s,v[0],v[1])}}
 /* ---- dessin ---- */
 function mjkFond(g,W,H){
   const im=MJ.img.fond_catapulte;if(!im||!im.naturalWidth){g.fillStyle='#24306a';g.fillRect(0,0,W,H);g.fillStyle='#e8eeff';g.fillRect(0,H*.72,W,H);return}
@@ -77,7 +79,7 @@ function mjkFond(g,W,H){
 }
 function mjkTraj(s,G,W,H){
   const p=s.pull;if(!p||p.t<.05)return[];
-  const v=mjkVit(p.ang,p.pw),vx=v[0],vy=v[1],pts=[],n=s.easy?40:6,dt=s.easy?.055:.07;
+  const v=mjkVit(p.ang,p.pw,s),vx=v[0],vy=v[1],pts=[],n=s.easy?40:6,dt=s.easy?.055:.07;
   for(let i=1;i<=n;i++){const t=i*dt,x=G.Lx+vx*t,y=G.Ly+vy*t+.5*MJK_G*t*t;if(y>G.gy||x>W)break;pts.push([x,y,i])}
   return pts;
 }
