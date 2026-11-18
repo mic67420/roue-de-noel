@@ -19,9 +19,16 @@ NOMS = {
  'B8': ['eclair_long','eclair_ramifie','eclair_epais','nuage_orage','pere_electrocute','pere_squelette','pere_squelette_etoile','pere_carbonise','etincelles','eclair_impact','sac_fume','arc_cercle'],
  'B9': ['meteo_roche','meteo_noire','meteo_glace','meteo_lave','expl1','expl2','expl3','expl4','cratere','debris','meteo_cristal','anneau'],
  'B10': ['boule_bas','boule_milieu','boule_tete','haut_de_forme','bonnet','carotte','charbon','echarpe','branche','moufle','bouton','noeud'],
+ 'B11': ['santa_dos','santa_saut','santa_atterrit','santa_gauche','santa_droite','santa_ecrase','santa_etourdi1','santa_etourdi2','santa_content','cadeau','etoile','coeur_plein','coeur_vide'],
+ 'B12': ['renne_trot','renne_galop','pingouin_marche','pingouin_ventre','renard','lievre','ours','boule_neige','traineau_vide','sapin','sapin_neige','rocher'],
+ 'B13': ['mouton','mouton_court','vache','oie','lapin','cheval','tracteur','charrette_ane','botte','epouvantail','cloture','arbre_givre'],
+ 'B14': ['voiture','taxi','camionnette','bus','chat','chien','pigeon','cycliste','passant','lampadaire','boite_lettres','banc'],
+ 'B15': ['enfant_luge','enfant_court','chien','poule','cheval_traineau','charrette','bonhomme','tonneau','sapin_noel','lanterne','arche','maisonnette'],
+ 'B16': ['immeuble_grand','immeuble_magasin','maison','eglise','grange','moulin','igloo','sapins3','rochers_glace','panneau','bosquet','lampadaire_village'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
 }
-TROUS_TRANSPARENTS = {('B6','coeur_vide')}   # l'intérieur blanc du cœur vide devient transparent
+LIGNES = {'B11': [5, 4, 4]}   # nombre d'objets par rangée quand ce n'est pas 4-4-4
+TROUS_TRANSPARENTS = {('B6','coeur_vide'),('B11','coeur_vide'),('B15','arche'),('B13','cloture')}   # l'intérieur blanc du cœur vide devient transparent
 
 def decouper(b):
     im = Image.open(os.path.join(SRC, b + '.jpg')).convert('RGB')
@@ -44,11 +51,12 @@ def decouper(b):
         objs.append((sl, i + 1, aire))
     return im, a, fg, grp, objs
 
-def ordonner(objs):
+def ordonner(objs, cfg=(4, 4, 4)):
     ys = sorted(set(((s[0].start + s[0].stop)//2) for s, _, _ in objs))
     # 3 rangées par regroupement des centres verticaux
     c = sorted(objs, key=lambda o: (o[0][0].start + o[0][0].stop)//2)
-    lignes = [c[0:4], c[4:8], c[8:12]]
+    a, b2, c3 = cfg
+    lignes = [c[0:a], c[a:a+b2], c[a+b2:a+b2+c3]]
     res = []
     for l in lignes:
         res += sorted(l, key=lambda o: (o[0][1].start + o[0][1].stop)//2)
@@ -59,9 +67,9 @@ def main():
     index = {}
     for b in sorted(NOMS):
         im, a, fg, grp, objs = decouper(b)
-        if len(objs) != 12:
+        if len(objs) != len(NOMS[b]):
             print(b, 'ATTENTION', len(objs), 'objets trouvés');
-        objs = ordonner(objs)
+        objs = ordonner(objs, LIGNES.get(b, (4, 4, 4)))
         for (sl, gid, aire), nom in zip(objs, NOMS[b]):
             y0, y1, x0, x1 = sl[0].start, sl[0].stop, sl[1].start, sl[1].stop
             m = ((grp == gid) & fg)[y0:y1, x0:x1]

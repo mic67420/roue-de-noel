@@ -216,7 +216,7 @@ function mjRunner(me,cfg){
     cv.addEventListener('pointerdown',e=>{try{cv.setPointerCapture(e.pointerId)}catch(_){}setX(e.clientX);if(state==='intro'&&tIntro>.6){state='count';tIntro=0}else if(state==='play'&&cfg.tap){const r=cv.getBoundingClientRect();cfg.tap(s,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,W,H)}});
     let down=false;cv.addEventListener('pointerdown',()=>{down=true});const fin=()=>{if(down&&cfg.up&&state==='play')cfg.up(s);down=false};cv.addEventListener('pointerup',fin);cv.addEventListener('pointercancel',fin);
     cv.addEventListener('pointermove',e=>{if(state!=='intro')setX(e.clientX);if(down&&state==='play'&&cfg.drag){const r=cv.getBoundingClientRect();cfg.drag(s,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,W,H)}});
-    const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(!cfg.cle)return;if(e.key==='ArrowLeft')cfg.cle(s,-1);else if(e.key==='ArrowRight')cfg.cle(s,1)};
+    const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(cfg.clavier){cfg.clavier(s,e.key);return}if(!cfg.cle)return;if(e.key==='ArrowLeft')cfg.cle(s,-1);else if(e.key==='ArrowRight')cfg.cle(s,1)};
     window.addEventListener('keydown',key);
     AE.init&&AE.init();
     let croix=null;
@@ -316,7 +316,8 @@ function mjTraineau(me){
 function mjListe(){return[
   {id:'traineau',nom:'🛷 Traîneau',fn:mjTraineau,emo:'🛷'},
   {id:'cadeaux',nom:'🎁 Cadeaux qui tombent',fn:mjCadeaux,emo:'🎁'},
-  {id:'lutins',nom:'🎯 Lutins farceurs',fn:mjLutins,emo:'🎯'}
+  {id:'lutins',nom:'🎯 Lutins farceurs',fn:mjLutins,emo:'🎯'},
+  {id:'traversee',nom:'🎅 La grande traversée',fn:mjTraversee,emo:'🎅'}
   // Bonhomme de neige retiré de la liste en v3.31 (ne fonctionnait pas bien) : le code reste dans 2-minijeu-bonhomme.js
   //,{id:'bonhomme',nom:'⛄ Bonhomme de neige',fn:mjBonhomme,emo:'⛄'}
 ]}
@@ -354,4 +355,4 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjMenu};
+window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjMenu};

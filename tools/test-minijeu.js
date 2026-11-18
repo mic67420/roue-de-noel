@@ -1,6 +1,6 @@
 // Teste les règles du mini-jeu du traîneau sans écran : un joueur qui esquive doit gagner, un joueur immobile doit perdre.
 const { charger } = require('./_faux-navigateur.js');
-const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp');
+const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjtNew,mjtUpdate,mjtHop');
 let ok = true;
 const dt = 1 / 60, MJ_ZS = .86;
 function jouer(easy, bot) {
@@ -144,6 +144,36 @@ for (const easy of [false, true]) {
   }
   const bon = g === N && tapG === N && idle === N;
   console.log(`Bonhomme d'Alix (boules + tas) : en glissant ${g}/${N}, en touchant seulement ${tapG}/${N} ; un joueur immobile perd ${idle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
+  if (!bon) ok = false;
+}
+
+// --- La grande traversée : un robot qui saute quand la voie est libre gagne ; un joueur immobile ne gagne jamais ---
+function mjtX(R, o, t) { const P = 24; return -9 + ((((o.x0 + R.dir * o.v * t) % P) + P) % P); }
+function traversee(easy, bot) {
+  const s = T.mjtNew(easy); let n = 0;
+  while (!s.done && n++ < 60 * 150) {
+    if (bot && !s.hop && s.stun <= 0) {
+      const nr = s.rows[s.r + 1];
+      let ok2 = true;
+      if (nr && nr.t === 'lane') {
+        for (const o of nr.objs) for (let k = 0; k <= 12; k++) {
+          const tt = s.t + k * .03 + .02;
+          if (Math.abs(mjtX(nr, o, tt) - s.c) < o.hw + .55) ok2 = false;
+        }
+      } else if (nr && nr.t === 'safe' && nr.blk.some(b => b.c === s.c)) {
+        T.mjtHop(s, s.c < 3 ? 1 : -1, 0); ok2 = false;
+      }
+      if (ok2) T.mjtHop(s, 0, 1);
+    }
+    T.mjtUpdate(s, dt);
+  }
+  return s;
+}
+for (const easy of [false, true]) {
+  const N = 40; let g = 0, idle = 0;
+  for (let i = 0; i < N; i++) { if (traversee(easy, true).done === 'win') g++; if (traversee(easy, false).done !== 'win') idle++; }
+  const bon = easy ? (g === N && idle === N) : (g >= N * .15 && idle === N);
+  console.log(`Traversée, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui saute bien gagne ${g}/${N} fois ; un joueur immobile ne gagne jamais ${idle}/${N}`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }
 const s = jouer(false, true);
