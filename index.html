@@ -238,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.32';
+const VERSION='3.33';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -2343,7 +2343,7 @@ window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,m
    Type « Crossy Road », vue de dessus en 3/4 : le Père Noël est en bas au centre, l'écran défile du haut vers le bas.
    Toucher = un bond en avant ; glisser à gauche / droite = un bond sur le côté.
    Les animaux et véhicules traversent les voies de gauche à droite ou de droite à gauche. 4 environnements : neige, plaine, ville, village.
-   Adultes : 30 s, 3 cœurs, la rafale de neige rattrape celui qui reste immobile. Alix : sans chrono, sans cœurs, lent et facile.
+   Adultes et Alix : 60 s, même décor. Adultes : 3 cœurs, la rafale de neige rattrape celui qui reste immobile. Alix : sans cœurs, lent et facile.
    Colonnes : 0..6 (le Père Noël est entre 0 et 6) ; les rangées vont de 0 (départ) à N (arche d'arrivée). */
 const TV_DIM={"B11_santa_dos":[123,205],"B11_santa_saut":[136,193],"B11_santa_atterrit":[197,174],"B11_santa_gauche":[139,187],"B11_santa_droite":[157,182],"B11_santa_ecrase":[238,156],"B11_santa_etourdi1":[168,203],"B11_santa_etourdi2":[153,211],"B11_santa_content":[206,213],"B11_cadeau":[196,201],"B11_etoile":[163,156],"B11_coeur_plein":[181,161],"B11_coeur_vide":[181,160],"B12_renne_trot":[221,220],"B12_renne_galop":[240,206],"B12_pingouin_marche":[130,178],"B12_pingouin_ventre":[213,123],"B12_renard":[230,123],"B12_lievre":[182,159],"B12_ours":[255,167],"B12_boule_neige":[205,197],"B12_traineau_vide":[209,151],"B12_sapin":[155,184],"B12_sapin_neige":[188,251],"B12_rocher":[207,158],"B13_mouton":[202,174],"B13_mouton_court":[220,166],"B13_vache":[237,178],"B13_oie":[143,182],"B13_lapin":[192,169],"B13_cheval":[260,196],"B13_tracteur":[209,169],"B13_charrette_ane":[270,172],"B13_botte":[197,175],"B13_epouvantail":[176,213],"B13_cloture":[189,183],"B13_arbre_givre":[201,222],"B14_voiture":[234,151],"B14_taxi":[271,137],"B14_camionnette":[259,171],"B14_bus":[259,178],"B14_chat":[229,133],"B14_chien":[230,157],"B14_pigeon":[178,186],"B14_cycliste":[195,219],"B14_passant":[145,229],"B14_lampadaire":[96,247],"B14_boite_lettres":[100,210],"B14_banc":[234,183],"B15_enfant_luge":[169,189],"B15_enfant_court":[139,190],"B15_chien":[221,153],"B15_poule":[143,180],"B15_cheval_traineau":[288,169],"B15_charrette":[248,158],"B15_bonhomme":[147,205],"B15_tonneau":[137,177],"B15_sapin_noel":[184,248],"B15_lanterne":[108,207],"B15_arche":[223,236],"B15_maisonnette":[180,239],"B16_immeuble_grand":[269,246],"B16_immeuble_magasin":[180,206],"B16_maison":[200,213],"B16_eglise":[176,227],"B16_grange":[227,194],"B16_moulin":[156,215],"B16_igloo":[246,168],"B16_sapins3":[237,227],"B16_rochers_glace":[245,182],"B16_panneau":[147,220],"B16_bosquet":[269,226],"B16_lampadaire_village":[77,228]};
 const TV_C=7,TV_CH=.13,TV_RH=.115,TV_HOP=.17,TV_P=24,TV_X0=-9;
@@ -2377,13 +2377,13 @@ function mjtLane(bio,easy){
 }
 function mjtSafe(bio,first,easy){
   const B=TV_BIO[bio],blk=[],marg=[];
-  if(!first&&!easy||(!first&&Math.random()<.5)){const nb=Math.random()<.5?1:2;for(let i=0;i<nb;i++){const c=Math.floor(Math.random()*TV_C);if(!blk.some(b=>Math.abs(b.c-c)<2)){const d=tvPick(B.blocs);blk.push({c,key:d[0],h:d[1]})}}}
+  if(!first){const nb=Math.random()<.5?1:2;for(let i=0;i<nb;i++){const c=Math.floor(Math.random()*TV_C);if(!blk.some(b=>Math.abs(b.c-c)<2)){const d=tvPick(B.blocs);blk.push({c,key:d[0],h:d[1]})}}}
   for(const side of[-1,1])if(Math.random()<.75){const d=tvPick(B.marges);marg.push({side,key:d[0],h:d[1]})}
   if(first)marg.push({side:1,key:'B16_panneau',h:1.5,pan:true});
   return{t:'safe',bio,blk,marg,first};
 }
 function mjtNew(easy){
-  const B=easy?5:8,rows=[{t:'safe',bio:0,blk:[],marg:[{side:-1,key:'B16_sapins3',h:2.2},{side:1,key:'B12_sapin_neige',h:1.7}],first:true,depart:true}];
+  const B=8,rows=[{t:'safe',bio:0,blk:[],marg:[{side:-1,key:'B16_sapins3',h:2.2},{side:1,key:'B12_sapin_neige',h:1.7}],first:true,depart:true}];
   let run=0,prevBlk=false;
   for(let k=0;k<4;k++)for(let i=0;i<B;i++){
     const first=i===0,lane=!first&&run<3&&Math.random()<(easy?.58:.74);
@@ -2391,7 +2391,7 @@ function mjtNew(easy){
     else{const r=mjtSafe(k,first,easy);if(prevBlk)r.blk=[];rows.push(r);run=0;prevBlk=r.blk.length>0}
   }
   rows.push({t:'fin',bio:3,blk:[],marg:[]});
-  return{D:easy?99999:30,notimer:easy,t:0,done:null,ev:[],easy,asp:2,rows,N:rows.length-1,
+  return{D:60,notimer:false,t:0,done:null,ev:[],easy,asp:2,rows,N:rows.length-1,
     c:3,r:0,hop:null,q:null,stun:0,inv:0,lives:3,max:3,chase:-3.4,cam:0,bio:0,bioT:-9,down:null,best:0};
 }
 function mjtX(R,o,t){const p=(((o.x0+R.dir*o.v*t)%TV_P)+TV_P)%TV_P;return TV_X0+p}
@@ -2451,7 +2451,7 @@ function mjtUpdate(s,dt){
   }
   const tgt=s.hop?s.hop.fr+(s.hop.tr-s.hop.fr)*Math.min(1,s.hop.t/s.hop.dur):s.r;
   s.cam+=(tgt-s.cam)*(1-Math.exp(-9*dt));
-  if(!s.done&&!s.easy&&s.t>=s.D)s.done='temps';
+  if(!s.done&&s.t>=s.D)s.done='temps';
 }
 /* ---- dessin ---- */
 function mjtSpr(g,key,cx,by,h,flip,alpha,rot){
