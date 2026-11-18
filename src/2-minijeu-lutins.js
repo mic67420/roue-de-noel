@@ -1,0 +1,157 @@
+/* ---- Mini-jeu 3 : lutins farceurs (v3.24) ----
+   Un canon à neige en bas de l'écran. Le joueur TOUCHE un lutin du doigt : une boule de neige part du canon.
+   Adultes : 3 cœurs, chaque lutin qui s'échappe coûte un cœur, 12 touchés à faire. Alix : pas de cœur perdu, 6 à toucher, lutins gros et lents.
+   Positions en fractions de l'écran (x : largeur, y : hauteur) ; tailles en fraction de la hauteur. */
+const MJL_TROUS=[.11,.31,.5,.69,.89],MJL_YT=.80,MJL_LANES=[.60,.69,.77];
+function mjlNew(easy){
+  return{D:30,t:0,done:null,ev:[],easy,asp:2,
+    need:easy?6:12,got:0,lives:3,max:3,
+    el:[],balls:[],splash:[],tSp:.6,nSp:0,aim:-Math.PI/2,rec:0,
+    // réglages
+    gap0:easy?2.0:1.05,gap1:easy?1.7:.62,cross:easy?5.2:1.7,peek:easy?2.8:.7,size:easy?.36:.22,pad:easy?.07:.025,
+    pRed:easy?0:.4,pGold:easy?.08:.08,pPeek:easy?.4:.4,pHop:easy?.2:.4};
+}
+function mjlSpawn(s){
+  const r=Math.random();
+  if(r<s.pPeek){ // lutin qui sort d'un trou
+    const libres=MJL_TROUS.map((x,i)=>i).filter(i=>!s.el.some(e=>e.kind==='peek'&&e.hole===i));
+    if(libres.length){const h=libres[Math.floor(Math.random()*libres.length)];
+      s.el.push({kind:'peek',hole:h,x:MJL_TROUS[h],y:MJL_YT,size:s.size*.95,age:0,ttl:s.peek*(.8+Math.random()*.4),gold:Math.random()<s.pGold,hit:false});return}
+  }
+  const dir=Math.random()<.5?1:-1,lane=Math.floor(Math.random()*3),red=Math.random()<s.pRed,gold=!red&&Math.random()<s.pGold;
+  const sz=s.size*(.82+lane*.1)*(red?.95:1),sp=(1.2+.2)/(s.cross*(red?.62:1));
+  s.el.push({kind:'run',x:dir>0?-.08:1.08,y:MJL_LANES[lane],dir,vx:dir*sp,size:sz,age:0,red,gold,hop:Math.random()<s.pHop,ph:Math.random()*6,hit:false});
+}
+function mjlTap(s,fx,fy){
+  if(s.done)return;
+  let best=null,bd=1e9;
+  for(const e of s.el){
+    if(e.hit||(e.kind==='peek'&&(e.age<.15||e.age>e.ttl-.05)))continue;
+    const hop=e.kind==='run'&&e.hop?Math.abs(Math.sin(e.ph))*.08:0;
+    const cy=e.y-e.size*.5-hop,cx=e.x;
+    const dx=(fx-cx)*s.asp,dy=fy-cy,hw=e.size*.32+s.pad,hh=e.size*.55+s.pad;
+    const d=(dx/hw)*(dx/hw)+(dy/hh)*(dy/hh);
+    if(d<=1&&d<bd){bd=d;best=e}
+  }
+  s.aim=Math.atan2(fy-.93,(fx-.5)*s.asp);s.rec=1;
+  if(best){best.hit=true;best.hitT=0;s.got+=best.gold?2:1;s.balls.push({x0:.5,y0:.93,x1:fx,y1:fy,t:0,dur:.16,hit:true});s.ev.push({k:best.gold?'dore':'touche',x:fx,y:fy})}
+  else{s.balls.push({x0:.5,y0:.93,x1:fx,y1:fy,t:0,dur:.2,hit:false});s.ev.push({k:'rate'})}
+}
+function mjlUpdate(s,dt){
+  if(s.done)return;
+  s.t+=dt;s.rec=Math.max(0,s.rec-dt*5);
+  s.tSp-=dt;
+  if(s.tSp<=0){mjlSpawn(s);const p=Math.min(1,s.t/s.D);s.tSp=(s.gap0+(s.gap1-s.gap0)*p)*(.75+Math.random()*.5)}
+  for(const e of s.el){
+    e.age+=dt;
+    if(e.hit){e.hitT+=dt;continue}
+    if(e.kind==='run'){e.x+=e.vx*dt;e.ph+=dt*(e.red?13:9);
+      if((e.dir>0&&e.x>1.07)||(e.dir<0&&e.x<-.07)){e.gone=true;mjlFuite(s,e)}}
+    else if(e.age>=e.ttl){e.gone=true;mjlFuite(s,e)}
+  }
+  s.el=s.el.filter(e=>!e.gone&&!(e.hit&&e.hitT>.8));
+  for(const b of s.balls)b.t+=dt;
+  for(const b of s.balls)if(!b.done&&b.t>=b.dur){b.done=true;s.splash.push({x:b.x1,y:b.y1,t:0,hit:b.hit})}
+  s.balls=s.balls.filter(b=>!b.done);
+  for(const p of s.splash)p.t+=dt;
+  s.splash=s.splash.filter(p=>p.t<.45);
+  if(s.got>=s.need){s.done='win';return}
+  if(s.lives<=0){s.done='lose';return}
+  if(s.t>=s.D)s.done='temps';
+}
+function mjlFuite(s,e){
+  if(s.easy){s.ev.push({k:'fuite0'});return}
+  s.lives--;s.ev.push({k:'fuite',x:e.x});
+}
+/* ---- dessin ---- */
+function mjlFond(W,H){
+  if(MJ.bgL&&MJ.bgL.width===W)return MJ.bgL;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  let gr=g.createLinearGradient(0,0,0,H*.62);gr.addColorStop(0,'#070d2e');gr.addColorStop(1,'#2b3f86');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  g.fillStyle='#fff';for(let i=0;i<70;i++){g.globalAlpha=.3+.7*((i*37)%10)/10;g.beginPath();g.arc((i*197.3)%W,(i*71.9)%(H*.5),.8+(i%3)*.6,0,6.283);g.fill()}
+  g.globalAlpha=1;g.fillStyle='#f4f1d8';g.beginPath();g.arc(W*.84,H*.2,H*.06,0,6.283);g.fill();g.fillStyle='rgba(244,241,216,.15)';g.beginPath();g.arc(W*.84,H*.2,H*.11,0,6.283);g.fill();
+  g.fillStyle='#8aa0d8';g.beginPath();g.moveTo(0,H*.6);for(let x=0;x<=W;x+=20)g.lineTo(x,H*(.5+.05*Math.sin(x/W*7+1)+.03*Math.sin(x/W*17)));g.lineTo(W,H*.62);g.lineTo(0,H*.62);g.fill();
+  g.fillStyle='#5b2f1a';for(let i=0;i<14;i++){const x=(i+.3)*W/14,y=H*.56,h=H*(.07+(i%3)*.02);g.fillStyle='#173a2c';g.beginPath();g.moveTo(x,y-h);g.lineTo(x+h*.3,y);g.lineTo(x-h*.3,y);g.fill()}
+  gr=g.createLinearGradient(0,H*.55,0,H);gr.addColorStop(0,'#e9f1ff');gr.addColorStop(.5,'#cfdcf5');gr.addColorStop(1,'#a9bce6');g.fillStyle=gr;
+  g.beginPath();g.moveTo(0,H*.58);for(let x=0;x<=W;x+=20)g.lineTo(x,H*(.58+.012*Math.sin(x/W*9)));g.lineTo(W,H);g.lineTo(0,H);g.fill();
+  MJ.bgL=c;return c;
+}
+function mjlSpr(g,im,cx,by,h,flip,rot,a){ // dessine une image centrée en x, posée en y (bas), hauteur h
+  if(!im||!im.naturalWidth)return;const w=h*im.naturalWidth/im.naturalHeight;
+  g.save();if(a!=null)g.globalAlpha=a;g.translate(cx,by);if(rot)g.rotate(rot);if(flip)g.scale(-1,1);g.drawImage(im,-w/2,-h,w,h);g.restore();
+}
+function mjlDraw(g,s,W,H,tm){
+  const im=MJ.img;s.asp=W/H;
+  g.drawImage(mjlFond(W,H),0,0);
+  // trous vides (ou lutin qui sort)
+  const ordre=s.el.slice().sort((a,b)=>a.y-b.y);
+  for(const x of MJL_TROUS){
+    if(!s.el.some(e=>e.kind==='peek'&&e.x===x&&!e.hit))mjlSpr(g,im.B4_trou_neige,x*W,MJL_YT*H+H*.01,H*.085);
+  }
+  for(const e of ordre){
+    const x=e.x*W,y=e.y*H,h=e.size*H;
+    if(e.kind==='peek'){
+      const up=Math.min(1,e.age/.22),down=Math.max(0,Math.min(1,(e.ttl-e.age)/.2)),k=e.hit?1:Math.min(up,down),ek=1-Math.pow(1-k,3);
+      if(e.hit){mjlSpr(g,im.B4_lutin_touche,x,y-e.hitT*H*.35+Math.pow(e.hitT,2)*H*.9,h*.95,false,e.hitT*4,Math.max(0,1-e.hitT/.8));mjlEtoiles(g,x,y-h*.7,e.hitT,H);continue}
+      g.save();g.beginPath();g.rect(x-W,y-H,W*2,H+H*.012);g.clip();
+      mjlSpr(g,im.B4_lutin_sort,x,y+(1-ek)*h*.9,h*.95);g.restore();continue;
+    }
+    // coureur
+    const hop=e.hop?Math.abs(Math.sin(e.ph))*H*.08:0,bob=e.hop?0:Math.abs(Math.sin(e.ph))*H*.012;
+    // ombre
+    g.fillStyle='rgba(30,45,90,.3)';g.beginPath();g.ellipse(x,y+H*.004,h*.2*(1-hop/H*3),h*.045,0,0,6.283);g.fill();
+    const spr=e.gold?im.B4_lutin_dore:e.red?im.B4_lutin_rouge:(Math.floor(e.ph/9)%2?im.B3_lutin:im.B4_lutin_debout);
+    if(e.hit){mjlSpr(g,im.B4_lutin_touche,x,y-hop-e.hitT*H*.3+Math.pow(e.hitT,2)*H*.9,h,e.dir<0,e.hitT*5*e.dir,Math.max(0,1-e.hitT/.8));mjlEtoiles(g,x,y-h*.8,e.hitT,H);continue}
+    mjlSpr(g,spr,x,y-hop-bob,h,e.dir<0,Math.sin(e.ph)*.07);
+    if(e.gold){g.save();g.globalAlpha=.6+.4*Math.sin(tm*10);g.fillStyle='#fff6b0';for(let i=0;i<3;i++){const a=tm*3+i*2.1;g.beginPath();g.arc(x+Math.cos(a)*h*.35,y-hop-h*.55+Math.sin(a)*h*.4,H*.007,0,6.283);g.fill()}g.restore()}
+  }
+  // boules de neige en vol
+  for(const b of s.balls){const k=b.t/b.dur,x=(b.x0+(b.x1-b.x0)*k)*W,y=(b.y0+(b.y1-b.y0)*k)*H-Math.sin(k*3.14)*H*.04,r=H*(.07-.035*k);
+    const bi=im.B3_boule_neige;if(bi&&bi.naturalWidth)g.drawImage(bi,x-r/2,y-r/2,r,r);else{g.fillStyle='#fff';g.beginPath();g.arc(x,y,r/3,0,6.283);g.fill()}}
+  // éclaboussures
+  for(const p of s.splash){const k=p.t/.45,r=H*(.1+.1*k),si=im.B3_eclaboussure_neige;if(si&&si.naturalWidth){g.globalAlpha=1-k;g.drawImage(si,p.x*W-r/2*1.3,p.y*H-r/2,r*1.3,r*si.naturalHeight/si.naturalWidth*1.3);g.globalAlpha=1}}
+  // canon
+  mjlCanon(g,s,W,H,tm);
+  // tas de neige devant
+  mjlSpr(g,im.B3_tas_neige,W*.06,H*1.02,H*.2);mjlSpr(g,im.B3_tas_neige,W*.94,H*1.02,H*.2,true);
+}
+function mjlEtoiles(g,x,y,t,H){g.save();g.fillStyle='#ffe066';g.globalAlpha=Math.max(0,1-t/.7);for(let i=0;i<4;i++){const a=t*6+i*1.57,r=H*(.03+t*.05);g.beginPath();g.arc(x+Math.cos(a)*r*2,y+Math.sin(a)*r,H*.012,0,6.283);g.fill()}g.restore()}
+function mjlCanon(g,s,W,H,tm){
+  const cx=W*.5,cy=H*.93,u=H/720,a=Math.max(-Math.PI+.35,Math.min(-.35,s.aim)),rc=s.rec*12*u;
+  g.save();g.translate(cx,cy);
+  g.fillStyle='rgba(30,45,90,.35)';g.beginPath();g.ellipse(0,38*u,90*u,16*u,0,0,6.283);g.fill();
+  g.save();g.rotate(a+Math.PI/2);g.translate(0,rc);
+  const gr=g.createLinearGradient(-26*u,0,26*u,0);gr.addColorStop(0,'#8a1a1a');gr.addColorStop(.5,'#e23b3b');gr.addColorStop(1,'#7a1212');
+  g.fillStyle=gr;g.beginPath();g.moveTo(-22*u,0);g.lineTo(-30*u,-92*u);g.lineTo(30*u,-92*u);g.lineTo(22*u,0);g.fill();
+  g.fillStyle='#fff';g.fillRect(-27*u,-96*u,54*u,12*u);g.fillRect(-25*u,-60*u,50*u,8*u);
+  g.fillStyle='#17202e';g.beginPath();g.ellipse(0,-96*u,28*u,7*u,0,0,6.283);g.fill();
+  g.restore();
+  g.fillStyle='#5a3a1c';g.beginPath();g.arc(0,12*u,40*u,0,6.283);g.fill();g.strokeStyle='#d8a85a';g.lineWidth=7*u;g.beginPath();g.arc(0,12*u,32*u,0,6.283);g.stroke();
+  g.fillStyle='#d8a85a';g.beginPath();g.arc(0,12*u,9*u,0,6.283);g.fill();
+  g.restore();
+}
+function mjlHud(g,s,W,H,me,tm){
+  const im=MJ.img,p=PLAYERS[me],u=H/720;
+  g.fillStyle='rgba(8,14,46,.65)';rrect(g,14*u,14*u,230*u,62*u,31*u);g.fill();
+  g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';g.fillText(p.av,26*u,46*u);
+  g.font=`bold ${30*u}px Georgia,serif`;g.fillText(p.name,80*u,47*u);
+  if(!s.easy){const hs=50*u;for(let i=0;i<s.max;i++){const img=im[i<s.lives?'B6_coeur_plein':'B6_coeur_vide'];if(img&&img.naturalWidth)g.drawImage(img,260*u+i*(hs+6*u),16*u,hs,hs*img.naturalHeight/img.naturalWidth)}}
+  const bx=W*.58,bw=W*.28,by=22*u,pr=Math.min(1,s.got/s.need);
+  g.fillStyle='rgba(8,14,46,.65)';rrect(g,bx,by,bw,22*u,11*u);g.fill();
+  g.fillStyle='#ffd24a';rrect(g,bx+3*u,by+3*u,Math.max(16*u,(bw-6*u)*pr),16*u,8*u);g.fill();
+  const lu=im.B4_lutin_dore;if(lu&&lu.naturalWidth)g.drawImage(lu,bx+bw-10*u,by-18*u,40*u,40*u*lu.naturalHeight/lu.naturalWidth);
+  g.fillStyle='#fff';g.font=`bold ${30*u}px Georgia,serif`;g.textAlign='right';g.fillText(s.got+' / '+s.need,bx-14*u,by+11*u);
+}
+function mjLutins(me){
+  return mjRunner(me,{
+    nouveau:mjlNew,maj:mjlUpdate,dessin:mjlDraw,hud:mjlHud,
+    tap:(s,fx,fy)=>mjlTap(s,fx,fy),
+    evenement:(e,s,fx,cv)=>{
+      if(e.k==='touche'){AE.pops&&AE.pops(3,.6);fx.push({t:0,x:e.x,y:e.y})}
+      else if(e.k==='dore'){AE.bells&&AE.bells();AE.pops&&AE.pops(6,.7);fx.push({t:0,x:e.x,y:e.y})}
+      else if(e.k==='rate'){AE.pops&&AE.pops(1,.25)}
+      else if(e.k==='fuite'){AE.nope&&AE.nope();cv.style.transform='translate('+(Math.random()*14-7)+'px,'+(Math.random()*8-4)+'px)'}
+    },
+    intro:['Tire sur les lutins !','Touche un lutin du doigt : le canon','lui lance une boule de neige !']
+  });
+}

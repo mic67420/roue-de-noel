@@ -212,10 +212,10 @@ function mjRunner(me,cfg){
     const H=720,W=Math.round(H*Math.max(1.5,BW/BH));cv.width=W;cv.height=H;
     const s=cfg.nouveau(easy);
     let state='intro',tIntro=0,last=performance.now(),tm=0,raf=0,endT=0,fx=[],parts=[],flash=0;
-    const setX=cx=>{const r=cv.getBoundingClientRect();cfg.pointeur(s,(cx-r.left)/r.width,W)};
-    cv.addEventListener('pointerdown',e=>{try{cv.setPointerCapture(e.pointerId)}catch(_){}setX(e.clientX);if(state==='intro'&&tIntro>.6){state='count';tIntro=0}});
+    const setX=cx=>{const r=cv.getBoundingClientRect();cfg.pointeur&&cfg.pointeur(s,(cx-r.left)/r.width,W)};
+    cv.addEventListener('pointerdown',e=>{try{cv.setPointerCapture(e.pointerId)}catch(_){}setX(e.clientX);if(state==='intro'&&tIntro>.6){state='count';tIntro=0}else if(state==='play'&&cfg.tap){const r=cv.getBoundingClientRect();cfg.tap(s,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,W,H)}});
     cv.addEventListener('pointermove',e=>{if(state!=='intro')setX(e.clientX)});
-    const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(e.key==='ArrowLeft')cfg.cle(s,-1);else if(e.key==='ArrowRight')cfg.cle(s,1)};
+    const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(!cfg.cle)return;if(e.key==='ArrowLeft')cfg.cle(s,-1);else if(e.key==='ArrowRight')cfg.cle(s,1)};
     window.addEventListener('keydown',key);
     AE.init&&AE.init();
     let croix=null;
@@ -314,7 +314,8 @@ function mjTraineau(me){
 /* Liste des mini-jeux (ajouter ici chaque nouveau mini-jeu) */
 function mjListe(){return[
   {id:'traineau',nom:'🛷 Traîneau',fn:mjTraineau,emo:'🛷'},
-  {id:'cadeaux',nom:'🎁 Cadeaux qui tombent',fn:mjCadeaux,emo:'🎁'}
+  {id:'cadeaux',nom:'🎁 Cadeaux qui tombent',fn:mjCadeaux,emo:'🎁'},
+  {id:'lutins',nom:'🎯 Lutins farceurs',fn:mjLutins,emo:'🎯'}
 ]}
 const mjDernier={};   // dernier mini-jeu joué par chaque joueur (jamais deux fois de suite le même pour un joueur)
 function mjChoisir(me){const L=mjListe(),ch=L.length>1?L.filter(x=>x.id!==mjDernier[me]):L,jeu=ch[Math.floor(Math.random()*ch.length)];mjDernier[me]=jeu.id;return jeu}
@@ -350,4 +351,4 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjMenu};
+window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjMenu};

@@ -1,6 +1,6 @@
 // Teste les règles du mini-jeu du traîneau sans écran : un joueur qui esquive doit gagner, un joueur immobile doit perdre.
 const { charger } = require('./_faux-navigateur.js');
-const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate');
+const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap');
 let ok = true;
 const dt = 1 / 60, MJ_ZS = .86;
 function jouer(easy, bot) {
@@ -60,6 +60,34 @@ for (const easy of [false, true]) {
   for (let i = 0; i < N; i++) { if (jouerC(easy, true).done === 'win') gagnes++; if (jouerC(easy, false).done !== 'win') perdusIdle++; }
   const bon = gagnes >= N * (easy ? .9 : .4) && perdusIdle >= N * (easy ? .25 : .9);
   console.log(`Cadeaux qui tombent, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui joue bien gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
+  if (!bon) ok = false;
+}
+
+// --- mini-jeu 3 : lutins farceurs ---
+function jouerL(easy, bot) {
+  const s = T.mjlNew(easy); s.asp = 2; let n = 0, prochain = 0; const vu = new Map();
+  while (!s.done && n++ < 60 * 80) {
+    if (bot && s.t >= prochain) {
+      // le robot repère un lutin visible depuis 0,3 s et tire dessus (90 % de précision)
+      for (const e of s.el) {
+        if (e.hit) continue;
+        if (!vu.has(e)) vu.set(e, s.t);
+        if (s.t - vu.get(e) < .3) continue;
+        const dec = e.kind === 'run' && e.hop ? Math.abs(Math.sin(e.ph)) * .08 : 0;
+        const ratage = Math.random() < .1 ? .3 : 0;
+        T.mjlTap(s, e.x + ratage, e.y - e.size * .5 - dec);
+        prochain = s.t + .22; break;
+      }
+    }
+    T.mjlUpdate(s, dt);
+  }
+  return s;
+}
+for (const easy of [false, true]) {
+  let gagnes = 0, N = 60, perdusIdle = 0;
+  for (let i = 0; i < N; i++) { if (jouerL(easy, true).done === 'win') gagnes++; if (jouerL(easy, false).done !== 'win') perdusIdle++; }
+  const bon = gagnes >= N * (easy ? .9 : .4) && perdusIdle >= N * .95;
+  console.log(`Lutins farceurs, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui joue bien gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }
 const s = jouer(false, true);

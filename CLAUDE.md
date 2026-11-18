@@ -121,3 +121,6 @@ Les pierres et glaçons sont remplacés par 5 météorites (`MJC_METEO` : roche,
 
 ## v3.23 : météorites verticales, plus de charbon
 Les météorites tombent à la verticale (images redressées par `rot` dans `MJC_METEO`, plus de dérive `dx`). Le charbon est supprimé : les mauvais objets sont uniquement les météorites (`pMet` n'est plus utilisé) et les éclairs. (Les notes « diagonale » et « le charbon reste » de la v3.22 sont périmées.)
+
+## v3.24 : mini-jeu 3 « Lutins farceurs » (`src/2-minijeu-lutins.js`)
+Canon à neige procédural en bas ; le joueur TOUCHE un lutin du doigt (hook `tap(s,fx,fy,W,H)` ajouté à `mjRunner` ; `pointeur`/`cle` sont maintenant facultatifs). Lutins : coureurs sur 3 voies (certains sautent, rouges = rapides, doré = compte 2) et lutins qui sortent de 5 trous. Adultes : 3 cœurs, chaque lutin échappé = −1 cœur, 12 à toucher (victoire immédiate), lutins petits/rapides ; Alix : pas de cœur perdu, 6 à toucher, lutins gros et lents. Pas de pièges. Images B3/B4 embarquées. Le jeu des « lutins qui sortent des trous » prévu devient donc fusionné ici : il reste **pont de glace** à faire (5 jeux au total). Test : bot dans `tools/test-minijeu.js` (réglage final à faire sur le téléphone de Mic).
