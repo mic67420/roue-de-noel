@@ -18,6 +18,7 @@ NOMS = {
  'B7': ['renne_marche1','renne_marche2','renne_galop','renne_debout','renne_face','bebe_renne','pingouin_marche1','pingouin_marche2','pingouin_glisse','pingouin_face','bebe_pingouin','pingouin_saute'],
  'B8': ['eclair_long','eclair_ramifie','eclair_epais','nuage_orage','pere_electrocute','pere_squelette','pere_squelette_etoile','pere_carbonise','etincelles','eclair_impact','sac_fume','arc_cercle'],
  'B9': ['meteo_roche','meteo_noire','meteo_glace','meteo_lave','expl1','expl2','expl3','expl4','cratere','debris','meteo_cristal','anneau'],
+ 'B10': ['boule_bas','boule_milieu','boule_tete','haut_de_forme','bonnet','carotte','charbon','echarpe','branche','moufle','bouton','noeud'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
 }
 TROUS_TRANSPARENTS = {('B6','coeur_vide')}   # l'intérieur blanc du cœur vide devient transparent

@@ -133,3 +133,6 @@ Canon redessiné en code (`mjlCanon`, `mjlRoue`) : affût en bois cerclé de fer
 
 ## v3.27 : mini-jeu 4 « Bonhomme de neige » (`src/2-minijeu-bonhomme.js`)
 Roule 3 boules en glissant le doigt (la boule grossit avec le chemin parcouru, `MJB_GAIN`) puis touche 4 accessoires (chapeau, nez-carotte, écharpe, bras). Adultes : 30 s, il faut **lâcher** la boule entre le cercle vert et le cercle rouge (`MJB_BAND` 1,1), plus gros = elle éclate ; Alix : sans chrono, la boule se pose toute seule au cercle vert et on peut reprendre en retouchant. Tout est dessiné en code (aucune image). `mjRunner` a de nouveaux hooks `drag(s,fx,fy)` et `up(s)`. `mjlFond(W,H,alt)` : `alt=true` = décor sans chalet-bonhomme. Il y a maintenant 4 jeux (traîneau, cadeaux, lutins, bonhomme) ; **pont de glace reste à faire**.
+
+## v3.28 : bonhomme de neige d'Alix = puzzle de pièces (planche B10)
+Pour Alix (`mjBonhommeAlix`, fonctions `mjba*`) : sans chrono, 21 pièces dessinées (images B10 : boules, chapeau ou bonnet au hasard, carotte, charbon ×7 (yeux+bouche), écharpe, nœud, 3 boutons, 2 branches, 2 moufles) à **glisser** du plateau (en bas à gauche, 4 pièces visibles) jusqu'à leur emplacement fantôme sur le bonhomme (`mjbaSlots`). Les adultes gardent les boules à rouler. B10 découpée par `tools/detourage-planches.py` (noms `boule_bas`… `noeud`), images `B10_*` embarquées.

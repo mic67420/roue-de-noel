@@ -171,6 +171,7 @@ function mjbHud(g,s,W,H,me,tm){
   g.fillStyle='#fff';g.font=`bold ${24*u}px Georgia,serif`;g.fillText(`⛄ ${n}/3 · 🎩 ${m}/4`,28*u,109*u);
 }
 function mjBonhomme(me){
+  if(PLAYERS[me].name==='Alix')return mjBonhommeAlix(me);
   return mjRunner(me,{
     nouveau:mjbNew,maj:mjbUpdate,dessin:mjbDraw,hud:mjbHud,
     tap:(s,fx,fy)=>mjbTap(s,fx,fy),drag:(s,fx,fy)=>mjbMove(s,fx,fy),up:s=>mjbUp(s),
@@ -181,5 +182,120 @@ function mjBonhomme(me){
       else if(e.k==='fondu'){AE.nope&&AE.nope()}
     },
     intro:['Construis ton bonhomme de neige !','Glisse le doigt pour rouler 3 boules, lâche-les au cercle vert,','puis touche les accessoires pour l\'habiller !']
+  });
+}
+
+/* ---- Version d'Alix : on habille le bonhomme avec des pièces dessinées (planche B10), sans chrono ----
+   Les pièces attendent dans un plateau en bas à gauche ; Alix glisse une pièce du doigt jusqu'à sa place sur le bonhomme
+   (zones fantômes). 21 pièces : 3 boules, chapeau (ou bonnet, au hasard), carotte, 2 yeux, 5 pour la bouche, écharpe, nœud, 3 boutons, 2 bras, 2 moufles. */
+const MJBA_Z=['boule_bas','boule_milieu','boule_tete','branche','moufle','bouton','noeud','echarpe','carotte','charbon','chapeau','bonnet'];
+const MJBA_IMG={boule_bas:'B10_boule_bas',boule_milieu:'B10_boule_milieu',boule_tete:'B10_boule_tete',chapeau:'B10_haut_de_forme',bonnet:'B10_bonnet',carotte:'B10_carotte',charbon:'B10_charbon',echarpe:'B10_echarpe',branche:'B10_branche',moufle:'B10_moufle',bouton:'B10_bouton',noeud:'B10_noeud'};
+const MJBA_ASP={boule_bas:235/219,boule_milieu:202/196,boule_tete:1.01,chapeau:245/183,bonnet:232/160,carotte:194/84,charbon:163/143,echarpe:198/196,branche:224/171,moufle:156/192,bouton:1,noeud:203/114}; // largeur/hauteur
+function mjbaSlots(hat){
+  const G=mjbGeo(),[b1,b2,b3]=G,S=[];
+  const add=(kind,x,y,w,flip)=>S.push({kind,x,y,w,flip:!!flip,placed:false,t:9});
+  add('boule_bas',b1.x,b1.y,b1.r*2);add('boule_milieu',b2.x,b2.y,b2.r*2);add('boule_tete',b3.x,b3.y,b3.r*2);
+  {const w=b3.r*2.3,h=w/MJBA_ASP.chapeau;if(hat==='chapeau')add('chapeau',b3.x,b3.y-b3.r*.78-h/2,w);else{const w2=b3.r*2.2,h2=w2/MJBA_ASP.bonnet;add('bonnet',b3.x,b3.y-b3.r*.55-h2/2+h2*.1,w2)}}
+  add('carotte',b3.x+b3.r*.62,b3.y+b3.r*.12,b3.r*1.3);
+  for(const sg of[-1,1])add('charbon',b3.x+sg*b3.r*.38,b3.y-b3.r*.28,b3.r*.36);
+  for(let j=-2;j<=2;j++)add('charbon',b3.x+j*b3.r*.22,b3.y+b3.r*.5+j*j*b3.r*.04,b3.r*.25);
+  add('echarpe',b3.x,b3.y+b3.r*1.12,b3.r*2.3);
+  add('noeud',b1.x,b1.y-b1.r*.5,b1.r*.5);
+  for(let j=0;j<3;j++)add('bouton',b2.x,b2.y+(.2+j*.35)*b2.r,b2.r*.3);
+  add('branche',b2.x+b2.r*1.45,b2.y-b2.r*.45,b2.r*1.5);add('branche',b2.x-b2.r*1.45,b2.y-b2.r*.45,b2.r*1.5,true);
+  add('moufle',b2.x+b2.r*2.2,b2.y-b2.r*1.1,b2.r*.5);add('moufle',b2.x-b2.r*2.2,b2.y-b2.r*1.1,b2.r*.5);
+  return S;
+}
+function mjbaNew(){
+  const hat=Math.random()<.5?'chapeau':'bonnet',slots=mjbaSlots(hat);
+  // ordre de construction : on suit l'ordre des emplacements
+  const q=slots.map(s=>s.kind);
+  return{D:99999,t:0,done:null,ev:[],easy:true,notimer:true,asp:2,slots,queue:q,held:null,fx:[],need:slots.length,got:0};
+}
+const mjbaTray=i=>({x:.07+i*.115,y:.875});
+function mjbaTap(s,fx,fy){
+  if(s.done||s.held)return;
+  const n=Math.min(4,s.queue.length);
+  for(let i=0;i<n;i++){const p=mjbaTray(i);if(Math.hypot((fx-p.x)*s.asp,fy-p.y)<.085){s.held={i,kind:s.queue[i],x:fx,y:fy,t:0};s.ev.push({k:'prend'});return}}
+}
+function mjbaMove(s,fx,fy){if(s.held&&!s.done){s.held.x=fx;s.held.y=fy}}
+function mjbaUp(s){
+  const h=s.held;if(!h)return;s.held=null;
+  let best=null,bd=1e9;
+  for(const sl of s.slots){if(sl.placed||sl.kind!==h.kind)continue;
+    const d=Math.hypot((h.x-sl.x)*s.asp,h.y-sl.y)-Math.min(.04,sl.w*.3);
+    if(d<bd){bd=d;best=sl}}
+  const tol=.1;
+  if(best&&bd<tol){best.placed=true;best.t=0;s.queue.splice(h.i,1);s.got++;s.fx.push({x:best.x,y:best.y,w:best.w,t:0});s.ev.push({k:'pose'})}
+  else s.ev.push({k:'rate'});
+}
+function mjbaUpdate(s,dt){
+  if(s.done)return;
+  s.t+=dt;if(s.held)s.held.t+=dt;
+  for(const sl of s.slots)if(sl.placed)sl.t+=dt;
+  for(const f of s.fx)f.t+=dt;s.fx=s.fx.filter(f=>f.t<.6);
+  if(s.got>=s.need&&s.fx.length===0)s.done='win';
+}
+function mjbaImg(g,kind,cx,cy,wpx,flip,rot,alpha){
+  const im=MJ.img[MJBA_IMG[kind]],h=wpx/MJBA_ASP[kind];
+  g.save();if(alpha!=null)g.globalAlpha=alpha;g.translate(cx,cy);if(rot)g.rotate(rot);if(flip)g.scale(-1,1);
+  if(im&&im.naturalWidth)g.drawImage(im,-wpx/2,-h/2,wpx,h);else{g.fillStyle='#ddd';g.beginPath();g.arc(0,0,wpx/2,0,6.283);g.fill()}
+  g.restore();
+}
+function mjbaDraw(g,s,W,H,tm){
+  s.asp=W/H;
+  g.drawImage(mjlFond(W,H,true),0,0);
+  const G=s.G||mjbGeo();
+  g.fillStyle='rgba(30,45,90,.3)';g.beginPath();g.ellipse(MJB_X*W,MJB_GY*H+H*.01,MJB_TGT[0]*H*1.1,H*.03,0,0,6.283);g.fill();
+  const vis=new Set(s.queue.slice(0,4)),held=s.held?s.held.kind:null;
+  // emplacements fantômes (pièces visibles sur le plateau), plus forts pour la pièce tenue
+  for(const sl of s.slots){
+    if(sl.placed||!vis.has(sl.kind))continue;
+    const on=sl.kind===held,pul=on?.55+.25*Math.sin(tm*9):.28;
+    mjbaImg(g,sl.kind,sl.x*W,sl.y*H,sl.w*H,sl.flip,0,pul);
+    g.save();g.setLineDash([8,7]);g.lineWidth=on?4:2.5;g.strokeStyle=on?'#ffe066':'rgba(255,255,255,.65)';g.beginPath();g.arc(sl.x*W,sl.y*H,Math.max(H*.022,sl.w*H*.5*(sl.kind.startsWith('boule')?1:.62)),0,6.283);g.stroke();g.restore();
+  }
+  // pièces posées, dans l'ordre d'empilement
+  const poses=s.slots.filter(x=>x.placed).sort((a,b)=>MJBA_Z.indexOf(a.kind)-MJBA_Z.indexOf(b.kind));
+  for(const sl of poses){const k=Math.min(1,sl.t/.3),pop=1+Math.sin(k*3.14)*.18;mjbaImg(g,sl.kind,sl.x*W,sl.y*H,sl.w*H*pop,sl.flip)}
+  // plateau
+  g.fillStyle='rgba(8,14,46,.55)';rrect(g,W*.012,H*.77,W*.5,H*.2,H*.04);g.fill();
+  const n=Math.min(4,s.queue.length);
+  for(let i=0;i<n;i++){
+    if(s.held&&s.held.i===i)continue;
+    const p=mjbaTray(i),k=s.queue[i],bob=Math.sin(tm*4+i)*H*.01,sz=Math.min(H*.17,H*.17*(MJBA_ASP[k]>1.4?1:MJBA_ASP[k]>1?1:1.0)),wpx=MJBA_ASP[k]>=1?H*.15:H*.15*MJBA_ASP[k];
+    g.fillStyle='rgba(255,255,255,.14)';g.beginPath();g.arc(p.x*W,p.y*H,H*.085,0,6.283);g.fill();
+    mjbaImg(g,k,p.x*W,p.y*H+bob,Math.min(wpx,H*(k.startsWith('boule')?.15:.14)),false);
+  }
+  // pièce tenue : grandit jusqu'à sa vraie taille
+  if(s.held){
+    const h=s.held,sl=s.slots.find(x=>!x.placed&&x.kind===h.kind),tw=sl?sl.w*H:H*.14,k=Math.min(1,h.t/.2),w=H*.14+(tw-H*.14)*k;
+    g.fillStyle='rgba(25,40,90,.25)';g.beginPath();g.ellipse(h.x*W+6,h.y*H+w/MJBA_ASP[h.kind]*.5+8,w*.4,H*.015,0,0,6.283);g.fill();
+    mjbaImg(g,h.kind,h.x*W,h.y*H-H*.04,w,false);
+  }
+  // étincelles de pose
+  for(const f of s.fx){const k=f.t/.6;g.save();g.globalAlpha=1-k;g.strokeStyle='#fff6b0';g.lineWidth=4;g.beginPath();g.arc(f.x*W,f.y*H,H*.03+f.w*H*.5*k*1.4,0,6.283);g.stroke();
+    g.fillStyle='#ffe066';for(let i=0;i<6;i++){const a=i*1.047+k,d=H*.04+f.w*H*.5*k*1.6;g.beginPath();g.arc(f.x*W+Math.cos(a)*d,f.y*H+Math.sin(a)*d,H*.01*(1-k),0,6.283);g.fill()}g.restore()}
+  if(s.got===0&&!s.held&&s.t<20){g.save();g.globalAlpha=.65+.35*Math.sin(tm*4);g.fillStyle='#fff';g.strokeStyle='#1a2a60';g.lineWidth=5;g.font=`bold ${H*.05}px Georgia,serif`;g.textAlign='center';
+    g.strokeText('Glisse la pièce sur le bonhomme',W*.34,H*.62);g.fillText('Glisse la pièce sur le bonhomme',W*.34,H*.62);g.restore()}
+}
+function mjbaHud(g,s,W,H,me,tm){
+  const p=PLAYERS[me],u=H/720,pr=s.got/s.need;
+  g.fillStyle='rgba(8,14,46,.65)';rrect(g,14*u,14*u,230*u,62*u,31*u);g.fill();
+  g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';g.fillText(p.av,26*u,46*u);
+  g.font=`bold ${30*u}px Georgia,serif`;g.fillText(p.name,80*u,47*u);
+  g.fillStyle='rgba(8,14,46,.65)';rrect(g,14*u,86*u,230*u,34*u,17*u);g.fill();
+  g.fillStyle='#ffd24a';rrect(g,20*u,92*u,Math.max(16*u,218*u*pr),22*u,11*u);g.fill();
+}
+function mjBonhommeAlix(me){
+  return mjRunner(me,{
+    nouveau:mjbaNew,maj:mjbaUpdate,dessin:mjbaDraw,hud:mjbaHud,
+    tap:(s,fx,fy)=>mjbaTap(s,fx,fy),drag:(s,fx,fy)=>mjbaMove(s,fx,fy),up:s=>mjbaUp(s),
+    evenement:(e,s,fx,cv)=>{
+      if(e.k==='pose'){AE.pops&&AE.pops(4,.6);AE.bells&&s.got%5===0&&AE.bells()}
+      else if(e.k==='prend'){AE.pops&&AE.pops(1,.3)}
+      else if(e.k==='rate'){AE.nope&&AE.nope()}
+    },
+    intro:['Habille le bonhomme !','Prends une pièce en bas à gauche','et glisse-la à sa place sur le bonhomme']
   });
 }

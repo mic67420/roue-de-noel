@@ -1,6 +1,6 @@
 // Teste les règles du mini-jeu du traîneau sans écran : un joueur qui esquive doit gagner, un joueur immobile doit perdre.
 const { charger } = require('./_faux-navigateur.js');
-const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp');
+const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp');
 let ok = true;
 const dt = 1 / 60, MJ_ZS = .86;
 function jouer(easy, bot) {
@@ -118,6 +118,26 @@ for (const easy of [false, true]) {
   for (let i = 0; i < N; i++) { if (jouerB(easy, true).done === 'win') gagnes++; if (jouerB(easy, false).done !== 'win') perdusIdle++; }
   const bon = gagnes >= N * .8 && perdusIdle >= N * .95;
   console.log(`Bonhomme de neige, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui joue bien gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
+  if (!bon) ok = false;
+}
+
+// --- bonhomme de neige, version d'Alix (pièces à glisser) ---
+{
+  let g = 0, idle = 0, N = 20;
+  for (let i = 0; i < N; i++) {
+    const s = T.mjbaNew(); s.asp = 2; let n = 0;
+    while (!s.done && n++ < 60 * 90) {
+      if (!s.held && s.queue.length) {
+        const k = s.queue[0], sl = s.slots.find(x => !x.placed && x.kind === k);
+        T.mjbaTap(s, .07, .875); T.mjbaMove(s, sl.x, sl.y); T.mjbaUp(s);
+      }
+      T.mjbaUpdate(s, dt);
+    }
+    if (s.done === 'win') g++;
+    const t2 = T.mjbaNew(); t2.asp = 2; for (let j = 0; j < 600; j++) T.mjbaUpdate(t2, dt); if (t2.done !== 'win') idle++;
+  }
+  const bon = g === N && idle === N;
+  console.log(`Bonhomme d'Alix (pièces) : un joueur qui place tout gagne ${g}/${N} fois ; un joueur immobile perd ${idle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }
 const s = jouer(false, true);
