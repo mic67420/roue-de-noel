@@ -2,21 +2,21 @@
    Un canon à neige en bas de l'écran. Le joueur TOUCHE un lutin du doigt : une boule de neige part du canon.
    Adultes : 3 cœurs, chaque lutin qui s'échappe coûte un cœur, 12 touchés à faire. Alix : pas de cœur perdu, 6 à toucher, lutins gros et lents.
    Positions en fractions de l'écran (x : largeur, y : hauteur) ; tailles en fraction de la hauteur. */
-const MJL_TROUS=[.11,.31,.5,.69,.89],MJL_YT=.80,MJL_LANES=[.60,.69,.77];
+const MJL_H=[{x:.07,y:.73,k:.85},{x:.23,y:.87,k:1.1},{x:.37,y:.67,k:.7},{x:.60,y:.71,k:.78},{x:.75,y:.89,k:1.1},{x:.91,y:.69,k:.82},{x:.47,y:.62,k:.6}],MJL_LANES=[.60,.69,.77];
 function mjlNew(easy){
-  return{D:30,t:0,done:null,ev:[],easy,asp:2,
-    need:easy?6:12,got:0,lives:3,max:3,
+  return{D:easy?99999:30,t:0,done:null,ev:[],easy,asp:2,
+    need:easy?8:20,notimer:easy,got:0,lives:3,max:3,
     el:[],balls:[],splash:[],tSp:.6,nSp:0,aim:-Math.PI/2,rec:0,
     // réglages
-    gap0:easy?2.0:1.05,gap1:easy?1.7:.62,cross:easy?5.2:1.7,peek:easy?2.8:.7,size:easy?.36:.22,pad:easy?.07:.025,
-    pRed:easy?0:.4,pGold:easy?.08:.08,pPeek:easy?.4:.4,pHop:easy?.2:.4};
+    gap0:easy?2.0:.75,gap1:easy?1.7:.5,cross:easy?5.2:2.4,peek:easy?2.8:1.15,size:easy?.36:.24,pad:easy?.07:.025,
+    pRed:easy?0:.25,pGold:easy?.08:.08,pPeek:easy?.4:.4,pHop:easy?.2:.4};
 }
 function mjlSpawn(s){
   const r=Math.random();
   if(r<s.pPeek){ // lutin qui sort d'un trou
-    const libres=MJL_TROUS.map((x,i)=>i).filter(i=>!s.el.some(e=>e.kind==='peek'&&e.hole===i));
+    const libres=MJL_H.map((x,i)=>i).filter(i=>!s.el.some(e=>e.kind==='peek'&&e.hole===i));
     if(libres.length){const h=libres[Math.floor(Math.random()*libres.length)];
-      s.el.push({kind:'peek',hole:h,x:MJL_TROUS[h],y:MJL_YT,size:s.size*.95,age:0,ttl:s.peek*(.8+Math.random()*.4),gold:Math.random()<s.pGold,hit:false});return}
+      s.el.push({kind:'peek',hole:h,x:MJL_H[h].x,y:MJL_H[h].y,size:s.size*.95*MJL_H[h].k,age:0,ttl:s.peek*(.8+Math.random()*.4),gold:Math.random()<s.pGold,hit:false});return}
   }
   const dir=Math.random()<.5?1:-1,lane=Math.floor(Math.random()*3),red=Math.random()<s.pRed,gold=!red&&Math.random()<s.pGold;
   const sz=s.size*(.82+lane*.1)*(red?.95:1),sp=(1.2+.2)/(s.cross*(red?.62:1));
@@ -56,24 +56,44 @@ function mjlUpdate(s,dt){
   for(const p of s.splash)p.t+=dt;
   s.splash=s.splash.filter(p=>p.t<.45);
   if(s.got>=s.need){s.done='win';return}
-  if(s.lives<=0){s.done='lose';return}
   if(s.t>=s.D)s.done='temps';
 }
 function mjlFuite(s,e){
-  if(s.easy){s.ev.push({k:'fuite0'});return}
-  s.lives--;s.ev.push({k:'fuite',x:e.x});
+  s.ev.push({k:'fuite0'}); // plus de cœur perdu : un lutin échappé ne coûte rien
 }
 /* ---- dessin ---- */
 function mjlFond(W,H){
   if(MJ.bgL&&MJ.bgL.width===W)return MJ.bgL;
   const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
-  let gr=g.createLinearGradient(0,0,0,H*.62);gr.addColorStop(0,'#070d2e');gr.addColorStop(1,'#2b3f86');g.fillStyle=gr;g.fillRect(0,0,W,H);
-  g.fillStyle='#fff';for(let i=0;i<70;i++){g.globalAlpha=.3+.7*((i*37)%10)/10;g.beginPath();g.arc((i*197.3)%W,(i*71.9)%(H*.5),.8+(i%3)*.6,0,6.283);g.fill()}
+  let gr=g.createLinearGradient(0,0,0,H*.6);gr.addColorStop(0,'#050a26');gr.addColorStop(.6,'#1d2d6e');gr.addColorStop(1,'#4a5fa8');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  // aurore boréale
+  for(let k=0;k<3;k++){const ag=g.createLinearGradient(0,H*.05,0,H*.4);const col=['80,255,170','90,170,255','200,120,255'][k];ag.addColorStop(0,'rgba('+col+',0)');ag.addColorStop(.5,'rgba('+col+',.16)');ag.addColorStop(1,'rgba('+col+',0)');g.fillStyle=ag;g.beginPath();g.moveTo(0,H*.2);for(let x=0;x<=W;x+=20)g.lineTo(x,H*(.14+k*.05+.06*Math.sin(x/W*(4+k)+k*2)));for(let x=W;x>=0;x-=20)g.lineTo(x,H*(.34+k*.04+.05*Math.sin(x/W*(3+k)+k)));g.fill()}
+  g.fillStyle='#fff';for(let i=0;i<110;i++){g.globalAlpha=.3+.7*((i*37)%10)/10;g.beginPath();g.arc((i*197.3)%W,(i*71.9)%(H*.5),.7+(i%3)*.6,0,6.283);g.fill()}
   g.globalAlpha=1;g.fillStyle='#f4f1d8';g.beginPath();g.arc(W*.84,H*.2,H*.06,0,6.283);g.fill();g.fillStyle='rgba(244,241,216,.15)';g.beginPath();g.arc(W*.84,H*.2,H*.11,0,6.283);g.fill();
-  g.fillStyle='#8aa0d8';g.beginPath();g.moveTo(0,H*.6);for(let x=0;x<=W;x+=20)g.lineTo(x,H*(.5+.05*Math.sin(x/W*7+1)+.03*Math.sin(x/W*17)));g.lineTo(W,H*.62);g.lineTo(0,H*.62);g.fill();
-  g.fillStyle='#5b2f1a';for(let i=0;i<14;i++){const x=(i+.3)*W/14,y=H*.56,h=H*(.07+(i%3)*.02);g.fillStyle='#173a2c';g.beginPath();g.moveTo(x,y-h);g.lineTo(x+h*.3,y);g.lineTo(x-h*.3,y);g.fill()}
-  gr=g.createLinearGradient(0,H*.55,0,H);gr.addColorStop(0,'#e9f1ff');gr.addColorStop(.5,'#cfdcf5');gr.addColorStop(1,'#a9bce6');g.fillStyle=gr;
-  g.beginPath();g.moveTo(0,H*.58);for(let x=0;x<=W;x+=20)g.lineTo(x,H*(.58+.012*Math.sin(x/W*9)));g.lineTo(W,H);g.lineTo(0,H);g.fill();
+  // montagnes lointaines puis collines
+  g.fillStyle='#6d80c0';g.beginPath();g.moveTo(0,H*.55);for(let x=0;x<=W;x+=16)g.lineTo(x,H*(.40+.07*Math.abs(Math.sin(x/W*5+.5))+.03*Math.sin(x/W*23)));g.lineTo(W,H*.6);g.lineTo(0,H*.6);g.fill();
+  g.fillStyle='#fff';g.globalAlpha=.55;for(let x=0;x<W;x+=16){const y=H*(.40+.07*Math.abs(Math.sin(x/W*5+.5))+.03*Math.sin(x/W*23));if(y<H*.44){g.fillRect(x,y,16,H*.012)}}g.globalAlpha=1;
+  g.fillStyle='#8da2da';g.beginPath();g.moveTo(0,H*.62);for(let x=0;x<=W;x+=20)g.lineTo(x,H*(.52+.05*Math.sin(x/W*7+1)+.03*Math.sin(x/W*17)));g.lineTo(W,H*.64);g.lineTo(0,H*.64);g.fill();
+  // sapins enneigés
+  const sapin=(x,y,h)=>{g.fillStyle='#143626';for(let i=0;i<4;i++){const w=h*(.16+i*.07),yy=y-h+i*h*.24;g.beginPath();g.moveTo(x,yy);g.lineTo(x+w,yy+h*.3);g.lineTo(x-w,yy+h*.3);g.fill();g.fillStyle='#e8f0ff';g.beginPath();g.moveTo(x,yy);g.lineTo(x+w*.62,yy+h*.19);g.lineTo(x-w*.62,yy+h*.19);g.fill();g.fillStyle='#143626'}};
+  for(let i=0;i<16;i++)sapin((i+.5)*W/16+((i*53)%20),H*.60,H*(.1+(i%3)*.03));
+  // chalet éclairé
+  const cx=W*.16,cy=H*.60,cw=H*.2;g.fillStyle='#3a2316';g.fillRect(cx,cy-cw*.55,cw,cw*.55);g.fillStyle='#e9f0ff';g.beginPath();g.moveTo(cx-cw*.1,cy-cw*.5);g.lineTo(cx+cw*.5,cy-cw*.95);g.lineTo(cx+cw*1.1,cy-cw*.5);g.fill();g.fillStyle='#6b2a1c';g.beginPath();g.moveTo(cx-cw*.03,cy-cw*.52);g.lineTo(cx+cw*.5,cy-cw*.9);g.lineTo(cx+cw*1.03,cy-cw*.52);g.fill();
+  g.fillStyle='#ffd36a';g.shadowColor='#ffb830';g.shadowBlur=18;g.fillRect(cx+cw*.14,cy-cw*.4,cw*.26,cw*.24);g.fillRect(cx+cw*.62,cy-cw*.4,cw*.26,cw*.24);g.shadowBlur=0;g.fillStyle='#24140c';g.fillRect(cx+cw*.43,cy-cw*.3,cw*.14,cw*.3);
+  g.fillStyle='#8a6a40';g.fillRect(cx+cw*.78,cy-cw*1.1,cw*.12,cw*.3);g.fillStyle='#e9f0ff';g.fillRect(cx+cw*.76,cy-cw*1.13,cw*.16,cw*.05);
+  // sol de neige
+  gr=g.createLinearGradient(0,H*.58,0,H);gr.addColorStop(0,'#eef4ff');gr.addColorStop(.5,'#d3e0f7');gr.addColorStop(1,'#a3b8e4');g.fillStyle=gr;
+  g.beginPath();g.moveTo(0,H*.6);for(let x=0;x<=W;x+=20)g.lineTo(x,H*(.6+.012*Math.sin(x/W*9)));g.lineTo(W,H);g.lineTo(0,H);g.fill();
+  // bosses de neige et ondulations douces
+  g.fillStyle='rgba(120,145,205,.18)';for(let i=0;i<9;i++){g.beginPath();g.ellipse(((i*313)%W),H*(.68+(i%4)*.07),W*.09,H*.018,0,0,6.283);g.fill()}
+  // barrière
+  g.fillStyle='#6b4a2a';for(let x=W*.34;x<W*.5;x+=H*.05){g.fillRect(x,H*.585,H*.012,H*.05)}g.fillRect(W*.34,H*.6,W*.16,H*.01);g.fillRect(W*.34,H*.62,W*.16,H*.01);g.fillStyle='#fff';for(let x=W*.34;x<W*.5;x+=H*.05)g.fillRect(x-1,H*.583,H*.014,H*.01);
+  // bonhomme de neige
+  const bx=W*.88,by=H*.64;g.fillStyle='#fff';g.strokeStyle='#9bb0dd';g.lineWidth=2;for(const [dy,r] of [[0,H*.045],[-H*.07,H*.035],[-H*.125,H*.026]]){g.beginPath();g.arc(bx,by+dy,r,0,6.283);g.fill();g.stroke()}
+  g.fillStyle='#e8892b';g.beginPath();g.moveTo(bx,by-H*.125);g.lineTo(bx+H*.05,by-H*.115);g.lineTo(bx,by-H*.108);g.fill();g.fillStyle='#222';g.fillRect(bx-H*.02,by-H*.17,H*.04,H*.025);g.fillRect(bx-H*.03,by-H*.148,H*.06,H*.007);
+  // lanternes guirlande
+  g.strokeStyle='#2a1a10';g.lineWidth=2;g.beginPath();g.moveTo(0,H*.42);for(let x=0;x<=W;x+=10)g.lineTo(x,H*(.42+.03*Math.abs(Math.sin(x/W*Math.PI*5))));g.stroke();
+  const cols=['#ff4a4a','#ffd23a','#4adf7a','#4aa8ff'];for(let i=0;i<30;i++){const x=(i+.5)*W/30,y=H*(.42+.03*Math.abs(Math.sin(x/W*Math.PI*5)))+4;g.fillStyle=cols[i%4];g.shadowColor=cols[i%4];g.shadowBlur=10;g.beginPath();g.arc(x,y+5,5,0,6.283);g.fill()}g.shadowBlur=0;
   MJ.bgL=c;return c;
 }
 function mjlSpr(g,im,cx,by,h,flip,rot,a){ // dessine une image centrée en x, posée en y (bas), hauteur h
@@ -85,8 +105,8 @@ function mjlDraw(g,s,W,H,tm){
   g.drawImage(mjlFond(W,H),0,0);
   // trous vides (ou lutin qui sort)
   const ordre=s.el.slice().sort((a,b)=>a.y-b.y);
-  for(const x of MJL_TROUS){
-    if(!s.el.some(e=>e.kind==='peek'&&e.x===x&&!e.hit))mjlSpr(g,im.B4_trou_neige,x*W,MJL_YT*H+H*.01,H*.085);
+  for(const o of MJL_H){
+    if(!s.el.some(e=>e.kind==='peek'&&e.x===o.x&&!e.hit))mjlSpr(g,im.B4_trou_neige,o.x*W,o.y*H+H*.01,H*.085*o.k);
   }
   for(const e of ordre){
     const x=e.x*W,y=e.y*H,h=e.size*H;
@@ -135,8 +155,7 @@ function mjlHud(g,s,W,H,me,tm){
   g.fillStyle='rgba(8,14,46,.65)';rrect(g,14*u,14*u,230*u,62*u,31*u);g.fill();
   g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';g.fillText(p.av,26*u,46*u);
   g.font=`bold ${30*u}px Georgia,serif`;g.fillText(p.name,80*u,47*u);
-  if(!s.easy){const hs=50*u;for(let i=0;i<s.max;i++){const img=im[i<s.lives?'B6_coeur_plein':'B6_coeur_vide'];if(img&&img.naturalWidth)g.drawImage(img,260*u+i*(hs+6*u),16*u,hs,hs*img.naturalHeight/img.naturalWidth)}}
-  const bx=W*.58,bw=W*.28,by=22*u,pr=Math.min(1,s.got/s.need);
+    const bx=W*.58,bw=W*.28,by=22*u,pr=Math.min(1,s.got/s.need);
   g.fillStyle='rgba(8,14,46,.65)';rrect(g,bx,by,bw,22*u,11*u);g.fill();
   g.fillStyle='#ffd24a';rrect(g,bx+3*u,by+3*u,Math.max(16*u,(bw-6*u)*pr),16*u,8*u);g.fill();
   const lu=im.B4_lutin_dore;if(lu&&lu.naturalWidth)g.drawImage(lu,bx+bw-10*u,by-18*u,40*u,40*u*lu.naturalHeight/lu.naturalWidth);
@@ -152,6 +171,6 @@ function mjLutins(me){
       else if(e.k==='rate'){AE.pops&&AE.pops(1,.25)}
       else if(e.k==='fuite'){AE.nope&&AE.nope();cv.style.transform='translate('+(Math.random()*14-7)+'px,'+(Math.random()*8-4)+'px)'}
     },
-    intro:['Tire sur les lutins !','Touche un lutin du doigt : le canon','lui lance une boule de neige !']
+    intro:['Tire sur les lutins !','Touche vite les lutins : le canon leur lance','une boule de neige !']
   });
 }

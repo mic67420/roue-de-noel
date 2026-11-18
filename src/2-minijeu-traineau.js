@@ -274,7 +274,7 @@ function mjRunner(me,cfg){
       g.clearRect(0,0,W,H);cfg.dessin(g,s,W,H,tm);cfg.hud(g,s,W,H,me,tm);
       for(const f of fx){f.t+=dt;const i=MJ.img.B6_nuage;if(i&&i.naturalWidth&&f.t<.7){const sc=H*.2*(1+f.t*1.4);g.globalAlpha=1-f.t/.7;g.drawImage(i,f.x*W-sc/2,H*f.y-sc*(.4+f.t),sc,sc*i.naturalHeight/i.naturalWidth);g.globalAlpha=1}}
       fx=fx.filter(f=>f.t<.7);
-      if(state==='play'||state==='count')countdown();
+      if((state==='play'||state==='count')&&!s.notimer)countdown();
       if(state==='intro'){
         g.fillStyle='rgba(6,10,36,.72)';g.fillRect(0,0,W,H);
         txt(cfg.intro[0],H*.22,H*.11);

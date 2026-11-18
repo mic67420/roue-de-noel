@@ -86,7 +86,7 @@ function jouerL(easy, bot) {
 for (const easy of [false, true]) {
   let gagnes = 0, N = 60, perdusIdle = 0;
   for (let i = 0; i < N; i++) { if (jouerL(easy, true).done === 'win') gagnes++; if (jouerL(easy, false).done !== 'win') perdusIdle++; }
-  const bon = gagnes >= N * (easy ? .9 : .4) && perdusIdle >= N * .95;
+  const bon = gagnes >= N * (easy ? .9 : .4) && perdusIdle >= N * (easy ? .0 : .95);
   console.log(`Lutins farceurs, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui joue bien gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }

@@ -124,3 +124,6 @@ Les météorites tombent à la verticale (images redressées par `rot` dans `MJC
 
 ## v3.24 : mini-jeu 3 « Lutins farceurs » (`src/2-minijeu-lutins.js`)
 Canon à neige procédural en bas ; le joueur TOUCHE un lutin du doigt (hook `tap(s,fx,fy,W,H)` ajouté à `mjRunner` ; `pointeur`/`cle` sont maintenant facultatifs). Lutins : coureurs sur 3 voies (certains sautent, rouges = rapides, doré = compte 2) et lutins qui sortent de 5 trous. Adultes : 3 cœurs, chaque lutin échappé = −1 cœur, 12 à toucher (victoire immédiate), lutins petits/rapides ; Alix : pas de cœur perdu, 6 à toucher, lutins gros et lents. Pas de pièges. Images B3/B4 embarquées. Le jeu des « lutins qui sortent des trous » prévu devient donc fusionné ici : il reste **pont de glace** à faire (5 jeux au total). Test : bot dans `tools/test-minijeu.js` (réglage final à faire sur le téléphone de Mic).
+
+## v3.25 : lutins farceurs refaits
+Décor riche (aurore, montagnes, chalet éclairé, sapins enneigés, guirlande, barrière, bonhomme de neige ; fond en cache `MJ.bgL`). 7 trous **non alignés** à tailles différentes (`MJL_H`). Plus de cœurs : un lutin échappé ne coûte rien. Adultes : **20 lutins en 30 s** (apparitions plus fréquentes, lutins plus lents). Alix : **8 lutins, sans chrono** (`s.notimer`, `D=99999` ; le compte à rebours de `mjRunner` est masqué si `s.notimer`).
