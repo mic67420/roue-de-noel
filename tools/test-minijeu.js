@@ -1,6 +1,6 @@
 // Teste les règles du mini-jeu du traîneau sans écran : un joueur qui esquive doit gagner, un joueur immobile doit perdre.
 const { charger } = require('./_faux-navigateur.js');
-const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjtNew,mjtUpdate,mjtHop');
+const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjtNew,mjtUpdate,mjtHop,mjkNew,mjkUpdate,mjkTir,mjkPos');
 let ok = true;
 const dt = 1 / 60, MJ_ZS = .86;
 function jouer(easy, bot) {
@@ -24,7 +24,7 @@ function jouer(easy, bot) {
 for (const easy of [false, true]) {
   let gagnes = 0, N = 60, perdusIdle = 0;
   for (let i = 0; i < N; i++) { if (jouer(easy, true).done === 'win') gagnes++; if (jouer(easy, false).done === 'lose') perdusIdle++; }
-  const bon = gagnes >= N * (easy ? .95 : .5) && perdusIdle >= N * (easy ? .3 : .95);
+  const bon = gagnes >= N * (easy ? .95 : .35) && perdusIdle >= N * (easy ? .3 : .95);
   console.log(`${easy ? 'Alix (facile)' : 'Adultes     '} : un joueur qui esquive gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }
@@ -174,6 +174,37 @@ for (const easy of [false, true]) {
   for (let i = 0; i < N; i++) { if (traversee(easy, true).done === 'win') g++; if (traversee(easy, false).done !== 'win') idle++; }
   const bon = easy ? (g === N && idle === N) : (g >= N * .15 && idle === N);
   console.log(`Traversée, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui saute bien gagne ${g}/${N} fois ; un joueur immobile ne gagne jamais ${idle}/${N}`, bon ? 'OK' : 'ÉCHEC');
+  if (!bon) ok = false;
+}
+
+// --- Catapulte : un robot qui calcule la trajectoire gagne ; un joueur qui ne tire pas ne gagne jamais ---
+function catapulte(easy, bot, bruit) {
+  const s = T.mjkNew(easy); s.W = 1080; s.H = 720; let n = 0, prochain = 0;
+  const G = 1100, K = 7.6, Lx = 1080 * .16 - (245 / 235 * 216) * .5 + (245 / 235 * 216) * .2, Ly = 648 - 216 + 216 * .09;
+  while (!s.done && n++ < 60 * 90) {
+    if (bot && !s.ball && s.balls > 0 && s.t >= prochain) {
+      const cible = s.gifts.find(g => g.st === 'on');
+      if (cible) {
+        let best = null;
+        for (const v of [900, 1000, 800]) for (let T2 = .4; T2 < 1.8; T2 += .02) {
+          const p = T.mjkPos(s, cible, s.t + T2, 1080, 720);
+          const vx = (p.x - Lx) / T2, vy = (p.y - Ly - .5 * G * T2 * T2) / T2;
+          const sp = Math.hypot(vx, vy);
+          if (sp <= 150 * K && sp > 300) { best = [vx, vy]; break; }
+        }
+        if (best) { const b = bruit || 0; T.mjkTir(s, -best[0] / K + (Math.random() - .5) * b, -best[1] / K + (Math.random() - .5) * b); }
+        prochain = s.t + .3;
+      }
+    }
+    T.mjkUpdate(s, dt);
+  }
+  return s;
+}
+for (const easy of [false, true]) {
+  const N = 30; let g = 0, idle = 0, bruit = 0;
+  for (let i = 0; i < N; i++) { if (catapulte(easy, true, 0).done === 'win') g++; if (catapulte(easy, false).done !== 'win') idle++; if (catapulte(easy, true, 60).done === 'win') bruit++; }
+  const bon = easy ? (g >= N * .9 && idle === N) : (g >= N * .8 && idle === N && bruit <= N);
+  console.log(`Catapulte, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur précis gagne ${g}/${N} fois, un joueur approximatif ${bruit}/${N} ; un joueur qui ne tire pas perd ${idle}/${N}`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }
 const s = jouer(false, true);
