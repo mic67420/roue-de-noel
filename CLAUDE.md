@@ -139,3 +139,6 @@ Pour Alix (`mjBonhommeAlix`, fonctions `mjba*`) : sans chrono, 21 pièces dessin
 
 ## v3.29 : bonhomme de neige d'Alix, version simplifiée (Mic : « un jeu qu'il arrive à faire »)
 Sans chrono. 1) 3 grosses boules à poser (glisser ou simple toucher) sur le bonhomme. 2) Un **tas** d'objets B10 tombe à gauche : Alix prend ce qu'il veut dans l'ordre qu'il veut ; relâché à moins de .4 H d'un emplacement libre du bon type, l'objet s'y range tout seul ; un simple toucher l'envoie directement à sa place. Plus de plateau séquentiel. **Le bonhomme sourit** : les 5 charbons de la bouche forment un sourire (coins remontés, `mjbaSlots`). Test : `tools/test-minijeu.js` (glisser et toucher seulement gagnent à tous les coups).
+
+## v3.30 : Alix place les objets où il veut
+Les objets du tas (hors boules) **restent exactement là où on les lâche** (sauf si on les lâche sur le tas : ils y retournent) ; léger aimant (.07 H) près d'une place habituelle, simple toucher = place habituelle. Taille minimale .065 H pour un objet posé librement. Le sourire est maintenant **dessiné** sur la tête dès qu'elle est posée (plus de bouche en charbons obligatoire). Victoire quand les 21 objets sont posés (`s.deco`).

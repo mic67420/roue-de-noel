@@ -238,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.29';
+const VERSION='3.30';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1471,7 +1471,7 @@ function mjbaNew(){
   const autres=slots.filter(x=>!x.kind.startsWith('boule')).map(x=>x.kind);
   for(let i=autres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autres[i],autres[j]]=[autres[j],autres[i]]}
   autres.forEach((k,i)=>{const c=i%6,r=Math.floor(i/6);items.push({kind:k,hx:.08+c*.075+(r%2)*.035+(Math.random()-.5)*.02,hy:.70+r*.075+(Math.random()-.5)*.03,rot:(Math.random()-.5)*.8,placed:false,ball:false,n:3+i})});
-  return{D:99999,t:0,done:null,ev:[],easy:true,notimer:true,asp:2,slots,items,held:null,fx:[],need:slots.length,got:0,t2:-1};
+  return{D:99999,t:0,done:null,ev:[],easy:true,notimer:true,asp:2,slots,items,held:null,fx:[],deco:[],need:items.length,got:0,t2:-1};
 }
 const mjbaP2=s=>s.t2>=0;
 function mjbaPos(s,it,H){ // position d'affichage d'un objet du tas (avec chute d'arrivée)
@@ -1492,19 +1492,32 @@ function mjbaMove(s,fx,fy){const h=s.held;if(!h||s.done)return;h.x=fx;h.y=fy;h.m
 function mjbaUp(s){
   const h=s.held;if(!h)return;s.held=null;
   const it=h.it,libres=s.slots.filter(x=>!x.placed&&x.kind===it.kind);
-  let best=null;
-  if(libres.length){
-    if(h.moved<.03)best=libres[0];                       // un simple toucher suffit : l'objet va tout seul à sa place
-    else{let bd=1e9;for(const sl of libres){const d=Math.hypot((h.x-sl.x)*s.asp,h.y-sl.y);if(d<bd){bd=d;best=sl}}if(bd>.4)best=null}
+  let slot=null,x=null,y=null;
+  if(it.ball){ // les 3 boules s'empilent toujours au bon endroit
+    if(libres.length){
+      if(h.moved<.03)slot=libres[0];
+      else{let bd=1e9;for(const sl of libres){const d=Math.hypot((h.x-sl.x)*s.asp,h.y-sl.y);if(d<bd){bd=d;slot=sl}}if(bd>.4)slot=null}
+    }
+  }else{
+    const px=h.x,py=h.y-.04;
+    if(h.moved<.03&&libres.length)slot=libres[0];                  // un simple toucher : l'objet va à sa place habituelle
+    else if(h.moved>=.03&&!(px<.52&&py>.6)&&py<.97&&py>.05){       // sinon il reste EXACTEMENT où on le lâche (sauf sur le tas)
+      let bd=.07;for(const sl of libres){const d=Math.hypot((px-sl.x)*s.asp,py-sl.y);if(d<bd){bd=d;slot=sl}}   // léger aimant près d'une place habituelle
+      if(!slot){x=px;y=py}
+    }
   }
-  if(best){best.placed=true;best.t=0;it.placed=true;s.got++;s.fx.push({x:best.x,y:best.y,w:best.w,t:0});s.ev.push({k:'pose'});
-    if(s.t2<0&&s.items.filter(x=>x.ball&&x.placed).length===3){s.t2=s.t+.7;s.ev.push({k:'tas'})}}
-  else s.ev.push({k:'rate'});
+  if(slot){slot.placed=true;x=slot.x;y=slot.y}
+  if(x!=null){
+    const ref=s.slots.find(q=>q.kind===it.kind);
+    s.deco.push({kind:it.kind,x,y,w:slot?ref.w:Math.max(ref.w,.065),flip:slot?slot.flip:(it.kind==='branche'&&x<MJB_X),t:0});
+    it.placed=true;s.got++;s.fx.push({x,y,w:ref.w,t:0});s.ev.push({k:'pose'});
+    if(s.t2<0&&s.items.filter(q=>q.ball&&q.placed).length===3){s.t2=s.t+.7;s.ev.push({k:'tas'})}
+  }else s.ev.push({k:'rate'});
 }
 function mjbaUpdate(s,dt){
   if(s.done)return;
   s.t+=dt;if(s.held)s.held.t+=dt;
-  for(const sl of s.slots)if(sl.placed)sl.t+=dt;
+  for(const d of s.deco)d.t+=dt;
   for(const f of s.fx)f.t+=dt;s.fx=s.fx.filter(f=>f.t<.6);
   if(s.got>=s.need&&s.fx.length===0)s.done='win';
 }
@@ -1529,9 +1542,13 @@ function mjbaDraw(g,s,W,H,tm){
     if(on)mjbaImg(g,sl.kind,sl.x*W,sl.y*H,sl.w*H,sl.flip,0,pul);
     g.save();g.setLineDash([9,8]);g.lineWidth=on?5:3;g.strokeStyle=on?'#ffe066':'rgba(255,255,255,.75)';g.beginPath();g.arc(sl.x*W,sl.y*H,Math.max(H*.024,sl.w*H*.5*(bal?1:.62)),0,6.283);g.stroke();g.restore();
   }
-  // pièces posées
-  const poses=s.slots.filter(x=>x.placed).sort((a,b)=>MJBA_Z.indexOf(a.kind)-MJBA_Z.indexOf(b.kind));
-  for(const sl of poses){const k=Math.min(1,sl.t/.3),pop=1+Math.sin(k*3.14)*.18;mjbaImg(g,sl.kind,sl.x*W,sl.y*H,sl.w*H*pop,sl.flip)}
+  // pièces posées : boules d'abord, puis le sourire, puis les objets (dans l'ordre d'empilement des types)
+  const dessiner=d=>{const k=Math.min(1,d.t/.3),pop=1+Math.sin(k*3.14)*.18;mjbaImg(g,d.kind,d.x*W,d.y*H,d.w*H*pop,d.flip)};
+  const tri=s.deco.slice().sort((a,b)=>MJBA_Z.indexOf(a.kind)-MJBA_Z.indexOf(b.kind));
+  for(const d of tri)if(d.kind.startsWith('boule'))dessiner(d);
+  const tete=s.deco.find(d=>d.kind==='boule_tete');
+  if(tete){const r=tete.w*H/2,cx=tete.x*W,cy=tete.y*H;g.save();g.strokeStyle='#1b1d24';g.lineWidth=Math.max(3,r*.08);g.lineCap='round';g.beginPath();g.arc(cx,cy+r*.02,r*.55,.2*Math.PI,.8*Math.PI);g.stroke();g.restore()}
+  for(const d of tri)if(!d.kind.startsWith('boule'))dessiner(d);
   // tas de neige où se trouvent les objets
   if(mjbaP2(s)){
     const gr=g.createRadialGradient(W*.27,H*.84,10,W*.27,H*.84,W*.3);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.7,'rgba(220,232,255,.9)');gr.addColorStop(1,'rgba(200,215,245,0)');
@@ -1557,7 +1574,7 @@ function mjbaDraw(g,s,W,H,tm){
   // consigne
   let msg=null;
   if(!mjbaP2(s))msg='Mets les 3 boules sur le bonhomme';
-  else if(s.got<=3+1&&!s.held)msg='Prends les objets du tas !';
+  else if(s.got<=3+1&&!s.held)msg='Mets les objets où tu veux !';
   if(msg){g.save();g.globalAlpha=.7+.3*Math.sin(tm*4);g.fillStyle='#fff';g.strokeStyle='#1a2a60';g.lineWidth=5;g.font=`bold ${H*.05}px Georgia,serif`;g.textAlign='center';
     g.strokeText(msg,W*.3,H*.55);g.fillText(msg,W*.3,H*.55);g.restore()}
 }
@@ -1579,7 +1596,7 @@ function mjBonhommeAlix(me){
       else if(e.k==='prend'){AE.pops&&AE.pops(1,.3)}
       else if(e.k==='rate'){AE.nope&&AE.nope()}
     },
-    intro:['Construis ton bonhomme !','Pose les 3 boules, puis prends les objets du tas','pour l\'habiller. Il va sourire !']
+    intro:['Construis ton bonhomme !','Pose les 3 boules, puis prends les objets du tas','et mets-les où tu veux sur le bonhomme !']
   });
 }
 /* ============ MINI-JEU 2 : LES CADEAUX QUI TOMBENT (v3.13) ============
