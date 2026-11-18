@@ -142,3 +142,6 @@ Sans chrono. 1) 3 grosses boules à poser (glisser ou simple toucher) sur le bon
 
 ## v3.30 : Alix place les objets où il veut
 Les objets du tas (hors boules) **restent exactement là où on les lâche** (sauf si on les lâche sur le tas : ils y retournent) ; léger aimant (.07 H) près d'une place habituelle, simple toucher = place habituelle. Taille minimale .065 H pour un objet posé librement. Le sourire est maintenant **dessiné** sur la tête dès qu'elle est posée (plus de bouche en charbons obligatoire). Victoire quand les 21 objets sont posés (`s.deco`).
+
+## v3.31 : jeu « Bonhomme de neige » RETIRÉ (décision de Mic : « ça ne fonctionne pas bien »)
+Il n'est plus dans `mjListe()` (ni dans le menu de test, ni tiré au hasard sur les cases cadeau). Le code et les images B10 restent dans le dépôt (`src/2-minijeu-bonhomme.js`, tests) si on veut le reprendre un jour : il suffit de dé-commenter la ligne `bonhomme` de `mjListe()`. Il reste donc 3 jeux actifs : traîneau, cadeaux qui tombent, lutins farceurs ; **pont de glace** toujours à faire.

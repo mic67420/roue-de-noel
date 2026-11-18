@@ -316,8 +316,9 @@ function mjTraineau(me){
 function mjListe(){return[
   {id:'traineau',nom:'🛷 Traîneau',fn:mjTraineau,emo:'🛷'},
   {id:'cadeaux',nom:'🎁 Cadeaux qui tombent',fn:mjCadeaux,emo:'🎁'},
-  {id:'lutins',nom:'🎯 Lutins farceurs',fn:mjLutins,emo:'🎯'},
-  {id:'bonhomme',nom:'⛄ Bonhomme de neige',fn:mjBonhomme,emo:'⛄'}
+  {id:'lutins',nom:'🎯 Lutins farceurs',fn:mjLutins,emo:'🎯'}
+  // Bonhomme de neige retiré de la liste en v3.31 (ne fonctionnait pas bien) : le code reste dans 2-minijeu-bonhomme.js
+  //,{id:'bonhomme',nom:'⛄ Bonhomme de neige',fn:mjBonhomme,emo:'⛄'}
 ]}
 const mjDernier={};   // dernier mini-jeu joué par chaque joueur (jamais deux fois de suite le même pour un joueur)
 function mjChoisir(me){const L=mjListe(),ch=L.length>1?L.filter(x=>x.id!==mjDernier[me]):L,jeu=ch[Math.floor(Math.random()*ch.length)];mjDernier[me]=jeu.id;return jeu}
