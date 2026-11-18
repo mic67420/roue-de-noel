@@ -62,8 +62,9 @@ function mjlFuite(s,e){
   s.ev.push({k:'fuite0'}); // plus de cœur perdu : un lutin échappé ne coûte rien
 }
 /* ---- dessin ---- */
-function mjlFond(W,H){
-  if(MJ.bgL&&MJ.bgL.width===W)return MJ.bgL;
+function mjlFond(W,H,alt){
+  const K=alt?'bgL2':'bgL';
+  if(MJ[K]&&MJ[K].width===W)return MJ[K];
   const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
   let gr=g.createLinearGradient(0,0,0,H*.6);gr.addColorStop(0,'#050a26');gr.addColorStop(.6,'#1d2d6e');gr.addColorStop(1,'#4a5fa8');g.fillStyle=gr;g.fillRect(0,0,W,H);
   // aurore boréale
@@ -88,13 +89,13 @@ function mjlFond(W,H){
   g.fillStyle='rgba(120,145,205,.18)';for(let i=0;i<9;i++){g.beginPath();g.ellipse(((i*313)%W),H*(.68+(i%4)*.07),W*.09,H*.018,0,0,6.283);g.fill()}
   // barrière
   g.fillStyle='#6b4a2a';for(let x=W*.34;x<W*.5;x+=H*.05){g.fillRect(x,H*.585,H*.012,H*.05)}g.fillRect(W*.34,H*.6,W*.16,H*.01);g.fillRect(W*.34,H*.62,W*.16,H*.01);g.fillStyle='#fff';for(let x=W*.34;x<W*.5;x+=H*.05)g.fillRect(x-1,H*.583,H*.014,H*.01);
-  // bonhomme de neige
-  const bx=W*.88,by=H*.64;g.fillStyle='#fff';g.strokeStyle='#9bb0dd';g.lineWidth=2;for(const [dy,r] of [[0,H*.045],[-H*.07,H*.035],[-H*.125,H*.026]]){g.beginPath();g.arc(bx,by+dy,r,0,6.283);g.fill();g.stroke()}
-  g.fillStyle='#e8892b';g.beginPath();g.moveTo(bx,by-H*.125);g.lineTo(bx+H*.05,by-H*.115);g.lineTo(bx,by-H*.108);g.fill();g.fillStyle='#222';g.fillRect(bx-H*.02,by-H*.17,H*.04,H*.025);g.fillRect(bx-H*.03,by-H*.148,H*.06,H*.007);
+  // bonhomme de neige (absent du décor de construction)
+  if(!alt){const bx=W*.88,by=H*.64;g.fillStyle='#fff';g.strokeStyle='#9bb0dd';g.lineWidth=2;for(const [dy,r] of [[0,H*.045],[-H*.07,H*.035],[-H*.125,H*.026]]){g.beginPath();g.arc(bx,by+dy,r,0,6.283);g.fill();g.stroke()}
+  g.fillStyle='#e8892b';g.beginPath();g.moveTo(bx,by-H*.125);g.lineTo(bx+H*.05,by-H*.115);g.lineTo(bx,by-H*.108);g.fill();g.fillStyle='#222';g.fillRect(bx-H*.02,by-H*.17,H*.04,H*.025);g.fillRect(bx-H*.03,by-H*.148,H*.06,H*.007)}
   // lanternes guirlande
   g.strokeStyle='#2a1a10';g.lineWidth=2;g.beginPath();g.moveTo(0,H*.42);for(let x=0;x<=W;x+=10)g.lineTo(x,H*(.42+.03*Math.abs(Math.sin(x/W*Math.PI*5))));g.stroke();
   const cols=['#ff4a4a','#ffd23a','#4adf7a','#4aa8ff'];for(let i=0;i<30;i++){const x=(i+.5)*W/30,y=H*(.42+.03*Math.abs(Math.sin(x/W*Math.PI*5)))+4;g.fillStyle=cols[i%4];g.shadowColor=cols[i%4];g.shadowBlur=10;g.beginPath();g.arc(x,y+5,5,0,6.283);g.fill()}g.shadowBlur=0;
-  MJ.bgL=c;return c;
+  MJ[K]=c;return c;
 }
 function mjlSpr(g,im,cx,by,h,flip,rot,a){ // dessine une image centrée en x, posée en y (bas), hauteur h
   if(!im||!im.naturalWidth)return;const w=h*im.naturalWidth/im.naturalHeight;

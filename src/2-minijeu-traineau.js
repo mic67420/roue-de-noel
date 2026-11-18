@@ -214,7 +214,8 @@ function mjRunner(me,cfg){
     let state='intro',tIntro=0,last=performance.now(),tm=0,raf=0,endT=0,fx=[],parts=[],flash=0;
     const setX=cx=>{const r=cv.getBoundingClientRect();cfg.pointeur&&cfg.pointeur(s,(cx-r.left)/r.width,W)};
     cv.addEventListener('pointerdown',e=>{try{cv.setPointerCapture(e.pointerId)}catch(_){}setX(e.clientX);if(state==='intro'&&tIntro>.6){state='count';tIntro=0}else if(state==='play'&&cfg.tap){const r=cv.getBoundingClientRect();cfg.tap(s,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,W,H)}});
-    cv.addEventListener('pointermove',e=>{if(state!=='intro')setX(e.clientX)});
+    let down=false;cv.addEventListener('pointerdown',()=>{down=true});const fin=()=>{if(down&&cfg.up&&state==='play')cfg.up(s);down=false};cv.addEventListener('pointerup',fin);cv.addEventListener('pointercancel',fin);
+    cv.addEventListener('pointermove',e=>{if(state!=='intro')setX(e.clientX);if(down&&state==='play'&&cfg.drag){const r=cv.getBoundingClientRect();cfg.drag(s,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,W,H)}});
     const key=e=>{if(state==='intro'){if(tIntro>.6){state='count';tIntro=0}return}if(!cfg.cle)return;if(e.key==='ArrowLeft')cfg.cle(s,-1);else if(e.key==='ArrowRight')cfg.cle(s,1)};
     window.addEventListener('keydown',key);
     AE.init&&AE.init();
@@ -315,7 +316,8 @@ function mjTraineau(me){
 function mjListe(){return[
   {id:'traineau',nom:'🛷 Traîneau',fn:mjTraineau,emo:'🛷'},
   {id:'cadeaux',nom:'🎁 Cadeaux qui tombent',fn:mjCadeaux,emo:'🎁'},
-  {id:'lutins',nom:'🎯 Lutins farceurs',fn:mjLutins,emo:'🎯'}
+  {id:'lutins',nom:'🎯 Lutins farceurs',fn:mjLutins,emo:'🎯'},
+  {id:'bonhomme',nom:'⛄ Bonhomme de neige',fn:mjBonhomme,emo:'⛄'}
 ]}
 const mjDernier={};   // dernier mini-jeu joué par chaque joueur (jamais deux fois de suite le même pour un joueur)
 function mjChoisir(me){const L=mjListe(),ch=L.length>1?L.filter(x=>x.id!==mjDernier[me]):L,jeu=ch[Math.floor(Math.random()*ch.length)];mjDernier[me]=jeu.id;return jeu}
@@ -351,4 +353,4 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjMenu};
+window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjMenu};

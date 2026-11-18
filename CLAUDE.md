@@ -130,3 +130,6 @@ Décor riche (aurore, montagnes, chalet éclairé, sapins enneigés, guirlande, 
 
 ## v3.26 : canon réaliste + objectifs
 Canon redessiné en code (`mjlCanon`, `mjlRoue`) : affût en bois cerclé de fer, roues à rayons, tube métallique conique avec anneaux de laiton, bouche évasée, reflets, neige, recul et fumée au tir. Adultes : **30 lutins en 30 s** (apparitions plus rapides) ; Alix : **20 lutins sans chrono**.
+
+## v3.27 : mini-jeu 4 « Bonhomme de neige » (`src/2-minijeu-bonhomme.js`)
+Roule 3 boules en glissant le doigt (la boule grossit avec le chemin parcouru, `MJB_GAIN`) puis touche 4 accessoires (chapeau, nez-carotte, écharpe, bras). Adultes : 30 s, il faut **lâcher** la boule entre le cercle vert et le cercle rouge (`MJB_BAND` 1,1), plus gros = elle éclate ; Alix : sans chrono, la boule se pose toute seule au cercle vert et on peut reprendre en retouchant. Tout est dessiné en code (aucune image). `mjRunner` a de nouveaux hooks `drag(s,fx,fy)` et `up(s)`. `mjlFond(W,H,alt)` : `alt=true` = décor sans chalet-bonhomme. Il y a maintenant 4 jeux (traîneau, cadeaux, lutins, bonhomme) ; **pont de glace reste à faire**.

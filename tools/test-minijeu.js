@@ -1,6 +1,6 @@
 // Teste les règles du mini-jeu du traîneau sans écran : un joueur qui esquive doit gagner, un joueur immobile doit perdre.
 const { charger } = require('./_faux-navigateur.js');
-const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap');
+const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp');
 let ok = true;
 const dt = 1 / 60, MJ_ZS = .86;
 function jouer(easy, bot) {
@@ -88,6 +88,36 @@ for (const easy of [false, true]) {
   for (let i = 0; i < N; i++) { if (jouerL(easy, true).done === 'win') gagnes++; if (jouerL(easy, false).done !== 'win') perdusIdle++; }
   const bon = gagnes >= N * (easy ? .9 : .4) && perdusIdle >= N * (easy ? .0 : .95);
   console.log(`Lutins farceurs, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui joue bien gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
+  if (!bon) ok = false;
+}
+
+// --- mini-jeu 4 : bonhomme de neige ---
+function jouerB(easy, bot) {
+  const s = T.mjbNew(easy); s.asp = 2; let n = 0, mode = 0, tx = .3, ty = .6, dir = 1, pause = 0; const TG = [.18, .13, .09];
+  while (!s.done && n++ < 60 * 90) {
+    if (bot) {
+      if (pause > 0) pause -= dt;
+      else if (s.stack.length < 3) {
+        if (!s.cur) { T.mjbTap(s, .3, .6); tx = .3; ty = .6; dir = 1; }
+        else {   // fait des allers-retours (1 H/s) puis lâche quand la boule est dans la zone (adultes) ou continue (Alix)
+          tx += dir * (1 / 60) / 2 / 1; if (tx > .45 || tx < .15) dir = -dir;
+          T.mjbMove(s, tx, ty);
+          if (s.cur && !s.easy && s.cur.r >= TG[s.stack.length] * 1.02) { T.mjbUp(s); pause = .25; }
+        }
+      } else {
+        const a = s.acc.find(x => !x.placed && !x.fly);
+        if (a) { T.mjbTap(s, a.x, a.y); pause = .3; }
+      }
+    }
+    T.mjbUpdate(s, dt);
+  }
+  return s;
+}
+for (const easy of [false, true]) {
+  let gagnes = 0, N = 40, perdusIdle = 0;
+  for (let i = 0; i < N; i++) { if (jouerB(easy, true).done === 'win') gagnes++; if (jouerB(easy, false).done !== 'win') perdusIdle++; }
+  const bon = gagnes >= N * .8 && perdusIdle >= N * .95;
+  console.log(`Bonhomme de neige, ${easy ? 'Alix (facile)' : 'adultes     '} : un joueur qui joue bien gagne ${gagnes}/${N} fois ; un joueur immobile perd ${perdusIdle}/${N} fois`, bon ? 'OK' : 'ÉCHEC');
   if (!bon) ok = false;
 }
 const s = jouer(false, true);
