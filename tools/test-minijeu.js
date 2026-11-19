@@ -1,6 +1,6 @@
 // Teste les règles du mini-jeu du traîneau sans écran : un joueur qui esquive doit gagner, un joueur immobile doit perdre.
 const { charger } = require('./_faux-navigateur.js');
-const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjtNew,mjtUpdate,mjtHop,mjkNew,mjkUpdate,mjkTir,mjkPos');
+const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjtNew,mjtUpdate,mjtHop,mjkNew,mjkUpdate,mjkTir,mjkPos,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrBox');
 let ok = true;
 const dt = 1 / 60, MJ_ZS = .86;
 function jouer(easy, bot) {
@@ -210,3 +210,33 @@ for (const easy of [false, true]) {
 const s = jouer(false, true);
 console.log('Durée adultes', s.D, 's, cœurs', s.max, '| Alix durée 30 s, cœurs 3');
 if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
+
+// ---- La course du renne : robot qui saute/se baisse au bon moment ; joueur immobile
+{
+  function partieRenne(easy, bot) {
+    const s = T.mjrNew(easy); const dt = 1 / 60;
+    for (let i = 0; i < 60 * 60 && !s.done; i++) {
+      if (bot) {
+        const rx = s.W * .22; let saut = false, bas = false;
+        for (const o of s.obs) {
+          if (o.hit || o.bonus) continue;
+          const b = T.mjrBox(s, o, s.H), d = b[0] - rx;
+          if (o.air) { if (d < s.v * .30 && b[1] > rx - s.H * .1) bas = true; }
+          else if (d > 0 && d < s.v * .40 && s.fy < 1) saut = true;
+        }
+        if (saut) T.mjrJump(s, true);
+        s.hold = s.fy > 1 && s.vy > 0;
+        s.duck = bas && s.fy < 1;
+      }
+      T.mjrUpdate(s, dt);
+    }
+    return s.done;
+  }
+  for (const [nom, easy] of [['adultes', false], ['Alix (facile)', true]]) {
+    let bot = 0, idle = 0; const N = 30;
+    for (let i = 0; i < N; i++) { if (partieRenne(easy, true) === 'win') bot++; if (partieRenne(easy, false) === 'win') idle++; }
+    const ok = bot >= N * .5 && idle === 0;
+    console.log('Course du renne, ' + nom + ' : un joueur précis gagne ' + bot + '/' + N + ' ; un joueur immobile gagne ' + idle + '/' + N + (ok ? ' OK' : ' ÉCHEC'));
+    if (!ok) process.exitCode = 1;
+  }
+}

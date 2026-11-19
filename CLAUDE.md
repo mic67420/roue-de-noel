@@ -163,3 +163,6 @@ Plus de lance-pierre : le joueur **maintient** le doigt, une jauge de puissance 
 
 ## v3.37 : plus de puissance pour la catapulte
 Vitesse maximale (`mjkVmax`) = assez pour que la boule (tir à 45°) dépasse le sapin de 50 % quelle que soit la largeur de l'écran (avant : fixe 1140 px/s, insuffisant sur les téléphones allongés 20:9).
+
+## v3.38 : mini-jeu « La course du renne » (`src/2-minijeu-course.js`)
+Type dinosaure de Chrome : le renne reste à gauche (x = 22 % de l'écran), le paysage défile. Toucher le haut de l'écran = sauter (doigt maintenu = saut plus haut) ; garder le doigt dans le tiers du bas = se baisser (adultes seulement) ; flèches/espace au clavier. 45 s pour tout le monde (gagné si on survit). Adultes : 2 cœurs, vitesse 470→770 px/s, obstacles au sol + branches/corbeaux en l'air. Alix : 3 cœurs, vitesse 340 constante, obstacles bas seulement, n'importe quel toucher saute. Cadeaux dorés = bonus (compteur). Décor : 6 paysages JPEG B24–B29 (`fond_run1..6`, `preparer-mini-jeux.py`) raccordés en fondu de 200 px dans un panorama en cache (`mjrPano`, ne se met en cache que si les images sont chargées) qui défile avec la progression ; sol dessiné en code. Sprites B22 (renne) et B23 (obstacles). Test : robot dans `tools/test-minijeu.js`. Réglage de difficulté à faire sur le téléphone de Mic.
