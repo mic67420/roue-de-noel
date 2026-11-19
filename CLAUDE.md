@@ -169,3 +169,6 @@ Type dinosaure de Chrome : le renne reste à gauche (x = 22 % de l'écran), le p
 
 ## v3.39 : course du renne = saut fixe au toucher (comme le dinosaure de Chrome)
 Cause du bug de la v3.38 : relâcher le doigt coupait le saut (« saut variable »), donc un simple toucher faisait un mini-saut. Maintenant : un toucher n'importe où = un saut toujours identique (`mjrDown`, `mjrUp` ne fait rien), plus de « se baisser », plus d'obstacles aériens. Alix : saut plus long et flottant (`s.G` 1500 au lieu de 2400) car il avance lentement.
+
+## v3.40 : course du renne plus dure pour les adultes, sans cadeaux
+Plus de cadeaux dorés (code `bonus` laissé mais jamais généré, compteur retiré). Même saut pour Alix et les adultes (`MJR_G` 2400) ; Alix a une petite zone de collision (`rw` .05 H) pour que le saut fixe passe facilement. Adultes : vitesse 650 → 1250 px/s (avant 470 → 770), écarts entre obstacles ≈ 0,85–1,55 s. Consigne de départ : « TAPOTE l'écran ! un petit coup de doigt, sans balayer » avec anneau qui pulse et doigt 👆 (7 s), et même texte dans l'intro.

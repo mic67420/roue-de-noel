@@ -222,7 +222,7 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
           if (o.hit || o.bonus) continue;
           const b = T.mjrBox(s, o, s.H), d = b[0] - rx;
           if (o.air) { if (d < s.v * .30 && b[1] > rx - s.H * .1) bas = true; }
-          else if (d > 0 && d < s.v * .40 && s.fy < 1) saut = true;
+          else if (d > 0 && d < s.v * .25 && s.fy < 1) saut = true;
         }
         if (saut) T.mjrJump(s, true);
         

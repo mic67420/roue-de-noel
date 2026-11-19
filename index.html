@@ -238,7 +238,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.39';
+const VERSION='3.40';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1938,19 +1938,18 @@ const MJR_FACILE=[0,1,2,5];   // tas petit, tas grand, souche, rocher
 const MJR_AIR=[['B23_branche',.27,1.523,.06,.13,.32],['B23_corbeau1',.09,1.086,.125,.12,.205],['B23_corbeau2',.09,1.415,.125,.12,.205]];
 const MJR_ASP={c:1.076,bas:1.554};
 function mjrNew(easy){
-  const o={D:MJR_D,notimer:false,t:0,done:null,ev:[],easy,asp:2,W:1080,H:720,d:0,v:easy?340:470,fy:0,vy:0,G:easy?1500:MJR_G,hold:false,duck:false,duckT:0,jumpBuf:0,lives:easy?3:2,max:easy?3:2,inv:0,stun:0,pts:0,obs:[],next:900,tAnim:0,best:0,coup:0};
+  const o={D:MJR_D,notimer:false,t:0,done:null,ev:[],easy,asp:2,W:1080,H:720,d:0,v:easy?340:650,fy:0,vy:0,G:MJR_G,hold:false,duck:false,duckT:0,jumpBuf:0,lives:easy?3:2,max:easy?3:2,inv:0,stun:0,pts:0,obs:[],next:900,tAnim:0,best:0,coup:0};
   mjrSpawn(o);return o;
 }
-function mjrVit(s){return s.easy?340:470+300*Math.min(1,s.t/s.D)}
+function mjrVit(s){return s.easy?340:650+600*Math.min(1,s.t/s.D)}
 function mjrSpawn(s){
   while(s.next<s.d+s.W+400){
-    const v=mjrVit(s)*(s.easy?1:1.15),gapBase=s.easy?v*(1.5+Math.random()*1.1):v*(.95+Math.random()*.85);
+    const v=mjrVit(s),gapBase=s.easy?v*(1.5+Math.random()*1.1):v*(.85+Math.random()*.7);
     if(s.t>s.D-5){s.next=s.d+s.W+4000;break}
     const air=false,H=s.H;
     if(air){const a=MJR_AIR[Math.random()<.5?0:1+Math.floor(Math.random()*2)];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],b:a[3],hb:a[4],ht:a[5],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+H*.35}
     else{const lst=s.easy?MJR_FACILE:[0,1,2,3,4,5,6,7],i=lst[Math.floor(Math.random()*lst.length)],a=MJR_SOL[i];
       s.obs.push({air:false,key:a[0],h:a[1]*(s.easy?.9:1),asp:a[2],wx:s.next,hit:false});s.next+=gapBase+a[1]*a[2]*H}
-    if(Math.random()<.4){const hh=.1+Math.random()*.22;s.obs.push({bonus:true,key:'B23_cadeau_or',h:.075,asp:.99,b:hh,wx:s.next-gapBase*.5,hit:false})}
   }
 }
 function mjrJump(s,hold){
@@ -1982,7 +1981,7 @@ function mjrUpdate(s,dt){
   }
   s.jumpBuf=Math.max(0,s.jumpBuf-dt);
   // collisions
-  const rx=s.W*MJR_RX,rh=(s.duck&&s.fy<1?.09:.17)*H,rw=.085*H,ry0=s.fy,ry1=s.fy+rh;
+  const rx=s.W*MJR_RX,rh=(s.duck&&s.fy<1?.09:.17)*H,rw=(s.easy?.05:.085)*H,ry0=s.fy,ry1=s.fy+rh;
   for(const o of s.obs){
     if(o.hit)continue;const b=mjrBox(s,o,H);
     if(b[1]<rx-rw||b[0]>rx+rw)continue;
@@ -2056,7 +2055,12 @@ function mjrDraw(g,s,W,H,tm){
   mjrSpr(g,key,rx,gy+H*.012-s.fy,sh,false,blink);
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<40;i++){const x=(((i*83.7-tm*(60+i%4*20)+s.d*.05)%W)+W)%W,y=((i*57.3+tm*(40+i%5*14))%H);g.beginPath();g.arc(x,y,1.3+i%3*.8,0,6.283);g.fill()}
-  if(s.t<6){g.save();g.globalAlpha=.75+.25*Math.sin(tm*5);g.textAlign='center';g.font=`bold ${H*.045}px Georgia,serif`;g.lineWidth=5;g.strokeStyle='#1a2a60';const m='Touche l\'écran pour sauter !';g.strokeText(m,W*.5,H*.33);g.fillStyle='#fff';g.fillText(m,W*.5,H*.33);g.restore()}
+  if(s.t<7){const a=Math.min(1,(7-s.t)/1.2),cx=W*.5,cy=H*.5,ph=(tm*1.6)%1;
+    g.save();g.globalAlpha=a;g.textAlign='center';g.lineJoin='round';
+    g.font=`bold ${H*.07}px Georgia,serif`;g.lineWidth=7;g.strokeStyle='#1a2a60';g.strokeText('TAPOTE l\'écran !',cx,H*.3);g.fillStyle='#fff';g.fillText('TAPOTE l\'écran !',cx,H*.3);
+    g.font=`bold ${H*.04}px Georgia,serif`;g.lineWidth=5;g.strokeText('un petit coup de doigt, sans balayer',cx,H*.37);g.fillStyle='#ffe48a';g.fillText('un petit coup de doigt, sans balayer',cx,H*.37);
+    for(let k=0;k<2;k++){const q=(ph+k*.5)%1;g.globalAlpha=a*(1-q)*.9;g.strokeStyle='#fff';g.lineWidth=6;g.beginPath();g.arc(cx,cy,H*(.04+.13*q),0,6.283);g.stroke()}
+    g.globalAlpha=a;const dy=Math.sin(ph*6.283)>0?H*.015:0;g.font=`${H*.14}px sans-serif`;g.fillText('👆',cx,cy+H*.1+dy);g.restore()}
 }
 function mjrHud(g,s,W,H,me,tm){
   const im=MJ.img,p=PLAYERS[me],u=H/720;
@@ -2064,10 +2068,6 @@ function mjrHud(g,s,W,H,me,tm){
   g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';g.fillText(p.av,26*u,46*u);
   g.font=`bold ${30*u}px Georgia,serif`;g.fillText(p.name,80*u,47*u);
   const hs=50*u;for(let i=0;i<s.max;i++){const img=im[i<s.lives?'B11_coeur_plein':'B11_coeur_vide'];if(img&&img.naturalWidth)g.drawImage(img,260*u+i*(hs+6*u),16*u,hs,hs*img.naturalHeight/img.naturalWidth)}
-  // cadeaux dorés ramassés
-  const k=im.B23_cadeau_or;g.fillStyle='rgba(8,14,46,.65)';rrect(g,14*u,86*u,150*u,50*u,25*u);g.fill();
-  if(k&&k.naturalWidth)g.drawImage(k,24*u,92*u,36*u,36*u*k.naturalHeight/k.naturalWidth);
-  g.fillStyle='#ffe48a';g.font=`bold ${30*u}px Georgia,serif`;g.fillText('× '+s.pts,72*u,112*u);
   // progression du voyage
   const bx=W*.58,bw=W*.28,by=26*u,pr=Math.min(1,s.t/s.D);
   g.fillStyle='rgba(8,14,46,.65)';rrect(g,bx,by,bw,22*u,11*u);g.fill();
@@ -2083,7 +2083,7 @@ function mjCourse(me){
       else if(e.k==='touche'){AE.nope&&AE.nope();AE.boom&&AE.boom();cv.style.transform='translate('+(Math.random()*14-7)+'px,'+(Math.random()*8-4)+'px)'}
       else if(e.k==='bonus'){AE.bells&&AE.bells()}
     },
-    intro:['La course du renne !','Touche l\'écran pour sauter par-dessus les obstacles.','Un seul toucher = un saut. Attention au rythme !']
+    intro:['La course du renne !','TAPOTE l\'écran (un petit coup de doigt, sans balayer) pour sauter !','Un toucher = un saut. Saute par-dessus les obstacles.']
   });
 }
 /* ---- Mini-jeu 3 : lutins farceurs (v3.24) ----
