@@ -225,8 +225,8 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
           else if (d > 0 && d < s.v * .40 && s.fy < 1) saut = true;
         }
         if (saut) T.mjrJump(s, true);
-        s.hold = s.fy > 1 && s.vy > 0;
-        s.duck = bas && s.fy < 1;
+        
+        
       }
       T.mjrUpdate(s, dt);
     }
