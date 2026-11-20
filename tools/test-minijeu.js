@@ -218,11 +218,17 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
     for (let i = 0; i < 70 * 60 && !s.done; i++) {
       if (bot) {
         const rx = s.W * .22; let saut = false, bas = false;
+        const sol = s.obs.filter(o => !o.hit && !o.bonus && !o.air).map(o => T.mjrBox(s, o, s.H)).filter(b => b[1] > rx - s.H * .1).sort((p, q) => p[0] - q[0]);
         for (const o of s.obs) {
-          if (o.hit || o.bonus) continue;
+          if (o.hit || o.bonus || !o.air) continue;
           const b = T.mjrBox(s, o, s.H), d = b[0] - rx;
-          if (o.air) { if (d < s.v * .35 && b[1] > rx - s.H * .15) bas = true; }
-          else if (d > 0 && d < s.v * .25 && s.fy < 1) saut = true;
+          if (d < s.v * .35 && b[1] > rx - s.H * .15) bas = true;
+        }
+        if (sol.length && s.fy < 1) {     // doublés serrés : on atterrit au milieu de l'espace entre les deux obstacles
+          const d = sol[0][0] - rx;
+          let lim = s.v * .25;
+          if (sol.length > 1 && sol[1][0] - sol[0][1] < s.v * .9) lim = Math.min(s.v * .5, Math.max(s.v * .25, s.v * .833 - (sol[0][1] - sol[0][0]) - (sol[1][0] - sol[0][1]) / 2));
+          if (d > 0 && d < lim) saut = true;
         }
         if (saut) T.mjrJump(s, true);
         T.mjrSlide(s, bas && s.fy < 1);

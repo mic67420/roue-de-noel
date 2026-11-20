@@ -252,7 +252,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.46';
+const VERSION='3.47';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1986,13 +1986,17 @@ function mjrNew(easy){
 }
 function mjrVit(s){return s.easy?340:650+600*Math.min(1,s.t/s.D)}
 function mjrSpawn(s){
+  // rythme irrégulier (adultes) : doublés serrés (un seul saut les passe, mais au bon moment), cadence moyenne, ou respiration ; jamais de doublé entre sol et air
   while(s.next<s.d+s.W+400){
-    const v=mjrVit(s),gapBase=s.easy?v*(1.5+Math.random()*1.1):v*(.85+Math.random()*.7);
+    const v=mjrVit(s),H=s.H;
     if(s.t>s.D-5){s.next=s.d+s.W+4000;break}
-    const air=!s.easy&&Math.random()<.45,H=s.H;
-    if(air){const a=Math.random()<.6?MJR_AIR[Math.floor(Math.random()*4)]:MJR_AIR[4+Math.floor(Math.random()*(MJR_AIR.length-4))];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],yb:a[3],yt:a[4],x0:a[5],x1:a[6],fly:a[7],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+a[1]*a[2]*H*.7}
-    else{const lst=s.easy?MJR_FACILE:Math.random()<.65?[9,10,11,12]:[0,1,2,3,4,5,6,7,8],i=lst[Math.floor(Math.random()*lst.length)],a=MJR_SOL[i];
-      s.obs.push({air:false,key:a[0],h:a[1]*(s.easy?.9:1),asp:a[2],wx:s.next,hit:false});s.next+=gapBase+a[1]*a[2]*H}
+    const air=!s.easy&&Math.random()<.45,r=Math.random();
+    let t=s.easy?1.5+Math.random()*1.1:r<.30?.24+122/v+Math.random()*.1:r<.78?.5+Math.random()*.4:.9+Math.random()*.5;   // doublé serré = juste le temps d'atterrir et de re-sauter
+    if(!s.easy&&s.lastAir!==undefined&&s.lastAir!==air)t=Math.max(t,.68+Math.random()*.15);
+    s.lastAir=air;
+    if(air){const a=Math.random()<.6?MJR_AIR[Math.floor(Math.random()*4)]:MJR_AIR[4+Math.floor(Math.random()*(MJR_AIR.length-4))];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],yb:a[3],yt:a[4],x0:a[5],x1:a[6],fly:a[7],wx:s.next,hit:false,fl:Math.random()*6});s.next+=v*t+a[1]*a[2]*H*.7}
+    else{const lst=s.easy?MJR_FACILE:Math.random()<.65?[9,10,11,12]:[0,1,2,4,5,6,7,8],i=lst[Math.floor(Math.random()*lst.length)],a=MJR_SOL[i];
+      s.obs.push({air:false,key:a[0],h:a[1]*(s.easy?.9:1),asp:a[2],wx:s.next,hit:false});s.next+=v*t+a[1]*a[2]*H}
   }
 }
 function mjrJump(s,hold){
