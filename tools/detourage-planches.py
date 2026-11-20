@@ -36,6 +36,7 @@ NOMS = {
  'B32': ['pont_pierre','passerelle','tronc','portique','branche_sapin','corbeau','oie','chouette','arche_glace','banderole','cerf_volant','pancarte'],
  'B33': ['g_debut1','g_debut2','g_debut3','g_debut4','g_plat1','g_neige','g_plat3','g_plat4','g_sortie1','g_sortie2','g_sortie3','g_sortie4'],
  'B16': ['immeuble_grand','immeuble_magasin','maison','eglise','grange','moulin','igloo','sapins3','rochers_glace','panneau','bosquet','lampadaire_village'],
+ 'B35': ['t1','t2','t3','t4','l1','l2','l3','l4','r1','r2','r3','r4'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
 }
 LIGNES = {'B11': [5, 4, 4]}   # nombre d'objets par rangée quand ce n'est pas 4-4-4

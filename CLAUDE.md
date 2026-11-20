@@ -208,3 +208,6 @@ Demande de Mic : caméra derrière le traîneau, tout en volume. Nouveau `mjDraw
 
 ## v3.52 : traîneau redevenu 2D dans le décor 3D (Mic : « le traîneau en 3D est vraiment moche »)
 Le traîneau est de nouveau le sprite B1 (`B1_traineau_droit/gauche/droite`) posé dans la scène 3D avec une ombre au sol ; le modèle 3D `mj3Traineau` est gardé dans `2-minijeu-traineau3d.js` mais non utilisé. Mic veut refaire le traîneau avec Gemini (nouvelle planche, vue de derrière : droit / tourne à gauche / tourne à droite) : à découper et brancher quand il l'envoie.
+
+## v3.53 : nouveau traîneau Gemini (planche B35) dans la course de traîneau
+Planche `B35` (traîneau vu de derrière, 12 poses ; découpée par `detourage-planches.py` : `t1..t4` tout droit/léger, `l1..l4` et `r1..r4`). Attention : Gemini a inversé les rangées → **`r1..r4` = virage à GAUCHE, `l1..l4` = virage à DROITE** (le traîneau, de dos, part vers le côté où pointent ses patins). Choix dans `mjDraw` (`2-minijeu-traineau3d.js`) selon `|s.vel|` : < .25 tout droit (`t1`/`t4` en alternance, 7 images/s), < .8 léger (`t2`/`t3`, miroir pour la droite), < 1,4 virage moyen (1/2), au-delà virage fort (3/4). Échelle : 220 px natifs = .30 H. Images `B35_*` embarquées (`EMBARQUE`). Anciennes images B1_traineau_* gardées pour `mjDraw2D`.

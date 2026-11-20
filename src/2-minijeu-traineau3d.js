@@ -245,9 +245,15 @@ function mjDraw(g,s,W,H,tm){
       for(const q of sp){q.l+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt}
       MJ.spray=sp.filter(q=>q.l<q.L);
       if(!(s.inv>0&&Math.floor(tm*14)%2)){          // traîneau = dessin 2D (sprite) posé dans le décor 3D (le modèle 3D, mj3Traineau, est gardé mais non utilisé)
-        const k2=s.vel<-.35?'B1_traineau_gauche':s.vel>.35?'B1_traineau_droite':'B1_traineau_droit',i=im[k2];
-        mj3Shadow(g,C,s.x*RH,0,70*H/720,60*H/720,1);
-        if(i&&i.naturalWidth){const h=H*.30,w=h*i.naturalWidth/i.naturalHeight,y=p[1]+Math.sin(tm*14)*H*.004;g.save();g.translate(p[0],y);g.rotate(Math.max(-.1,Math.min(.1,s.vel*.035)));g.drawImage(i,-w/2,-h*.95,w,h);g.restore()}
+        const av=Math.abs(s.vel),n=Math.floor(tm*7)%2,lvl=av<.25?0:av<.8?1:av<1.4?2:3;
+        // planche B35 : tout droit (t1,t4), léger (t2,t3 ; miroir pour la droite), virage à gauche (r1..r4), virage à droite (l1..l4)
+        let k2,flip=false;
+        if(lvl===0)k2=n?'B35_t1':'B35_t4';
+        else if(lvl===1){k2=n?'B35_t2':'B35_t3';flip=s.vel>0}
+        else{const side=s.vel<0?'r':'l',q=lvl===2?(n?1:2):(n?3:4);k2='B35_'+side+q}
+        const i=im[k2];
+        mj3Shadow(g,C,s.x*RH,0,80*H/720,60*H/720,1);
+        if(i&&i.naturalWidth){const sc=H*.30/220,w=i.naturalWidth*sc,h=i.naturalHeight*sc,y=p[1]+Math.sin(tm*14)*H*.004;g.save();g.translate(p[0],y);if(flip)g.scale(-1,1);g.drawImage(i,-w/2,-h*.97,w,h);g.restore()}
       }
       for(const q of MJ.spray){const a=1-q.l/q.L;g.fillStyle='rgba(255,255,255,'+(.8*a)+')';g.beginPath();g.arc(q.x,q.y,q.r*(1+q.l*1.6),0,6.283);g.fill()}
       continue;
