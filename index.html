@@ -252,7 +252,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.51';
+const VERSION='3.52';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -3182,7 +3182,11 @@ function mjDraw(g,s,W,H,tm){
       if(dt>0){const n=2+Math.min(3,Math.abs(s.vel)*2);for(let q=0;q<n;q++){const sd=Math.random()<.5?-1:1;sp.push({x:p[0]+sd*55*H/720,y:p[1]-4,vx:sd*(20+Math.random()*60)*H/720-s.vel*40*H/720,vy:(80+Math.random()*140)*H/720,r:(3+Math.random()*5)*H/720,l:0,L:.45+Math.random()*.3})}}
       for(const q of sp){q.l+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt}
       MJ.spray=sp.filter(q=>q.l<q.L);
-      if(!(s.inv>0&&Math.floor(tm*14)%2))mj3Traineau(g,C,s,tm);
+      if(!(s.inv>0&&Math.floor(tm*14)%2)){          // traîneau = dessin 2D (sprite) posé dans le décor 3D (le modèle 3D, mj3Traineau, est gardé mais non utilisé)
+        const k2=s.vel<-.35?'B1_traineau_gauche':s.vel>.35?'B1_traineau_droite':'B1_traineau_droit',i=im[k2];
+        mj3Shadow(g,C,s.x*RH,0,70*H/720,60*H/720,1);
+        if(i&&i.naturalWidth){const h=H*.30,w=h*i.naturalWidth/i.naturalHeight,y=p[1]+Math.sin(tm*14)*H*.004;g.save();g.translate(p[0],y);g.rotate(Math.max(-.1,Math.min(.1,s.vel*.035)));g.drawImage(i,-w/2,-h*.95,w,h);g.restore()}
+      }
       for(const q of MJ.spray){const a=1-q.l/q.L;g.fillStyle='rgba(255,255,255,'+(.8*a)+')';g.beginPath();g.arc(q.x,q.y,q.r*(1+q.l*1.6),0,6.283);g.fill()}
       continue;
     }
