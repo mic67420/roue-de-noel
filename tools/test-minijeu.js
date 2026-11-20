@@ -226,11 +226,14 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
         }
         if (sol.length && s.fy < 1) {     // doublés serrés : on atterrit au milieu de l'espace entre les deux obstacles
           const d = sol[0][0] - rx;
-          let lim = s.v * .25;
-          if (sol.length > 1 && sol[1][0] - sol[0][1] < s.v * .9) lim = Math.min(s.v * .5, Math.max(s.v * .25, s.v * .833 - (sol[0][1] - sol[0][0]) - (sol[1][0] - sol[0][1]) / 2));
-          if (d > 0 && d < lim) saut = true;
+          let lim = s.v * .25, grand = false;
+          if (sol.length > 1 && sol[1][0] - sol[0][1] < s.v * .9) {      // doublé : grand saut (≈1,24 s en l'air), centré sur l'ensemble
+            const span = sol[1][1] - sol[0][0], vol = 1.24 * s.v;
+            if (span < vol * .75) { grand = true; lim = (vol - span) / 2; }
+          }
+          if (d > 0 && d < lim) { saut = true; s.__grand = grand; }
         }
-        if (saut) T.mjrJump(s, true);
+        if (saut) T.mjrJump(s, !!s.__grand);
         T.mjrSlide(s, bas && s.fy < 1);
       }
       T.mjrUpdate(s, dt);
@@ -251,8 +254,10 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
     s = T.mjrNew(false); T.mjrDown(s, .5, .4); T.mjrDrag(s, .5, .42); T.mjrUpdate(s, 1 / 60); const pasEncore = !s.slide && s.fy <= 0;
     T.mjrDrag(s, .5, .55); T.mjrUpdate(s, 1 / 60); const glisse = s.slide === true && s.fy === 0;
     T.mjrUp(s); T.mjrUpdate(s, 1 / 60); const relev = s.slide === false && s.slideEnd > 0;
+    s = T.mjrNew(false); T.mjrDown(s, .5, .4); for (let i = 0; i < 14; i++) T.mjrUpdate(s, 1 / 60); const grand = s.G === 1100 && s.fy > 0;
+    s = T.mjrNew(false); T.mjrDown(s, .5, .4); T.mjrUp(s); const petit = s.G === 2600 && s.vy > 0;
     s = T.mjrNew(true); T.mjrDown(s, .5, .4); const alix = s.vy > 0;
-    const ok = saut && pasEncore && glisse && relev && alix;
+    const ok = saut && pasEncore && glisse && relev && alix && grand && petit;
     console.log('Course du renne, gestes (toucher = saut, doigt vers le bas = glissade, Alix saute au toucher) : ' + (ok ? 'OK' : 'ÉCHEC ' + [saut, pasEncore, glisse, relev, alix]));
     if (!ok) process.exitCode = 1;
   }

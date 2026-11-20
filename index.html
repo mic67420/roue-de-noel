@@ -252,7 +252,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.49';
+const VERSION='3.50';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1999,11 +1999,13 @@ function mjrSpawn(s){
       s.obs.push({air:false,key:a[0],h:a[1]*(s.easy?.9:1),asp:a[2],wx:s.next,hit:false});s.next+=v*t+a[1]*a[2]*H}
   }
 }
-function mjrJump(s,hold){
+const MJR_LONG=.18;               // adultes : appui plus long que .18 s = GRAND saut
+function mjrJump(s,grand){
   if(s.done||s.fy>1)return false;
-  s.vy=s.V0;s.hold=!!hold;s.slide=false;s.slideEnd=0;s.slideP=false;s.slideK=0;s.ev.push({k:'saut'});return true;
+  if(!s.easy){if(grand){s.G=1100;s.V0=680}else{s.G=2600;s.V0=840}}   // grand : ≈1,24 s en l'air, sommet .29 H ; petit : ≈.65 s, sommet .19 H
+  const hold=grand;s.vy=s.V0;s.hold=!!hold;s.slide=false;s.slideEnd=0;s.slideP=false;s.slideK=0;s.ev.push({k:'saut'});return true;
 }
-const mjrTapJump=s=>{if(s.done)return;if(s.fy>1)s.jumpBuf=.12;else mjrJump(s,false)};
+const mjrTapJump=(s,grand)=>{if(s.done)return;if(s.fy>1){s.jumpBuf=.12;s.bufG=!!grand}else mjrJump(s,grand)};
 function mjrDown(s,fx,fy){      // Alix : un toucher = saut tout de suite ; adultes : saut au relâchement (ou après .35 s), sauf si le doigt glisse vers le bas = glissade
   if(s.done)return;
   if(s.easy){mjrTapJump(s);return}
@@ -2014,12 +2016,13 @@ function mjrDrag(s,fx,fy){
   if(fy-s.py0>.08){s.swiped=true;s.slideP=true}          // doigt posé puis glissé vers le bas
 }
 function mjrUp(s){
-  if(!s.easy&&s.pd&&!s.swiped&&!s.jumped)mjrTapJump(s);
+  if(!s.easy&&s.pd&&!s.swiped&&!s.jumped)mjrTapJump(s,false);   // appui bref = petit saut
   s.pd=false;s.slideP=false;
 }
 function mjrSlide(s,on){s.slideP=!!on}                   // pour le robot de test
 function mjrKey(s,k){
-  if(k==='ArrowUp'||k===' '||k==='w')mjrTapJump(s);
+  if(k===' ')mjrTapJump(s,true);
+  else if(k==='ArrowUp'||k==='w')mjrTapJump(s,false);
   else if((k==='ArrowDown'||k==='s')&&!s.easy)s.slideK=.3;
 }
 function mjrBox(s,o,H){          // boîte de collision d'un obstacle, en px : [x0,x1,yBas,yHaut] (y vers le haut depuis le sol)
@@ -2037,11 +2040,11 @@ function mjrUpdate(s,dt){
   // saut
   if(s.fy>0||s.vy>0){
     s.fy+=s.vy*dt;s.vy-=s.G*dt;
-    if(s.fy<=0){s.fy=0;s.vy=0;s.ev.push({k:'pose'});if(s.jumpBuf>0){s.jumpBuf=0;mjrJump(s,false)}}
+    if(s.fy<=0){s.fy=0;s.vy=0;s.ev.push({k:'pose'});if(s.jumpBuf>0){s.jumpBuf=0;mjrJump(s,s.bufG)}}
   }
   s.jumpBuf=Math.max(0,s.jumpBuf-dt);
-  // maintien sans bouger : saut après .35 s ; glissade
-  if(s.pd&&!s.swiped&&!s.jumped){s.pt+=dt;if(s.pt>.35){s.jumped=true;mjrTapJump(s)}}
+  // maintien sans bouger : GRAND saut après .18 s ; glissade
+  if(s.pd&&!s.swiped&&!s.jumped){s.pt+=dt;if(s.pt>MJR_LONG){s.jumped=true;mjrTapJump(s,true)}}
   if(s.slideK>0)s.slideK-=dt;
   const veut=(s.slideP||s.slideK>0)&&!s.easy;
   if(s.fy<=1){
@@ -2311,10 +2314,10 @@ function mjrDraw(g,s,W,H,tm){
   for(const q of proches)q[0].near(g,W,H,gy,q[1],tm);
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<40;i++){const x=(((i*83.7-tm*(60+i%4*20)+s.d*.05)%W)+W)%W,y=((i*57.3+tm*(40+i%5*14))%H);g.beginPath();g.arc(x,y,1.3+i%3*.8,0,6.283);g.fill()}
-  const P1=s.easy?7:4.5,P2=s.easy?0:10;
+  const P1=s.easy?7:4,P2=s.easy?0:13,P1b=s.easy?7:8;
   if(s.t<P2){
-    const ph=(tm*1.6)%1,cx=W*.5,cy=H*.5,tap=s.t<P1,a=Math.min(1,(tap?P1-s.t:P2-s.t)/1);
-    const titre=tap?'TAPOTE l\'écran !':'GLISSADE !',sous=tap?(s.easy?'un petit coup de doigt, sans balayer':'un petit coup de doigt = un saut'):'pose le doigt, puis glisse-le vers le BAS';
+    const ph=(tm*1.6)%1,cx=W*.5,cy=H*.5,tap=s.t<P1b,hold=!s.easy&&s.t>=P1&&s.t<P1b,a=Math.min(1,(s.t<P1b?P1b-s.t:P2-s.t)/1);
+    const titre=!tap?'GLISSADE !':hold?'MAINTIENS !':'TAPOTE l\'écran !',sous=!tap?'pose le doigt, puis glisse-le vers le BAS':hold?'appui long = GRAND saut (ponts, doublés)':(s.easy?'un petit coup de doigt, sans balayer':'appui bref = petit saut');
     g.save();g.globalAlpha=a;g.textAlign='center';g.lineJoin='round';
     g.font=`bold ${H*.07}px Georgia,serif`;g.lineWidth=7;g.strokeStyle='#1a2a60';g.strokeText(titre,cx,H*.3);g.fillStyle='#fff';g.fillText(titre,cx,H*.3);
     g.font=`bold ${H*.04}px Georgia,serif`;g.lineWidth=5;g.strokeText(sous,cx,H*.37);g.fillStyle='#ffe48a';g.fillText(sous,cx,H*.37);
@@ -2353,7 +2356,7 @@ function mjCourse(me){
       else if(e.k==='bonus'){AE.bells&&AE.bells()}
     },
     intro:PLAYERS[me].name==='Alix'?['La course du renne !','TAPOTE l\'écran (un petit coup de doigt, sans balayer) pour sauter !','Un toucher = un saut. Saute par-dessus les obstacles.']
-      :['La course du renne !','TAPOTE l\'écran pour SAUTER par-dessus les obstacles au sol.','Pour GLISSER sous les ponts et les oiseaux : pose le doigt et glisse-le vers le BAS.']
+      :['La course du renne !','Appui BREF = petit saut. Appui LONG (maintenu) = GRAND saut.','Pour GLISSER sous les ponts et les oiseaux : pose le doigt et glisse-le vers le BAS.']
   });
 }
 /* ---- Mini-jeu 3 : lutins farceurs (v3.24) ----
