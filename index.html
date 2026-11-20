@@ -252,7 +252,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.43';
+const VERSION='3.44';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1976,7 +1976,7 @@ const MJR_FACILE=[0,1,2,5];
 MJR_SOL.push(['B32_tronc',.17,1.62]);   // 8 : tronc sur des rochers (adultes)   // tas petit, tas grand, souche, rocher
 // obstacles à passer EN GLISSANT : [image, hauteur (H), largeur/hauteur, bas libre (H), haut (H), x0, x1 (part de la largeur qui touche), volant]
 // bas libre ≈ .155 H : le renne debout (.17 H) s'y cogne, le renne en glissade (.13 H) passe
-const MJR_AIR=[['B32_pont_pierre',.31,1.73,.155,.30,.2,.85,0],['B32_passerelle',.41,1.31,.156,.40,.12,.9,0],['B32_arche_glace',.345,1.32,.155,.335,.18,.85,0],
+const MJR_AIR=[['B3D_pont',.30,1,.155,.28,0,1,0],['B32_passerelle',.41,1.31,.156,.40,.12,.9,0],['B32_arche_glace',.345,1.32,.155,.335,.18,.85,0],
   ['B32_banderole',.31,1.13,.155,.30,.15,.88,0],['B32_branche_sapin',.37,1.37,.155,.36,.4,.98,0],
   ['B32_corbeau',.10,1.145,.155,.245,.15,.85,1],['B32_oie',.105,1.41,.155,.25,.15,.85,1],['B32_chouette',.11,1.57,.155,.255,.15,.85,1],['B32_cerf_volant',.2,1.02,.155,.34,.25,.85,1]];
 const MJR_ASP={c:1.076,bas:1.554};
@@ -1990,7 +1990,7 @@ function mjrSpawn(s){
     const v=mjrVit(s),gapBase=s.easy?v*(1.5+Math.random()*1.1):v*(.85+Math.random()*.7);
     if(s.t>s.D-5){s.next=s.d+s.W+4000;break}
     const air=!s.easy&&Math.random()<.45,H=s.H;
-    if(air){const a=MJR_AIR[Math.floor(Math.random()*MJR_AIR.length)];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],yb:a[3],yt:a[4],x0:a[5],x1:a[6],fly:a[7],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+a[1]*a[2]*H*.7}
+    if(air){const a=Math.random()<.5?MJR_AIR[0]:MJR_AIR[Math.floor(Math.random()*MJR_AIR.length)];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],yb:a[3],yt:a[4],x0:a[5],x1:a[6],fly:a[7],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+a[1]*a[2]*H*.7}
     else{const lst=s.easy?MJR_FACILE:[0,1,2,3,4,5,6,7,8],i=lst[Math.floor(Math.random()*lst.length)],a=MJR_SOL[i];
       s.obs.push({air:false,key:a[0],h:a[1]*(s.easy?.9:1),asp:a[2],wx:s.next,hit:false});s.next+=gapBase+a[1]*a[2]*H}
   }
@@ -2076,6 +2076,40 @@ function mjrPano(){
   if(MJ.img.fond_run6&&MJ.img.fond_run6.naturalWidth)MJ.runPano=c;
   return c;
 }
+
+/* ---- décor 3D (v3.44) : petite projection en perspective maison, sans moteur 3D ----
+   x = pixels écran (au plan du renne), y = hauteur au-dessus du sol (px), z = profondeur (px, + = vers nous). Le renne est en z = 0. */
+function mjr3dP(W,H,gy,x,y,z){const cx=W/2,hor=gy-.5*H,f=1/(1-z/(H*1.2));return[cx+(x-cx)*f,hor+(gy-y-hor)*f]}
+function mjr3dPoly(g,pts,fill,lw){g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();g.fillStyle=fill;g.fill();if(lw){g.lineWidth=lw;g.strokeStyle='#2a2838';g.stroke()}}
+function mjr3dBox(g,W,H,gy,x0,x1,y0,y1,z0,z1,dark){
+  const P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z),cx=W/2,lw=Math.max(2,H*.006);g.lineJoin='round';
+  const cF=dark?'#6f7690':'#a3a9bb',cS=dark?'#5a6078':'#7e849a',cT=dark?'#dfe8f6':'#f0f5fd';
+  const sx=x0>cx?x0:x1<cx?x1:null;
+  if(sx!==null)mjr3dPoly(g,[P(sx,y0,z0),P(sx,y0,z1),P(sx,y1,z1),P(sx,y1,z0)],cS,lw);
+  mjr3dPoly(g,[P(x0,y1,z0),P(x1,y1,z0),P(x1,y1,z1),P(x0,y1,z1)],cT,lw);
+  const a=P(x0,y1,z1),b=P(x1,y0,z1);
+  mjr3dPoly(g,[P(x0,y0,z1),P(x1,y0,z1),P(x1,y1,z1),P(x0,y1,z1)],cF,lw);
+  // joints de pierre
+  g.save();g.beginPath();g.rect(a[0],a[1],b[0]-a[0],b[1]-a[1]);g.clip();g.strokeStyle='rgba(30,30,50,.4)';g.lineWidth=1.5;
+  const rh=H*.03,n=Math.max(1,Math.round((b[1]-a[1])/rh)),hh=(b[1]-a[1])/n;
+  g.beginPath();for(let i=1;i<n;i++){g.moveTo(a[0],a[1]+i*hh);g.lineTo(b[0],a[1]+i*hh)}
+  for(let i=0;i<n;i++){const st=(i%2)*H*.04;for(let x=a[0]+st+H*.04;x<b[0];x+=H*.08){g.moveTo(x,a[1]+i*hh);g.lineTo(x,a[1]+(i+1)*hh)}}
+  g.stroke();g.restore();
+}
+const MJ3D={D:.10,p:.03,xw:.15};
+function mjr3dFar(g,W,H,gy,sx){          // ce qui est DERRIÈRE le renne : ombre au sol et mur du fond
+  const P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z),d=MJ3D.D*H,p=MJ3D.p*H,xw=MJ3D.xw*H;
+  mjr3dPoly(g,[P(sx-xw,0,-d),P(sx+xw,0,-d),P(sx+xw*1.1,0,d),P(sx-xw*1.1,0,d)],'rgba(15,25,70,.3)',0);
+  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,0,.20*H,-d-p,-d+p,true);
+}
+function mjr3dNear(g,W,H,gy,sx){         // ce qui est DEVANT le renne : tablier, poteaux, rambardes
+  const d=MJ3D.D*H,xw=MJ3D.xw*H,cw=.035*H,t=.03*H;
+  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.155*H,.20*H,-d,d,false);
+  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.20*H,.28*H,-d,-d+t,false);
+  mjr3dBox(g,W,H,gy,sx-xw,sx-xw+cw,0,.155*H,d-t,d,false);
+  mjr3dBox(g,W,H,gy,sx+xw-cw,sx+xw,0,.155*H,d-t,d,false);
+  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.20*H,.28*H,d-t,d,false);
+}
 function mjrSpr(g,key,cx,by,h,flip,alpha){
   const im=MJ.img[key];if(!im||!im.naturalWidth)return;
   const w=h*im.naturalWidth/im.naturalHeight;
@@ -2098,10 +2132,12 @@ function mjrDraw(g,s,W,H,tm){
     g.fillStyle='rgba(120,140,190,.22)';g.beginPath();g.ellipse(xx+4,yy+H*.008,H*(.018+(i%4)*.008),H*.004,0,0,6.283);g.fill();
   }
   // obstacles
+  const proches=[];
   for(const o of s.obs){
     const sx=o.wx-s.d+rx;if(sx<-H*.4||sx>W+H*.4)continue;
     const hp=o.h*H;
     if(o.bonus){const bob=Math.sin(tm*5+o.wx)*H*.01;mjrSpr(g,o.key,sx,gy-o.b*H-bob,hp,false,o.hit?0:1);continue}
+    if(o.key==='B3D_pont'){mjr3dFar(g,W,H,gy,sx);proches.push(sx);continue}
     if(o.air){
       if(o.fly){const bob=Math.sin(tm*4+o.fl)*H*.012;g.fillStyle='rgba(20,30,80,.14)';g.beginPath();g.ellipse(sx,gy+H*.012,hp*o.asp*.3,H*.01,0,0,6.283);g.fill();
         mjrSpr(g,o.key,sx,gy-o.yb*H-bob,hp,false)}
@@ -2125,6 +2161,7 @@ function mjrDraw(g,s,W,H,tm){
   if(key.indexOf('B33_')===0){      // poses de glissade : même échelle que le galop (210 px = .2 H), calées sur le museau
     const ig=im[key];if(ig&&ig.naturalWidth){const k=sh/210,w=ig.naturalWidth*k,hh=ig.naturalHeight*k;g.save();g.globalAlpha=blink;g.drawImage(ig,rx+H*.108-w,gy+H*.012-hh,w,hh);g.restore()}
   }else mjrSpr(g,key,rx,gy+H*.012-s.fy,sh,false,blink);
+  for(const x of proches)mjr3dNear(g,W,H,gy,x);
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<40;i++){const x=(((i*83.7-tm*(60+i%4*20)+s.d*.05)%W)+W)%W,y=((i*57.3+tm*(40+i%5*14))%H);g.beginPath();g.arc(x,y,1.3+i%3*.8,0,6.283);g.fill()}
   const P1=s.easy?7:4.5,P2=s.easy?0:10;

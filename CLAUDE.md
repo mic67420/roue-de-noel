@@ -181,3 +181,6 @@ Adultes seulement : **toucher rapide = saut** (déclenché au relâchement, ou a
 
 ## v3.43 : course du renne, 6 vies pour tout le monde, saut d'Alix plus long
 6 cœurs (adultes et Alix ; cœurs plus petits dans `mjrHud` pour ne pas toucher le numéro de version). Alix : même hauteur de saut mais plus long (`s.G` 1100, `s.V0` 676 → ≈ 1,23 s en l'air, ≈ 420 px parcourus au lieu de 280) ; adultes inchangés (G 2400, V0 1000).
+
+## v3.44 : TEST décor 3D — pont de pierre en 3D dans la course du renne
+Mic a choisi « vrai décor en 3D » (pas de Three.js : trop lourd, un mini-moteur de perspective maison suffit). `mjr3dP` (projection : x écran, y hauteur, z profondeur, renne en z=0, point de fuite au centre), `mjr3dBox` (boîte à 3 faces + joints de pierre), `mjr3dFar` (ombre + mur du fond, dessinés AVANT le renne) et `mjr3dNear` (tablier, poteaux, rambardes, dessinés APRÈS le renne : il passe donc vraiment dessous). Entrée `B3D_pont` en tête de `MJR_AIR` (remplace `B32_pont_pierre`, boîte de collision = 0,30 H de large, bas libre .155 H) ; **pour le test, 50 % des obstacles aériens sont ce pont**. Si Mic valide : refaire passerelle, arche, banderole… en 3D de la même façon, puis remettre la fréquence normale.
