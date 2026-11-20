@@ -137,7 +137,7 @@ function mjkDraw(g,s,W,H,tm){
 function mjkHud(g,s,W,H,me,tm){
   const im=MJ.img,p=PLAYERS[me],u=H/720;
   g.fillStyle='rgba(8,14,46,.65)';rrect(g,14*u,14*u,230*u,62*u,31*u);g.fill();
-  g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';g.fillText(p.av,26*u,46*u);
+  g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';avDraw(g,p,24*u,46*u,40*u);
   g.font=`bold ${30*u}px Georgia,serif`;g.fillText(p.name,80*u,47*u);
   // cadeaux à décrocher
   const gw=50*u;g.fillStyle='rgba(8,14,46,.65)';rrect(g,260*u,14*u,(s.need*(gw+8*u)+20*u),62*u,31*u);g.fill();

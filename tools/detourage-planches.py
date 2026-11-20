@@ -31,6 +31,8 @@ NOMS = {
  'B21': ['sapin','sapin_deco','cadeau_rouge','cadeau_bleu','cadeau_vert','cadeau_or','cadeau_raye','cadeau_pois','cadeau_gros','etoile','cloche','ruban'],
  'B22': ['renne_c1','renne_c2','renne_c3','renne_c4','renne_c5','renne_c6','renne_saut1','renne_saut2','renne_atterrit','renne_bas','renne_touche','renne_content'],
  'B23': ['tas_petit','tas_grand','souche','sapin','sapins3','rocher','bonhomme','branche','corbeau1','corbeau2','guirlande','cadeau_or'],
+ 'B30': ['chat','chien','panda','renard','grenouille','lion','hibou','dragon','licorne','dino','pingouin','requin'],
+ 'B31': ['robot','astronaute','pirate','chevalier','ninja','sorciere','magicien','cowboy','footballeur','cuisinier','alien','hero'],
  'B16': ['immeuble_grand','immeuble_magasin','maison','eglise','grange','moulin','igloo','sapins3','rochers_glace','panneau','bosquet','lampadaire_village'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
 }

@@ -92,14 +92,40 @@ function showSettings(){
     if(b.id==='sVid'){videoPanel();return}
     if(b.id==='sMJ'){mjMenu();return}
     if(b.id==='sMaj'){b.textContent='⏳ Recherche…';majVerifier(true).then(r=>{if(r==='aucune'){b.textContent='✅ Déjà à jour (v'+VERSION+')'}else if(r==='erreur'){b.textContent='⚠️ Pas de connexion'}});return}
-    if(b.id==='sGo'){store.set(KEYCFG,cfg);startNew(cfg)}
+    if(b.id==='sGo'){store.set(KEYCFG,cfg);pickAvatars(cfg)}
   };
 }
-function startNew(cfg){
-  S=newState(cfg);H=[];busy=false;save();showScreen('game');hud();
+function applyAv(arr){
+  PLAYERS.forEach((p,i)=>{p.avId=(arr&&arr[i]&&AVATARS.includes(arr[i]))?arr[i]:null;if(p.avId)avEntry(p.avId)});
+  try{if(small&&small.build)small.build()}catch(e){}
+}
+/* ---- Choix des avatars (v3.41) : chaque joueur touche l'avatar qu'il veut, un même avatar ne peut pas être pris deux fois ---- */
+function pickAvatars(cfg){
+  showScreen('avPick');
+  const el=$('avPick'),chosen=[];
+  const draw=()=>{
+    const me=Math.min(chosen.length,PLAYERS.length-1);
+    const row=PLAYERS.map((p,i)=>`<div class="pk${i===chosen.length?' on':''}" style="--c:${p.col}"><div class="pa">${chosen[i]?avHtml(chosen[i]):'<span class="qm">?</span>'}</div><div>${p.name}</div></div>`).join('');
+    const grid=AVATARS.map(id=>{const own=chosen.indexOf(id);return`<button class="avb${own>=0?' used':''}" data-id="${id}"${own>=0?` style="--c:${PLAYERS[own].col}" disabled`:''}>${avHtml(id)}</button>`}).join('');
+    const done=chosen.length>=PLAYERS.length;
+    el.innerHTML=`<div class="avTitle" style="--c:${PLAYERS[me].col}">${done?'C’est parti !':PLAYERS[me].name+', choisis ton avatar !'}</div><div class="pkRow">${row}</div><div class="avGrid">${grid}</div><div class="btnRow">${chosen.length&&!done?'<button class="btn g sm2" id="avBack">⬅ Revenir au joueur précédent</button>':''}<button class="btn sm2" id="avCancel">↩ Réglages</button></div>`;
+  };
+  draw();
+  el.onclick=e=>{
+    const b=e.target.closest('button');if(!b||chosen.length>=PLAYERS.length)return;
+    if(b.id==='avBack'){chosen.pop();draw();return}
+    if(b.id==='avCancel'){showSettings();return}
+    if(b.dataset.id&&!chosen.includes(b.dataset.id)){
+      chosen.push(b.dataset.id);AE.pop(chosen.length);draw();
+      if(chosen.length>=PLAYERS.length)setTimeout(()=>{applyAv(chosen);startNew(cfg,chosen)},900);
+    }
+  };
+}
+function startNew(cfg,avs){
+  S=newState(cfg);S.av=avs||[];H=[];busy=false;save();showScreen('game');hud();
 }
 function resume(){
-  S=saved.S;H=saved.H||[];busy=false;
+  S=saved.S;H=saved.H||[];busy=false;applyAv(S.av);
   if(['smallSpin'].includes(S.phase))S.phase='smallReady';
   if(['bigSpin','resolve'].includes(S.phase))S.phase='bigReady';
   if(S.phase==='bigReady'&&S.current<0)S.phase='smallReady';
@@ -569,6 +595,7 @@ function init(){
   small=new Roue($('cvSmall'),{rf:.40,ir:.62,imax:.46,bulbs:false,hub:'🎄',view:playerView,tick:s=>AE.tick(s*.8),phys:{mu:2.3}});
   small.setSegs(PLAYERS);
   saved=loadSave();
+  if(saved)applyAv(saved.S.av);
   vidEmbedded();
   ICON.load(()=>{if(big)big.build()});   // icônes de la roue (images intégrées)
   buildIntro();

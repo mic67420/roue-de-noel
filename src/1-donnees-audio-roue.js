@@ -1,7 +1,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='3.40';
+const VERSION='3.41';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -18,12 +18,34 @@ $('ver').textContent='v'+VERSION;
 /* ============ DONNEES ============ */
 // w = poids secret du tirage (jamais affiché)
 const PLAYERS=[
-  {name:'Mic',av:'🎅',col:'#d32f2f',w:15},
-  {name:'Caroline',av:'🤶',col:'#2e9e5b',w:15},
-  {name:'Arley',av:'🦌',col:'#f2b01e',w:20},
-  {name:'Axel',av:'⛄',col:'#1e88e5',w:20},
-  {name:'Alix',av:'🧝',col:'#e91e8c',w:25}
+  {name:'Mic',emo:'🎅',col:'#d32f2f',w:15},
+  {name:'Caroline',emo:'🤶',col:'#2e9e5b',w:15},
+  {name:'Arley',emo:'🦌',col:'#f2b01e',w:20},
+  {name:'Axel',emo:'⛄',col:'#1e88e5',w:20},
+  {name:'Alix',emo:'🧝',col:'#e91e8c',w:25}
 ];
+/* ---- Avatars (v3.41) : chaque joueur choisit un avatar au début de la partie (planches B30 + B31).
+   p.avId = clé de l'image (ou null = emoji p.emo). p.av = HTML prêt à insérer (image ou emoji) ;
+   dans un canvas on utilise avDraw() ou avImg(). Images = window.MJ_IMGS (data-URI) converties une fois en adresses courtes (blob). */
+const AVATARS=['B30_chat','B30_chien','B30_panda','B30_renard','B30_grenouille','B30_lion','B30_hibou','B30_dragon','B30_licorne','B30_dino','B30_pingouin','B30_requin',
+  'B31_robot','B31_astronaute','B31_pirate','B31_chevalier','B31_ninja','B31_sorciere','B31_magicien','B31_cowboy','B31_footballeur','B31_cuisinier','B31_alien','B31_hero'];
+const AVC={};   // cache : id -> {url, img}
+function avEntry(id){
+  if(AVC[id])return AVC[id];
+  const D=(typeof window!=='undefined'&&window.MJ_IMGS)||{};if(!D[id])return null;
+  let url=D[id].u;
+  try{const b=atob(url.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);url=URL.createObjectURL(new Blob([a],{type:'image/png'}))}catch(e){}
+  const img=new Image();img.onload=()=>{try{if(small&&small.build)small.build()}catch(e){}};img.src=url;
+  return AVC[id]={url,img};
+}
+const avImg=id=>{const e=id&&avEntry(id);return e&&e.img.complete&&e.img.naturalWidth?e.img:null};
+const avHtml=id=>{const e=avEntry(id);return e?`<img class="avi" src="${e.url}" alt="">`:''};
+PLAYERS.forEach(p=>{p.avId=null;Object.defineProperty(p,'av',{get(){return(p.avId&&avEntry(p.avId))?avHtml(p.avId):p.emo}})});
+function avDraw(g,p,x,y,h){   // dessine l'avatar (ou l'emoji avec la police déjà réglée) : x = bord gauche, y = milieu
+  const im=avImg(p.avId);
+  if(im){const hh=h*1.15,w=hh*im.naturalWidth/im.naturalHeight;g.drawImage(im,x-h*.05,y-hh*.5,w,hh)}
+  else g.fillText(p.emo,x,y);
+}
 const SPECIALS={
   vol:{col:'#3b1a55'},echange:{col:'#10336b'},double:{col:'#6b4a10'},bouclier:{col:'#2b3340'},
   choix:{col:'#07514e'},autre:{col:'#6a1740'},pas:{col:'#34495e'}
@@ -113,7 +135,7 @@ function segView(s){
   if(s.k==='mystery')return{col:'#17151f',draw:(g,z)=>ICON.draw(g,'mystery',z*1.16)};
   return{col:SPECIALS[s.k].col,draw:(g,z)=>ICON.draw(g,s.k,z*1.16)};
 }
-const playerView=p=>({col:p.col,ico:p.av,cream:true});
+const playerView=p=>({col:p.col,ico:p.emo,img:avImg(p.avId),cream:true});
 
 /* ============ ICONES DE LA ROUE (dessinées en vectoriel, validées case par case) ============ */
 const ICON=(()=>{
@@ -767,7 +789,8 @@ class Roue{
       if(v.draw)v.draw(g,size*1.25);
       else{
         g.beginPath();g.arc(0,0,size*.55,0,7);g.fillStyle='rgba(255,247,226,.94)';g.fill();
-        g.font=`${size*.8}px ${EMOJI}`;g.fillStyle='#000';g.fillText(v.ico,0,size*.04);
+        if(v.img){g.save();g.beginPath();g.arc(0,0,size*.55,0,7);g.clip();const h=size*1.05,w=h*v.img.naturalWidth/v.img.naturalHeight;g.drawImage(v.img,-w/2,-h*.52,w,h);g.restore()}
+        else{g.font=`${size*.8}px ${EMOJI}`;g.fillStyle='#000';g.fillText(v.ico,0,size*.04)}
       }
       g.restore();
     });

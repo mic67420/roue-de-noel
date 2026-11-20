@@ -47,6 +47,19 @@ body.mjOn #lights{display:none}
 #introCta.on.two{animation:none}
 /* ---------- REGLAGES ---------- */
 #settings{padding:2vh 3vw}
+.avi{height:1.05em;width:auto;vertical-align:-.14em}
+#avPick{padding:1vh 2vw;gap:1.2vh}
+.avTitle{font-size:5vh;font-weight:900;color:#fff;text-shadow:0 .4vh 0 rgba(0,0,0,.5);border-bottom:.8vh solid var(--c);padding:0 2vh}
+.pkRow{display:flex;gap:1.6vh}
+.pk{display:flex;flex-direction:column;align-items:center;font-size:2.6vh;font-weight:800;padding:.5vh 1.2vh;border-radius:2vh;border:.5vh solid var(--c);background:rgba(10,16,56,.75);min-width:11vh;opacity:.85}
+.pk.on{transform:scale(1.1);opacity:1;box-shadow:0 0 3vh var(--c)}
+.pk .pa{font-size:8vh;height:8.4vh;line-height:1;display:flex;align-items:center}
+.pk .qm{font-size:6vh;color:#ffe48a}
+.avGrid{display:grid;grid-template-columns:repeat(8,1fr);gap:1.2vh;width:min(150vh,96vw)}
+.avb{background:rgba(255,255,255,.12);border:.5vh solid rgba(255,255,255,.35);border-radius:2.2vh;padding:.6vh;height:17vh;display:flex;align-items:center;justify-content:center;font-size:14vh}
+.avb .avi{height:100%;width:auto;max-width:100%;object-fit:contain;vertical-align:baseline}
+.avb:active{transform:scale(.92)}
+.avb.used{opacity:.3;border-color:var(--c);filter:grayscale(.8)}
 .panel{width:min(115vh,92vw);background:rgba(10,16,56,.82);border:.6vh solid var(--or);border-radius:3vh;padding:2.6vh 3vh;display:flex;flex-direction:column;gap:1.8vh;align-items:stretch}
 .panel h2{align-self:center}
 .setRow{display:flex;align-items:center;justify-content:space-between;gap:2vh;font-size:3.3vh;font-weight:800;line-height:1.15}
@@ -202,6 +215,7 @@ input[type=range]{width:52vh;height:5vh;accent-color:#f5c542}
 </div>
 
 <div id="settings" class="screen"></div>
+<div id="avPick" class="screen"></div>
 
 <div id="game">
   <div id="colL">

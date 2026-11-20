@@ -365,7 +365,7 @@ function layoutWheels(){
   big.setSegs(S.layout);small.setSegs(PLAYERS);
 }
 function showScreen(id){
-  ['intro','settings','game'].forEach(x=>$(x).classList.toggle('on',x===id));
+  ['intro','settings','avPick','game'].forEach(x=>$(x).classList.toggle('on',x===id));
   $('santa').style.display=id==='game'?'block':'none';
   if(id==='game'){bgT=Math.max(bgT,99);requestAnimationFrame(()=>requestAnimationFrame(layoutWheels))}
 }
