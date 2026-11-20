@@ -17,7 +17,7 @@ function mjLoad(){
   });
 }
 const MJ_OBST=[                       // [image, demi-largeur de collision, hauteur à l'écran (part de la hauteur)]
-  ['B1_sapin_grand',.30,.50],['B1_sapin_petit',.20,.34],['B1_rocher',.26,.22],['B1_bonhomme',.17,.34],['B1_souche',.20,.19],['TRONC',.34,.17]
+  ['B1_sapin_grand',.30,.50],['B1_sapin_petit',.20,.34],['B1_rocher',.26,.22],['B1_bonhomme',.17,.34],['B1_souche',.20,.19],['MAISON',.42,.55],['TRONC',.34,.17]
 ];
 const MJ_ANIM=[                      // animaux qui traversent la piste : [images, demi-largeur, hauteur, vitesse (piste/s), images par seconde, saut, adultes seulement]
   [['B7_renne_marche1','B7_renne_marche2'],.24,.30,.8,5,0,false],
@@ -31,7 +31,7 @@ const MJ_ZS=.86;                      // « profondeur » où se trouve le traî
 function mjNew(easy){
   const e=!!easy;
   return{
-    easy:e,t:0,D:30,lives:3,max:3,inv:0,
+    easy:e,t:0,D:30,lives:6,max:6,inv:0,
     x:0,tx:0,vel:0,hw:e?.18:.22,maxV:e?3.5:2.1,   // position du traîneau (-1 = bord gauche de la piste, +1 = bord droit) ; maxV = vitesse latérale maximale
     base:e?.30:.60,spd:0,dist:0,
     i0:e?1.0:.68,i1:e?.75:.38,nextSpawn:.6,nextScen:0,nextArch:3.5,
@@ -189,7 +189,7 @@ function mjHud(g,s,W,H,me,tm){
   g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';avDraw(g,p,24*u,46*u,40*u);
   g.font=`bold ${30*u}px Georgia,serif`;g.fillText(p.name,80*u,47*u);
   // cœurs
-  const hs=50*u;
+  const hs=(s.max>4?40:50)*u;
   for(let i=0;i<s.max;i++){
     const k=i<s.lives?'B6_coeur_plein':'B6_coeur_vide',img=im[k];
     if(img&&img.naturalWidth){const pulse=(s.inv>1.1&&i===s.lives)?1.3:1;g.drawImage(img,260*u+i*(hs+6*u),16*u,hs*pulse,hs*pulse*img.naturalHeight/img.naturalWidth)}

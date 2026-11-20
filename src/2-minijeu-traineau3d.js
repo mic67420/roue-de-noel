@@ -151,6 +151,26 @@ function mj3Arche(g,C,D,tm){
   const cols=['#ff3b3b','#ffd23b','#4bd6ff','#6bff7a','#ff7bd5'];
   pts.forEach((p,i)=>{const on=(Math.floor(tm*3)+i)%3!==0,R=Math.max(2,6*p[2]);if(on){g.globalAlpha=.3;g.fillStyle=cols[i%5];g.beginPath();g.arc(p[0],p[1],R*2.4,0,6.283);g.fill();g.globalAlpha=1}g.fillStyle=cols[i%5];g.beginPath();g.arc(p[0],p[1]+R,R,0,6.283);g.fill()});
 }
+/* grande maison enneigée (obstacle fixe et décor) */
+function mj3Maison(g,C,X,D,w,h,sd){
+  const pal=[[232,200,150],[176,84,66],[118,146,196],[124,166,126]],wc=pal[Math.floor(sd*4)%4],dep=w*.72,D0=D,D1=D+dep,Dc=D+dep/2,x0=X-w/2,x1=X+w/2,wh=h*.60,ov=w*.07;
+  const faces=mj3Box(x0,x1,0,wh,D0,D1,wc),ctr=[X,h*.4,Dc];
+  // toit à deux pans, couvert de neige
+  const sn=[240,246,255];
+  faces.push({v:[[x0-ov,wh-4,D0-ov],[x1+ov,wh-4,D0-ov],[x1+ov,h,Dc],[x0-ov,h,Dc]],c:sn,ctr});
+  faces.push({v:[[x0-ov,wh-4,D1+ov],[x1+ov,wh-4,D1+ov],[x1+ov,h,Dc],[x0-ov,h,Dc]],c:sn,ctr});
+  faces.push({v:[[x0-1,wh,D0],[x0-1,wh,D1],[x0-1,h-2,Dc]],c:wc,ctr});faces.push({v:[[x1+1,wh,D0],[x1+1,wh,D1],[x1+1,h-2,Dc]],c:wc,ctr});
+  // cheminée
+  faces.push(...mj3Box(X+w*.22,X+w*.34,h*.72,h*1.06,Dc-w*.06,Dc+w*.06,[150,80,66]),...mj3Box(X+w*.205,X+w*.355,h*1.06,h*1.1,Dc-w*.075,Dc+w*.075,sn));
+  // fenêtres lumineuses sur la façade (côté traîneau) et les côtés ; porte
+  const fw=w*.13,fh=wh*.24,Df=D0-.6,win=(cx,cy)=>{faces.push({v:[[cx-fw-4,cy-fh-4,Df],[cx+fw+4,cy-fh-4,Df],[cx+fw+4,cy+fh+4,Df],[cx-fw-4,cy+fh+4,Df]],c:[84,52,40],ctr},{v:[[cx-fw,cy-fh,Df-.6],[cx+fw,cy-fh,Df-.6],[cx+fw,cy+fh,Df-.6],[cx-fw,cy+fh,Df-.6]],c:[255,214,118],lit:1,ctr},{v:[[cx-2,cy-fh,Df-1.2],[cx+2,cy-fh,Df-1.2],[cx+2,cy+fh,Df-1.2],[cx-2,cy+fh,Df-1.2]],c:[84,52,40],ctr},{v:[[cx-fw,cy-2,Df-1.2],[cx+fw,cy-2,Df-1.2],[cx+fw,cy+2,Df-1.2],[cx-fw,cy+2,Df-1.2]],c:[84,52,40],ctr})};
+  for(const dx of[-.3,0,.3])win(X+dx*w,wh*.76);
+  win(X-.3*w,wh*.32);win(X+.3*w,wh*.32);
+  faces.push({v:[[X-w*.09,0,Df],[X+w*.09,0,Df],[X+w*.09,wh*.5,Df],[X-w*.09,wh*.5,Df]],c:[110,66,44],ctr});
+  faces.push({v:[[X-w*.075,0,Df-.6],[X+w*.075,0,Df-.6],[X+w*.075,wh*.46,Df-.6],[X-w*.075,wh*.46,Df-.6]],c:[150,92,60],ctr});
+  for(const sx of[x0-.6,x1+.6])for(const dz of[.3,.7]){const cz=D0+dep*dz,q=w*.09,cy=wh*.55;faces.push({v:[[sx,cy-fh,cz-q],[sx,cy-fh,cz+q],[sx,cy+fh,cz+q],[sx,cy+fh,cz-q]],c:[255,214,118],lit:1,ctr})}
+  mj3Mesh(g,C,faces,ctr);
+}
 /* ---- le traîneau ---- */
 function mj3Traineau(g,C,s,tm){
   const k=C.H/720*1.3,yaw=Math.max(-.25,Math.min(.25,s.vel*.06)),roll=Math.max(-.09,Math.min(.09,-s.vel*.03)),X=s.x*C.RH;
@@ -245,15 +265,10 @@ function mjDraw(g,s,W,H,tm){
       for(const q of sp){q.l+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt}
       MJ.spray=sp.filter(q=>q.l<q.L);
       if(!(s.inv>0&&Math.floor(tm*14)%2)){          // traîneau = dessin 2D (sprite) posé dans le décor 3D (le modèle 3D, mj3Traineau, est gardé mais non utilisé)
-        const av=Math.abs(s.vel),n=Math.floor(tm*7)%2,lvl=av<.25?0:av<.8?1:av<1.4?2:3;
-        // planche B35 : tout droit (t1,t4), léger (t2,t3 ; miroir pour la droite), virage à gauche (r1..r4), virage à droite (l1..l4)
-        let k2,flip=false;
-        if(lvl===0)k2=n?'B35_t1':'B35_t4';
-        else if(lvl===1){k2=n?'B35_t2':'B35_t3';flip=s.vel>0}
-        else{const side=s.vel<0?'r':'l',q=lvl===2?(n?1:2):(n?3:4);k2='B35_'+side+q}
+        const n=Math.floor(tm*7)%2,k2=n?'B35_t1':'B35_t4',flip=false;     // uniquement le Père Noël vu de derrière (la perspective ne marche pas avec les poses de virage)
         const i=im[k2];
         mj3Shadow(g,C,s.x*RH,0,80*H/720,60*H/720,1);
-        if(i&&i.naturalWidth){const sc=H*.30/220,w=i.naturalWidth*sc,h=i.naturalHeight*sc,y=p[1]+Math.sin(tm*14)*H*.004;g.save();g.translate(p[0],y);if(flip)g.scale(-1,1);g.drawImage(i,-w/2,-h*.97,w,h);g.restore()}
+        if(i&&i.naturalWidth){const sc=H*.30/220,w=i.naturalWidth*sc,h=i.naturalHeight*sc,y=p[1]+Math.sin(tm*14)*H*.004;g.save();g.translate(p[0],y);g.rotate(Math.max(-.07,Math.min(.07,s.vel*.03)));g.drawImage(i,-w/2,-h*.97,w,h);g.restore()}
       }
       for(const q of MJ.spray){const a=1-q.l/q.L;g.fillStyle='rgba(255,255,255,'+(.8*a)+')';g.beginPath();g.arc(q.x,q.y,q.r*(1+q.l*1.6),0,6.283);g.fill()}
       continue;
@@ -266,6 +281,7 @@ function mjDraw(g,s,W,H,tm){
     else if(k==='B1_rocher'){const w=(o.hw||.26)*RH*1.05,h=o.hf*MJ_ZS*H;mj3Shadow(g,C,Xs,D,w*1.1,w);mj3Rocher(g,C,Xs,D,w,h,seed(o))}
     else if(k==='B1_souche'){const r=(o.hw||.2)*RH*.8,h=o.hf*MJ_ZS*H;mj3Shadow(g,C,Xs,D,r*1.1,r);mj3Souche(g,C,Xs,D,h,r)}
     else if(k==='B1_bonhomme'){const h=o.hf*MJ_ZS*H;mj3Shadow(g,C,Xs,D,h*.3,h*.25);mj3Bonhomme(g,C,Xs,D,h)}
+    else if(k==='MAISON'){const w=(o.hw||.42)*RH*2,h=o.hf*MJ_ZS*H*1.05,Xm=Xs+(it.sc?Math.sign(wx||1)*.45*RH:0);mj3Shadow(g,C,Xm,D+w*.36,w*.58,w*.4);mj3Maison(g,C,Xm,D,w,h,seed(o))}
     else if(k==='TRONC'){const L=(o.hw||.34)*RH,r=o.hf*MJ_ZS*H*.5;mj3Shadow(g,C,Xs,D,L*1.05,r*1.4);mj3Tronc(g,C,Xs,D,L,r)}
     else if(o.type==='cadeau'){const Y=26+Math.sin(tm*4+o.wx*7)*10;mj3Shadow(g,C,Xs,D,62,62,.7);mj3Cadeau(g,C,Xs,Y,D,tm*1.7+o.wx*5,seed(o),tm)}
     else if(o.type==='etoile'){const Y=60+Math.sin(tm*4+o.wx*7)*14;mj3Shadow(g,C,Xs,D,50,40,.6);mj3Etoile(g,C,Xs,Y,D,tm*2.2+o.wx*5,tm)}
