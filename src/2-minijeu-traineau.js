@@ -17,7 +17,7 @@ function mjLoad(){
   });
 }
 const MJ_OBST=[                       // [image, demi-largeur de collision, hauteur à l'écran (part de la hauteur)]
-  ['B1_sapin_grand',.30,.50],['B1_sapin_petit',.20,.34],['B1_rocher',.26,.22],['B1_bonhomme',.17,.34],['B1_souche',.20,.19]
+  ['B1_sapin_grand',.30,.50],['B1_sapin_petit',.20,.34],['B1_rocher',.26,.22],['B1_bonhomme',.17,.34],['B1_souche',.20,.19],['TRONC',.34,.17]
 ];
 const MJ_ANIM=[                      // animaux qui traversent la piste : [images, demi-largeur, hauteur, vitesse (piste/s), images par seconde, saut, adultes seulement]
   [['B7_renne_marche1','B7_renne_marche2'],.24,.30,.8,5,0,false],
@@ -34,7 +34,7 @@ function mjNew(easy){
     easy:e,t:0,D:30,lives:3,max:3,inv:0,
     x:0,tx:0,vel:0,hw:e?.18:.22,maxV:e?3.5:2.1,   // position du traîneau (-1 = bord gauche de la piste, +1 = bord droit) ; maxV = vitesse latérale maximale
     base:e?.30:.60,spd:0,dist:0,
-    i0:e?1.0:.68,i1:e?.75:.38,nextSpawn:.6,nextScen:0,
+    i0:e?1.0:.68,i1:e?.75:.38,nextSpawn:.6,nextScen:0,nextArch:3.5,
     obj:[],sc:[],ev:[],score:0,stars:0,done:null,hits:0
   };
 }
@@ -68,9 +68,10 @@ function mjUpdate(s,dt){
   if(s.inv>0)s.inv-=dt;
   while(s.t>=s.nextSpawn&&s.t<s.D-2.6){mjSpawn(s,prog);s.nextSpawn+=s.i0+(s.i1-s.i0)*prog}
   while(s.t>=s.nextScen){                // décor sur les côtés (sans collision)
-    const t=MJ_OBST[Math.floor(Math.random()*MJ_OBST.length)],side=Math.random()<.5?-1:1;
+    const t=MJ_OBST[Math.floor(Math.random()*(MJ_OBST.length-1))],side=Math.random()<.5?-1:1;
     s.sc.push({k:t[0],wx:side*(1.4+Math.random()*.9),hf:t[2]*(.8+Math.random()*.4),z:.07});s.nextScen+=.28+Math.random()*.25;
   }
+  if(s.t>=s.nextArch&&s.t<s.D-3){s.sc.push({k:'ARCHE',wx:0,hf:.5,z:.07});s.nextArch=s.t+5+Math.random()*3}
   for(const o of s.obj){
     o.z+=s.spd*dt;if(o.vx)o.wx+=o.vx*dt;
     if(!o.done&&o.z>=MJ_ZS-.035){
@@ -87,7 +88,7 @@ function mjUpdate(s,dt){
   if(s.lives<=0)s.done='lose';else if(s.t>=s.D)s.done='win';
 }
 /* ---- dessin ---- */
-function mjDraw(g,s,W,H,tm){
+function mjDraw2D(g,s,W,H,tm){
   const im=MJ.img,hy=H*.30,roadHalf=W*.42,gy=z=>hy+(H*1.0-hy)*z,px=(wx,z)=>W/2+wx*roadHalf*z,P=u=>MJ_ZS*Math.pow(Math.max(u,0)/MJ_ZS,1.5);   // P : effet de perspective, ce qui est proche défile plus vite
   // ciel, collines lointaines, brume et neige du fond : dessinés une seule fois puis recopiés (plus fluide sur téléphone)
   if(!MJ.bg||MJ.bg.width!==W||MJ.bg.height!==H){
@@ -356,4 +357,4 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkLance,mjkPos,mjkDraw,mjCourse,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrDrag,mjrSlide,mjrKey,mjrBox,mjrPano,mjrDraw,mjLoad,MJ,MJR_AIR,mjMenu};
+window.MJ_TEST={mjDraw,mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkLance,mjkPos,mjkDraw,mjCourse,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrDrag,mjrSlide,mjrKey,mjrBox,mjrPano,mjrDraw,mjLoad,MJ,MJR_AIR,mjMenu};
