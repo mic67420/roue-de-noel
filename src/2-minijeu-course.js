@@ -1,18 +1,24 @@
 /* ---- Mini-jeu : LA COURSE DU RENNE (v3.38) ----
    Comme le dinosaure de Chrome : le renne reste à la même place à l'écran, c'est le paysage qui défile.
-   Toucher le haut de l'écran = sauter (garder le doigt = saut plus haut). Garder le doigt dans le tiers du bas = se baisser.
-   Obstacles au sol : sauter. Obstacles en l'air (branche, corbeau) : se baisser. Cadeaux dorés = bonus.
+   Un toucher = un saut identique. ADULTES (v3.42) : garder le doigt posé et le glisser vers le BAS = glissade à plat ventre
+   (planche B33), pour passer sous les ponts, la passerelle, l'arche, la banderole, les branches, les oiseaux et le cerf-volant (planche B32).
+   Obstacles au sol : sauter. Obstacles en l'air : glisser. Alix : saut seulement.
    Paysage : 6 décors (B24 à B29) raccordés en fondu dans un long panorama qui défile lentement (parallaxe),
    sol dessiné en code qui défile à la vitesse du jeu. 45 s. Adultes : 2 cœurs, vitesse croissante, obstacles aériens.
    Alix : 3 cœurs, vitesse lente et constante, obstacles bas seulement. Unités : H = 720 px ; vitesses en px/s. */
 const MJR_G=2400,MJR_V0=1000,MJR_RX=.22,MJR_GY=.84,MJR_D=45;
 // [clé, hauteur (en H), largeur/hauteur, hauteur du bas au-dessus du sol (air), hauteur de la boîte]
 const MJR_SOL=[['B23_tas_petit',.075,2.713],['B23_tas_grand',.12,1.821],['B23_souche',.105,1.542],['B23_sapin',.17,0.764],['B23_sapins3',.16,1.221],['B23_rocher',.115,1.393],['B23_bonhomme',.19,0.768],['B23_guirlande',.12,2.351]];
-const MJR_FACILE=[0,1,2,5];   // tas petit, tas grand, souche, rocher
-const MJR_AIR=[['B23_branche',.27,1.523,.06,.13,.32],['B23_corbeau1',.09,1.086,.125,.12,.205],['B23_corbeau2',.09,1.415,.125,.12,.205]];
+const MJR_FACILE=[0,1,2,5];
+MJR_SOL.push(['B32_tronc',.17,1.62]);   // 8 : tronc sur des rochers (adultes)   // tas petit, tas grand, souche, rocher
+// obstacles à passer EN GLISSANT : [image, hauteur (H), largeur/hauteur, bas libre (H), haut (H), x0, x1 (part de la largeur qui touche), volant]
+// bas libre ≈ .155 H : le renne debout (.17 H) s'y cogne, le renne en glissade (.13 H) passe
+const MJR_AIR=[['B32_pont_pierre',.31,1.73,.155,.30,.2,.85,0],['B32_passerelle',.41,1.31,.156,.40,.12,.9,0],['B32_arche_glace',.345,1.32,.155,.335,.18,.85,0],
+  ['B32_banderole',.31,1.13,.155,.30,.15,.88,0],['B32_branche_sapin',.37,1.37,.155,.36,.4,.98,0],
+  ['B32_corbeau',.10,1.145,.155,.245,.15,.85,1],['B32_oie',.105,1.41,.155,.25,.15,.85,1],['B32_chouette',.11,1.57,.155,.255,.15,.85,1],['B32_cerf_volant',.2,1.02,.155,.34,.25,.85,1]];
 const MJR_ASP={c:1.076,bas:1.554};
 function mjrNew(easy){
-  const o={D:MJR_D,notimer:false,t:0,done:null,ev:[],easy,asp:2,W:1080,H:720,d:0,v:easy?340:650,fy:0,vy:0,G:MJR_G,hold:false,duck:false,duckT:0,jumpBuf:0,lives:easy?3:2,max:easy?3:2,inv:0,stun:0,pts:0,obs:[],next:900,tAnim:0,best:0,coup:0};
+  const o={D:MJR_D,notimer:false,t:0,done:null,ev:[],easy,asp:2,W:1080,H:720,d:0,v:easy?340:650,fy:0,vy:0,G:MJR_G,hold:false,slideP:false,slideK:0,slide:false,tSlide:0,slideEnd:0,pd:false,pt:0,py0:0,swiped:false,jumped:false,jumpBuf:0,lives:easy?3:2,max:easy?3:2,inv:0,stun:0,pts:0,obs:[],next:900,tAnim:0,best:0,coup:0};
   mjrSpawn(o);return o;
 }
 function mjrVit(s){return s.easy?340:650+600*Math.min(1,s.t/s.D)}
@@ -20,26 +26,39 @@ function mjrSpawn(s){
   while(s.next<s.d+s.W+400){
     const v=mjrVit(s),gapBase=s.easy?v*(1.5+Math.random()*1.1):v*(.85+Math.random()*.7);
     if(s.t>s.D-5){s.next=s.d+s.W+4000;break}
-    const air=false,H=s.H;
-    if(air){const a=MJR_AIR[Math.random()<.5?0:1+Math.floor(Math.random()*2)];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],b:a[3],hb:a[4],ht:a[5],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+H*.35}
-    else{const lst=s.easy?MJR_FACILE:[0,1,2,3,4,5,6,7],i=lst[Math.floor(Math.random()*lst.length)],a=MJR_SOL[i];
+    const air=!s.easy&&Math.random()<.45,H=s.H;
+    if(air){const a=MJR_AIR[Math.floor(Math.random()*MJR_AIR.length)];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],yb:a[3],yt:a[4],x0:a[5],x1:a[6],fly:a[7],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+a[1]*a[2]*H*.7}
+    else{const lst=s.easy?MJR_FACILE:[0,1,2,3,4,5,6,7,8],i=lst[Math.floor(Math.random()*lst.length)],a=MJR_SOL[i];
       s.obs.push({air:false,key:a[0],h:a[1]*(s.easy?.9:1),asp:a[2],wx:s.next,hit:false});s.next+=gapBase+a[1]*a[2]*H}
   }
 }
 function mjrJump(s,hold){
   if(s.done||s.fy>1)return false;
-  s.vy=MJR_V0;s.hold=!!hold;s.ev.push({k:'saut'});return true;
+  s.vy=MJR_V0;s.hold=!!hold;s.slide=false;s.slideEnd=0;s.slideP=false;s.slideK=0;s.ev.push({k:'saut'});return true;
 }
-function mjrDown(s){          // un simple toucher n'importe où = un saut toujours identique
+const mjrTapJump=s=>{if(s.done)return;if(s.fy>1)s.jumpBuf=.12;else mjrJump(s,false)};
+function mjrDown(s,fx,fy){      // Alix : un toucher = saut tout de suite ; adultes : saut au relâchement (ou après .35 s), sauf si le doigt glisse vers le bas = glissade
   if(s.done)return;
-  if(s.fy>1)s.jumpBuf=.12;else mjrJump(s,false);
+  if(s.easy){mjrTapJump(s);return}
+  s.pd=true;s.pt=0;s.py0=fy;s.swiped=false;s.jumped=false;
 }
-function mjrUp(s){}
-function mjrKey(s,k){if(k==='ArrowUp'||k===' '||k==='w')mjrDown(s)}
+function mjrDrag(s,fx,fy){
+  if(s.easy||s.done||!s.pd||s.swiped||s.jumped)return;
+  if(fy-s.py0>.08){s.swiped=true;s.slideP=true}          // doigt posé puis glissé vers le bas
+}
+function mjrUp(s){
+  if(!s.easy&&s.pd&&!s.swiped&&!s.jumped)mjrTapJump(s);
+  s.pd=false;s.slideP=false;
+}
+function mjrSlide(s,on){s.slideP=!!on}                   // pour le robot de test
+function mjrKey(s,k){
+  if(k==='ArrowUp'||k===' '||k==='w')mjrTapJump(s);
+  else if((k==='ArrowDown'||k==='s')&&!s.easy)s.slideK=.3;
+}
 function mjrBox(s,o,H){          // boîte de collision d'un obstacle, en px : [x0,x1,yBas,yHaut] (y vers le haut depuis le sol)
   const w=o.h*H*o.asp,sx=o.wx-s.d+s.W*MJR_RX;
   if(o.bonus)return[sx-w*.45,sx+w*.45,o.b*H,o.b*H+o.h*H];
-  if(o.air)return[sx-w*.42,sx+w*.42,o.hb*H,o.ht*H];
+  if(o.air)return[sx-w*.5+w*o.x0,sx-w*.5+w*o.x1,o.yb*H,o.yt*H];
   return[sx-w*.36,sx+w*.36,0,o.h*H*.82];
 }
 function mjrUpdate(s,dt){
@@ -54,8 +73,18 @@ function mjrUpdate(s,dt){
     if(s.fy<=0){s.fy=0;s.vy=0;s.ev.push({k:'pose'});if(s.jumpBuf>0){s.jumpBuf=0;mjrJump(s,false)}}
   }
   s.jumpBuf=Math.max(0,s.jumpBuf-dt);
+  // maintien sans bouger : saut après .35 s ; glissade
+  if(s.pd&&!s.swiped&&!s.jumped){s.pt+=dt;if(s.pt>.35){s.jumped=true;mjrTapJump(s)}}
+  if(s.slideK>0)s.slideK-=dt;
+  const veut=(s.slideP||s.slideK>0)&&!s.easy;
+  if(s.fy<=1){
+    if(veut&&!s.slide){s.slide=true;s.tSlide=0;s.slideEnd=0;s.ev.push({k:'glisse'})}
+    else if(!veut&&s.slide){s.slide=false;s.slideEnd=.28}
+  }
+  if(s.slide)s.tSlide+=dt;
+  if(s.slideEnd>0)s.slideEnd=Math.max(0,s.slideEnd-dt);
   // collisions
-  const rx=s.W*MJR_RX,rh=(s.duck&&s.fy<1?.09:.17)*H,rw=(s.easy?.05:.085)*H,ry0=s.fy,ry1=s.fy+rh;
+  const rx=s.W*MJR_RX,bas=s.fy<1&&(s.slide||s.slideEnd>0),rh=(bas?.13:.17)*H,rw=(s.easy?.05:bas?.11:.085)*H,ry0=s.fy,ry1=s.fy+rh;
   for(const o of s.obs){
     if(o.hit)continue;const b=mjrBox(s,o,H);
     if(b[1]<rx-rw||b[0]>rx+rw)continue;
@@ -110,31 +139,49 @@ function mjrDraw(g,s,W,H,tm){
     const sx=o.wx-s.d+rx;if(sx<-H*.4||sx>W+H*.4)continue;
     const hp=o.h*H;
     if(o.bonus){const bob=Math.sin(tm*5+o.wx)*H*.01;mjrSpr(g,o.key,sx,gy-o.b*H-bob,hp,false,o.hit?0:1);continue}
-    if(o.air){g.fillStyle='rgba(20,30,80,.18)';g.beginPath();g.ellipse(sx,gy+H*.01,hp*o.asp*.3,H*.012,0,0,6.283);g.fill();
-      const fl=o.key.indexOf('corbeau')>=0?(Math.floor(tm*8+o.fl)%2?'B23_corbeau1':'B23_corbeau2'):o.key;
-      mjrSpr(g,fl,sx,gy-o.b*H,hp,false);continue}
+    if(o.air){
+      if(o.fly){const bob=Math.sin(tm*4+o.fl)*H*.012;g.fillStyle='rgba(20,30,80,.14)';g.beginPath();g.ellipse(sx,gy+H*.012,hp*o.asp*.3,H*.01,0,0,6.283);g.fill();
+        mjrSpr(g,o.key,sx,gy-o.yb*H-bob,hp,false)}
+      else{g.fillStyle='rgba(20,30,80,.2)';g.beginPath();g.ellipse(sx,gy+H*.01,hp*o.asp*.4,H*.013,0,0,6.283);g.fill();
+        mjrSpr(g,o.key,sx,gy+H*.012,hp,false)}
+      continue}
     g.fillStyle='rgba(20,30,80,.2)';g.beginPath();g.ellipse(sx,gy+H*.008,hp*o.asp*.45,H*.011,0,0,6.283);g.fill();
     mjrSpr(g,o.key,sx,gy+H*.01,hp,false);
   }
   // renne
-  const bas=s.duck&&s.fy<1&&!s.coup;
+  const sl=s.fy<1&&s.slide&&!s.coup,fin=s.fy<1&&!s.slide&&s.slideEnd>0&&!s.coup;
   let key='B22_renne_c1';
   if(s.done==='win')key='B22_renne_content';
   else if(s.coup>0)key='B22_renne_touche';
   else if(s.fy>1){key=s.vy>350?'B22_renne_saut1':s.vy<-350?'B22_renne_atterrit':'B22_renne_saut2'}
-  else if(bas)key='B22_renne_bas';
+  else if(sl){const q=s.tSlide;key=q<.07?'B33_g_debut2':q<.15?'B33_g_debut3':['B33_g_plat1','B33_g_neige','B33_g_plat3','B33_g_neige'][Math.floor((q-.15)/.12)%4]}
+  else if(fin){const e=.28-s.slideEnd;key=e<.09?'B33_g_sortie1':e<.18?'B33_g_sortie2':'B33_g_sortie3'}
   else key='B22_renne_c'+(1+Math.floor(s.tAnim*(9+s.v/110))%6);
-  const rh=H*.2,sh=H*.2*(bas?.7:1),blink=s.inv>0&&Math.floor(tm*14)%2===0?.45:1;
+  const sh=H*.2,blink=s.inv>0&&Math.floor(tm*14)%2===0?.45:1;
   g.fillStyle='rgba(20,30,80,.28)';g.beginPath();g.ellipse(rx,gy+H*.012,H*.11*(1-Math.min(.5,s.fy/H*1.4)),H*.014,0,0,6.283);g.fill();
-  mjrSpr(g,key,rx,gy+H*.012-s.fy,sh,false,blink);
+  if(key.indexOf('B33_')===0){      // poses de glissade : même échelle que le galop (210 px = .2 H), calées sur le museau
+    const ig=im[key];if(ig&&ig.naturalWidth){const k=sh/210,w=ig.naturalWidth*k,hh=ig.naturalHeight*k;g.save();g.globalAlpha=blink;g.drawImage(ig,rx+H*.108-w,gy+H*.012-hh,w,hh);g.restore()}
+  }else mjrSpr(g,key,rx,gy+H*.012-s.fy,sh,false,blink);
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<40;i++){const x=(((i*83.7-tm*(60+i%4*20)+s.d*.05)%W)+W)%W,y=((i*57.3+tm*(40+i%5*14))%H);g.beginPath();g.arc(x,y,1.3+i%3*.8,0,6.283);g.fill()}
-  if(s.t<7){const a=Math.min(1,(7-s.t)/1.2),cx=W*.5,cy=H*.5,ph=(tm*1.6)%1;
+  const P1=s.easy?7:4.5,P2=s.easy?0:10;
+  if(s.t<P2){
+    const ph=(tm*1.6)%1,cx=W*.5,cy=H*.5,tap=s.t<P1,a=Math.min(1,(tap?P1-s.t:P2-s.t)/1);
+    const titre=tap?'TAPOTE l\'écran !':'GLISSADE !',sous=tap?(s.easy?'un petit coup de doigt, sans balayer':'un petit coup de doigt = un saut'):'pose le doigt, puis glisse-le vers le BAS';
     g.save();g.globalAlpha=a;g.textAlign='center';g.lineJoin='round';
-    g.font=`bold ${H*.07}px Georgia,serif`;g.lineWidth=7;g.strokeStyle='#1a2a60';g.strokeText('TAPOTE l\'écran !',cx,H*.3);g.fillStyle='#fff';g.fillText('TAPOTE l\'écran !',cx,H*.3);
-    g.font=`bold ${H*.04}px Georgia,serif`;g.lineWidth=5;g.strokeText('un petit coup de doigt, sans balayer',cx,H*.37);g.fillStyle='#ffe48a';g.fillText('un petit coup de doigt, sans balayer',cx,H*.37);
-    for(let k=0;k<2;k++){const q=(ph+k*.5)%1;g.globalAlpha=a*(1-q)*.9;g.strokeStyle='#fff';g.lineWidth=6;g.beginPath();g.arc(cx,cy,H*(.04+.13*q),0,6.283);g.stroke()}
-    g.globalAlpha=a;const dy=Math.sin(ph*6.283)>0?H*.015:0;g.font=`${H*.14}px sans-serif`;g.fillText('👆',cx,cy+H*.1+dy);g.restore()}
+    g.font=`bold ${H*.07}px Georgia,serif`;g.lineWidth=7;g.strokeStyle='#1a2a60';g.strokeText(titre,cx,H*.3);g.fillStyle='#fff';g.fillText(titre,cx,H*.3);
+    g.font=`bold ${H*.04}px Georgia,serif`;g.lineWidth=5;g.strokeText(sous,cx,H*.37);g.fillStyle='#ffe48a';g.fillText(sous,cx,H*.37);
+    if(tap){
+      for(let k=0;k<2;k++){const q=(ph+k*.5)%1;g.globalAlpha=a*(1-q)*.9;g.strokeStyle='#fff';g.lineWidth=6;g.beginPath();g.arc(cx,cy,H*(.04+.13*q),0,6.283);g.stroke()}
+      g.globalAlpha=a;const dy=Math.sin(ph*6.283)>0?H*.015:0;g.font=`${H*.14}px sans-serif`;g.fillText('👆',cx,cy+H*.1+dy);
+    }else{
+      const q=ph<.75?ph/.75:1,y=cy-H*.04+H*.2*q;
+      g.globalAlpha=a*.9;g.strokeStyle='#fff';g.lineWidth=6;g.beginPath();g.arc(cx,cy-H*.04,H*.05,0,6.283);g.stroke();
+      g.lineWidth=9;g.setLineDash([H*.03,H*.025]);g.beginPath();g.moveTo(cx,cy);g.lineTo(cx,cy+H*.2);g.stroke();g.setLineDash([]);
+      g.fillStyle='#fff';g.beginPath();g.moveTo(cx-H*.04,cy+H*.2);g.lineTo(cx+H*.04,cy+H*.2);g.lineTo(cx,cy+H*.26);g.closePath();g.fill();
+      g.globalAlpha=a;g.font=`${H*.14}px sans-serif`;g.fillText('👆',cx,y+H*.1);
+    }
+    g.restore()}
 }
 function mjrHud(g,s,W,H,me,tm){
   const im=MJ.img,p=PLAYERS[me],u=H/720;
@@ -151,12 +198,14 @@ function mjrHud(g,s,W,H,me,tm){
 function mjCourse(me){
   return mjRunner(me,{
     nouveau:mjrNew,maj:mjrUpdate,dessin:mjrDraw,hud:mjrHud,
-    tap:mjrDown,up:mjrUp,clavier:(s,k)=>mjrKey(s,k),
+    tap:mjrDown,drag:mjrDrag,up:mjrUp,clavier:(s,k)=>mjrKey(s,k),
     evenement:(e,s,fx,cv)=>{
       if(e.k==='saut'){AE.pops&&AE.pops(1,.2)}
+      else if(e.k==='glisse'){AE.pops&&AE.pops(3,.12)}
       else if(e.k==='touche'){AE.nope&&AE.nope();AE.boom&&AE.boom();cv.style.transform='translate('+(Math.random()*14-7)+'px,'+(Math.random()*8-4)+'px)'}
       else if(e.k==='bonus'){AE.bells&&AE.bells()}
     },
-    intro:['La course du renne !','TAPOTE l\'écran (un petit coup de doigt, sans balayer) pour sauter !','Un toucher = un saut. Saute par-dessus les obstacles.']
+    intro:PLAYERS[me].name==='Alix'?['La course du renne !','TAPOTE l\'écran (un petit coup de doigt, sans balayer) pour sauter !','Un toucher = un saut. Saute par-dessus les obstacles.']
+      :['La course du renne !','TAPOTE l\'écran pour SAUTER par-dessus les obstacles au sol.','Pour GLISSER sous les ponts et les oiseaux : pose le doigt et glisse-le vers le BAS.']
   });
 }

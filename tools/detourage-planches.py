@@ -33,11 +33,13 @@ NOMS = {
  'B23': ['tas_petit','tas_grand','souche','sapin','sapins3','rocher','bonhomme','branche','corbeau1','corbeau2','guirlande','cadeau_or'],
  'B30': ['chat','chien','panda','renard','grenouille','lion','hibou','dragon','licorne','dino','pingouin','requin'],
  'B31': ['robot','astronaute','pirate','chevalier','ninja','sorciere','magicien','cowboy','footballeur','cuisinier','alien','hero'],
+ 'B32': ['pont_pierre','passerelle','tronc','portique','branche_sapin','corbeau','oie','chouette','arche_glace','banderole','cerf_volant','pancarte'],
+ 'B33': ['g_debut1','g_debut2','g_debut3','g_debut4','g_plat1','g_neige','g_plat3','g_plat4','g_sortie1','g_sortie2','g_sortie3','g_sortie4'],
  'B16': ['immeuble_grand','immeuble_magasin','maison','eglise','grange','moulin','igloo','sapins3','rochers_glace','panneau','bosquet','lampadaire_village'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
 }
 LIGNES = {'B11': [5, 4, 4]}   # nombre d'objets par rangée quand ce n'est pas 4-4-4
-TROUS_TRANSPARENTS = {('B6','coeur_vide'),('B11','coeur_vide'),('B15','arche'),('B13','cloture'),('B18','couronne'),('B20','cata_repos'),('B20','cata_tendue'),('B20','cata_tir'),('B20','base'),('B21','cloche'),('B21','ruban'),('B22','renne_c2'),('B22','renne_bas'),('B22','renne_c1'),('B22','renne_c3'),('B22','renne_saut1'),('B22','renne_saut2'),('B22','renne_atterrit')}   # l'intérieur blanc du cœur vide devient transparent
+TROUS_TRANSPARENTS = {('B33','g_debut1'),('B33','g_debut2'),('B33','g_debut3'),('B33','g_debut4'),('B33','g_plat1'),('B33','g_neige'),('B33','g_plat3'),('B33','g_plat4'),('B33','g_sortie1'),('B33','g_sortie2'),('B33','g_sortie3'),('B33','g_sortie4'),('B32','pont_pierre'),('B32','arche_glace'),('B32','passerelle'),('B32','portique'),('B32','pancarte'),('B32','banderole'),('B6','coeur_vide'),('B11','coeur_vide'),('B15','arche'),('B13','cloture'),('B18','couronne'),('B20','cata_repos'),('B20','cata_tendue'),('B20','cata_tir'),('B20','base'),('B21','cloche'),('B21','ruban'),('B22','renne_c2'),('B22','renne_bas'),('B22','renne_c1'),('B22','renne_c3'),('B22','renne_saut1'),('B22','renne_saut2'),('B22','renne_atterrit')}   # l'intérieur blanc du cœur vide devient transparent
 
 def decouper(b):
     im = Image.open(os.path.join(SRC, b + '.jpg')).convert('RGB')

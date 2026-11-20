@@ -1,7 +1,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='3.41';
+const VERSION='3.42';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;

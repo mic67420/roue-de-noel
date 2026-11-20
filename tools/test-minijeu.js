@@ -1,6 +1,6 @@
 // Teste les règles du mini-jeu du traîneau sans écran : un joueur qui esquive doit gagner, un joueur immobile doit perdre.
 const { charger } = require('./_faux-navigateur.js');
-const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjtNew,mjtUpdate,mjtHop,mjkNew,mjkUpdate,mjkTir,mjkPos,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrBox');
+const T = charger(null, 'mjNew,mjUpdate,mjcNew,mjcUpdate,mjlNew,mjlUpdate,mjlTap,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjtNew,mjtUpdate,mjtHop,mjkNew,mjkUpdate,mjkTir,mjkPos,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrDrag,mjrSlide,mjrBox');
 let ok = true;
 const dt = 1 / 60, MJ_ZS = .86;
 function jouer(easy, bot) {
@@ -221,12 +221,11 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
         for (const o of s.obs) {
           if (o.hit || o.bonus) continue;
           const b = T.mjrBox(s, o, s.H), d = b[0] - rx;
-          if (o.air) { if (d < s.v * .30 && b[1] > rx - s.H * .1) bas = true; }
+          if (o.air) { if (d < s.v * .35 && b[1] > rx - s.H * .15) bas = true; }
           else if (d > 0 && d < s.v * .25 && s.fy < 1) saut = true;
         }
         if (saut) T.mjrJump(s, true);
-        
-        
+        T.mjrSlide(s, bas && s.fy < 1);
       }
       T.mjrUpdate(s, dt);
     }
@@ -237,6 +236,18 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
     for (let i = 0; i < N; i++) { if (partieRenne(easy, true) === 'win') bot++; if (partieRenne(easy, false) === 'win') idle++; }
     const ok = bot >= N * .5 && idle === 0;
     console.log('Course du renne, ' + nom + ' : un joueur précis gagne ' + bot + '/' + N + ' ; un joueur immobile gagne ' + idle + '/' + N + (ok ? ' OK' : ' ÉCHEC'));
+    if (!ok) process.exitCode = 1;
+  }
+  // gestes des adultes : toucher rapide = saut ; poser le doigt puis glisser vers le bas = glissade ; relâcher = on se relève
+  {
+    let s = T.mjrNew(false); T.mjrDown(s, .5, .4); T.mjrUp(s); T.mjrUpdate(s, 1 / 60);
+    const saut = s.vy > 0 || s.fy > 0;
+    s = T.mjrNew(false); T.mjrDown(s, .5, .4); T.mjrDrag(s, .5, .42); T.mjrUpdate(s, 1 / 60); const pasEncore = !s.slide && s.fy <= 0;
+    T.mjrDrag(s, .5, .55); T.mjrUpdate(s, 1 / 60); const glisse = s.slide === true && s.fy === 0;
+    T.mjrUp(s); T.mjrUpdate(s, 1 / 60); const relev = s.slide === false && s.slideEnd > 0;
+    s = T.mjrNew(true); T.mjrDown(s, .5, .4); const alix = s.vy > 0;
+    const ok = saut && pasEncore && glisse && relev && alix;
+    console.log('Course du renne, gestes (toucher = saut, doigt vers le bas = glissade, Alix saute au toucher) : ' + (ok ? 'OK' : 'ÉCHEC ' + [saut, pasEncore, glisse, relev, alix]));
     if (!ok) process.exitCode = 1;
   }
 }

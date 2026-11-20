@@ -356,4 +356,4 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkLance,mjkPos,mjkDraw,mjCourse,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrKey,mjrBox,mjrPano,mjMenu};
+window.MJ_TEST={mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkLance,mjkPos,mjkDraw,mjCourse,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrDrag,mjrSlide,mjrKey,mjrBox,mjrPano,mjrDraw,mjLoad,MJ,MJR_AIR,mjMenu};
