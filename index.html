@@ -252,7 +252,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.42';
+const VERSION='3.43';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -1981,7 +1981,7 @@ const MJR_AIR=[['B32_pont_pierre',.31,1.73,.155,.30,.2,.85,0],['B32_passerelle',
   ['B32_corbeau',.10,1.145,.155,.245,.15,.85,1],['B32_oie',.105,1.41,.155,.25,.15,.85,1],['B32_chouette',.11,1.57,.155,.255,.15,.85,1],['B32_cerf_volant',.2,1.02,.155,.34,.25,.85,1]];
 const MJR_ASP={c:1.076,bas:1.554};
 function mjrNew(easy){
-  const o={D:MJR_D,notimer:false,t:0,done:null,ev:[],easy,asp:2,W:1080,H:720,d:0,v:easy?340:650,fy:0,vy:0,G:MJR_G,hold:false,slideP:false,slideK:0,slide:false,tSlide:0,slideEnd:0,pd:false,pt:0,py0:0,swiped:false,jumped:false,jumpBuf:0,lives:easy?3:2,max:easy?3:2,inv:0,stun:0,pts:0,obs:[],next:900,tAnim:0,best:0,coup:0};
+  const o={D:MJR_D,notimer:false,t:0,done:null,ev:[],easy,asp:2,W:1080,H:720,d:0,v:easy?340:650,fy:0,vy:0,G:easy?1100:MJR_G,V0:easy?676:MJR_V0,hold:false,slideP:false,slideK:0,slide:false,tSlide:0,slideEnd:0,pd:false,pt:0,py0:0,swiped:false,jumped:false,jumpBuf:0,lives:6,max:6,inv:0,stun:0,pts:0,obs:[],next:900,tAnim:0,best:0,coup:0};
   mjrSpawn(o);return o;
 }
 function mjrVit(s){return s.easy?340:650+600*Math.min(1,s.t/s.D)}
@@ -1997,7 +1997,7 @@ function mjrSpawn(s){
 }
 function mjrJump(s,hold){
   if(s.done||s.fy>1)return false;
-  s.vy=MJR_V0;s.hold=!!hold;s.slide=false;s.slideEnd=0;s.slideP=false;s.slideK=0;s.ev.push({k:'saut'});return true;
+  s.vy=s.V0;s.hold=!!hold;s.slide=false;s.slideEnd=0;s.slideP=false;s.slideK=0;s.ev.push({k:'saut'});return true;
 }
 const mjrTapJump=s=>{if(s.done)return;if(s.fy>1)s.jumpBuf=.12;else mjrJump(s,false)};
 function mjrDown(s,fx,fy){      // Alix : un toucher = saut tout de suite ; adultes : saut au relâchement (ou après .35 s), sauf si le doigt glisse vers le bas = glissade
@@ -2151,7 +2151,7 @@ function mjrHud(g,s,W,H,me,tm){
   g.fillStyle='rgba(8,14,46,.65)';rrect(g,14*u,14*u,230*u,62*u,31*u);g.fill();
   g.font=`${40*u}px sans-serif`;g.textBaseline='middle';g.textAlign='left';g.fillStyle='#fff';avDraw(g,p,24*u,46*u,40*u);
   g.font=`bold ${30*u}px Georgia,serif`;g.fillText(p.name,80*u,47*u);
-  const hs=50*u;for(let i=0;i<s.max;i++){const img=im[i<s.lives?'B11_coeur_plein':'B11_coeur_vide'];if(img&&img.naturalWidth)g.drawImage(img,260*u+i*(hs+6*u),16*u,hs,hs*img.naturalHeight/img.naturalWidth)}
+  const hs=36*u;for(let i=0;i<s.max;i++){const img=im[i<s.lives?'B11_coeur_plein':'B11_coeur_vide'];if(img&&img.naturalWidth)g.drawImage(img,256*u+i*(hs+4*u),20*u,hs,hs*img.naturalHeight/img.naturalWidth)}
   // progression du voyage
   const bx=W*.58,bw=W*.28,by=26*u,pr=Math.min(1,s.t/s.D);
   g.fillStyle='rgba(8,14,46,.65)';rrect(g,bx,by,bw,22*u,11*u);g.fill();
