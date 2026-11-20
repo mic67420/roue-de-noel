@@ -252,7 +252,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.58';
+const VERSION='3.59';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -3496,6 +3496,7 @@ function mjtRGB(c,k){                              // '#rrggbb' * k (éclaircir 
   const n=parseInt(c.slice(1),16),r=n>>16&255,g=n>>8&255,b=n&255,m=v=>Math.max(0,Math.min(255,Math.round(v*k)));
   return'rgb('+m(r)+','+m(g)+','+m(b)+')';
 }
+function mjtA(c,a){const n=parseInt(c.slice(1),16);return'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')'}
 function mjtPoly(g,C,pts,z,fill){                  // pts = [[X,Y,z],…]
   g.fillStyle=fill;g.beginPath();
   for(let i=0;i<pts.length;i++){const p=pts[i],zz=p[2]===undefined?z:p[2],x=C.X(p[0],zz),y=C.Y(p[1],zz);i?g.lineTo(x,y):g.moveTo(x,y)}
@@ -3546,12 +3547,14 @@ function mjtMaison(g,C,X,z,h,wall,roof,opt){
   if(opt.auvent){mjtPoly(g,C,[[X0,.62,z0-.12],[X1,.62,z0-.12],[X1,.5,z0-.3],[X0,.5,z0-.3]],0,opt.auvent)}
 }
 function mjtSapin(g,C,X,Y0,z,h,xmas,t){
-  const tiers=3,w=h*.36;
-  mjt3Loft(g,C,X,Y0,z,[[0,.1],[h*.18,.1]],'#6a4426',6,false);
+  const w=h*.36;
+  if(z>9){mjt3Loft(g,C,X,Y0+h*.1,z,[[0,w],[h*.9,0]],'#3a7350',5,false);return}   // loin : un seul cône
+  const tiers=z>5?2:3;
+  if(z<7)mjt3Loft(g,C,X,Y0,z,[[0,.1],[h*.18,.1]],'#6a4426',6,false);
   for(let i=0;i<tiers;i++){
     const yb=Y0+h*.14+i*h*.25,th=h*.34,r=w*(1-i*.24);
-    mjt3Loft(g,C,X,yb,z,[[0,r],[th,0]],'#2f6b45',8,false);
-    mjt3Loft(g,C,X,yb+th*.42,z,[[0,r*.58],[th*.58,0]],'#f2f7ff',8,false);
+    mjt3Loft(g,C,X,yb,z,[[0,r],[th,0]],'#2f6b45',z>5?6:8,false);
+    if(z<7)mjt3Loft(g,C,X,yb+th*.42,z,[[0,r*.58],[th*.58,0]],'#f2f7ff',8,false);
   }
   if(xmas){
     for(let i=0;i<7;i++){const a=i*2.4,yy=Y0+h*(.2+i*.1),rr=w*(1-i*.11)*.8,zz=z-rr*Math.sin(a)*.5;if(Math.sin(a)<-.2)continue;
@@ -3644,6 +3647,8 @@ function mjt3Deco(g,C,key,X,z,h,t,side){
 }
 function mjtDraw(g,s,W,H,tm){
   s.asp=W/H;
+  if(!s.warm){s.warm=[];const seen={};for(const R of s.rows)if(R.t==='lane')for(const o of R.objs){const k=o.key+'|'+R.dir+'|'+o.h;if(!seen[k]){seen[k]=1;s.warm.push([o.key,R.dir,o.h])}}}
+  if(s.warm.length){const C0=mjt3Cam(s,W,H);for(let i=0;i<3&&s.warm.length;i++){const q=s.warm.pop();mjtVehCache(C0,q[0],q[1],q[2],tvAsp(q[0]))}}
   if(s.fin&&s.fin.t>.25){mjtFinale(g,s,W,H,tm);return}
   const C=mjt3Cam(s,W,H),ch=C.ch,zb=C.zb,cam=s.cam,U=.885*ch;
   const bioCur=Math.max(0,Math.min(3,Math.round(s.cam<0?0:(s.rows[Math.min(s.N,Math.max(0,Math.round(s.cam+3)))]||{bio:0}).bio)));
@@ -3682,15 +3687,15 @@ function mjtDraw(g,s,W,H,tm){
     g.fillStyle=lane?b.lane:b.safe[((r%2)+2)%2];g.fillRect(0,yF,W,yN-yF+1);
     if(!lane&&r>=0){ // face avant du plateau (marche)
       const y0=C.Y(0,zN);g.fillStyle=mjtRGB(b.safe[0],.74);g.fillRect(0,yN,W,y0-yN+1);
-      g.fillStyle='rgba(255,255,255,.55)';g.fillRect(0,yN,W,Math.max(1,(y0-yN)*.22));
+      if(zN<9){g.fillStyle='rgba(255,255,255,.55)';g.fillRect(0,yN,W,Math.max(1,(y0-yN)*.22))}
     }
     if(R.t==='fin'){const sqx=ch*f*.5;for(let i=-Math.ceil(W/2/sqx);i<W/2/sqx+1;i++)for(let j=0;j<2;j++){g.fillStyle=(i+j+100)%2?'#fff':'#c8202c';const ya=yF+(yN-yF)*j/2;g.fillRect(W/2+i*sqx,ya,sqx+1,(yN-yF)/2+1)}}
     else if(lane){
-      g.strokeStyle=b.ligne;g.lineWidth=Math.max(1.5,ch*.07*f);g.setLineDash([ch*.5*f,ch*.45*f]);g.beginPath();const ym=C.Y(0,zc);g.moveTo(0,ym);g.lineTo(W,ym);g.stroke();g.setLineDash([]);
-      g.fillStyle='rgba(255,255,255,.18)';g.fillRect(0,yF,W,Math.max(1,(yN-yF)*.07));
-      g.fillStyle='rgba(0,0,0,.16)';g.fillRect(0,yN-Math.max(1,(yN-yF)*.1),W,Math.max(1,(yN-yF)*.1));
+      if(zN<9){g.strokeStyle=b.ligne;g.lineWidth=Math.max(1.5,ch*.07*f);g.setLineDash([ch*.5*f,ch*.45*f]);g.beginPath();const ym=C.Y(0,zc);g.moveTo(0,ym);g.lineTo(W,ym);g.stroke();g.setLineDash([])}
+      if(zN<9){g.fillStyle='rgba(255,255,255,.18)';g.fillRect(0,yF,W,Math.max(1,(yN-yF)*.07));
+      g.fillStyle='rgba(0,0,0,.16)';g.fillRect(0,yN-Math.max(1,(yN-yF)*.1),W,Math.max(1,(yN-yF)*.1))}
     }else{
-      g.fillStyle='rgba(255,255,255,.5)';for(let i=0;i<10;i++){const hx=mjtHash(r,i);g.fillRect(hx*W,yF+mjtHash(i,r)*(yN-yF),Math.max(1,3*f),Math.max(1,2*f))}
+      if(zN<8){g.fillStyle='rgba(255,255,255,.5)';for(let i=0;i<10;i++){const hx=mjtHash(r,i);g.fillRect(hx*W,yF+mjtHash(i,r)*(yN-yF),Math.max(1,3*f),Math.max(1,2*f))}}
     }
     // décor de la rangée
     if(R.t==='safe'&&r>=0){
@@ -3701,7 +3706,7 @@ function mjtDraw(g,s,W,H,tm){
         if(!mjt3Deco(g,C,m.key,X,zd,m.h,tm,m.side))mjtSpr(g,m.key,C.X(X,zd),C.Y(MJT_HS,zd),m.h*U*f,false);
       }
       // arbres de fond, de chaque côté (remplissent les bords de l'écran)
-      for(const sd of[-1,1]){const hh=mjtHash(r+sd*9,5);if(hh>.55&&!R.depart){const X=sd*(9.6+hh*2.5);if(R.bio===2)mjtLampadaire(g,C,X,MJT_HS,zd,1.9,tm);else mjtSapin(g,C,X,MJT_HS,zd,1.5+hh,R.bio===3&&hh>.8,tm)}}
+      for(const sd of[-1,1]){const hh=mjtHash(r+sd*9,5);if(hh>.55&&!R.depart&&zc<13){const X=sd*(9.6+hh*2.5);if(R.bio===2)mjtLampadaire(g,C,X,MJT_HS,zd,1.9,tm);else mjtSapin(g,C,X,MJT_HS,zd,1.5+hh,R.bio===3&&hh>.8,tm)}}
       for(const bl of R.blk){
         const X=bl.c-3,y0=MJT_HS;
         g.save();g.translate(0,0);
@@ -3722,9 +3727,10 @@ function mjtDraw(g,s,W,H,tm){
       }
     }
     if(r===rSan)drawSanta();
-    if(fogA>.02){g.fillStyle=fog;g.globalAlpha=fogA;g.fillRect(0,Math.max(0,yF-ch*3.2*f),W,yN-yF+ch*3.2*f+1);g.globalAlpha=1}
   }
   if(!santaDone)drawSanta();
+  // brume lointaine : un seul dégradé pour tout l'horizon (beaucoup plus léger qu'une couche par rangée)
+  {const y5=C.Y(0,5.5),gb=g.createLinearGradient(0,C.hy-H*.03,0,y5);const rgb=fog;gb.addColorStop(0,fog);gb.addColorStop(.12,mjtA(fog,.9));gb.addColorStop(1,mjtA(fog,0));g.fillStyle=gb;g.fillRect(0,C.hy-H*.03,W,y5-C.hy+H*.03)}
   // flocons
   g.fillStyle='rgba(255,255,255,.8)';
   for(let i=0;i<34;i++){const sz=1.5+(i%4),px=((i*131.7+tm*(10+i%5*6)+Math.sin(tm+i)*20)%(W+20))-10,py=((i*77.3+tm*(40+(i%4)*22))%(H+20))-10;g.beginPath();g.arc(px,py,sz,0,6.283);g.fill()}
@@ -3786,7 +3792,7 @@ function mjtPathV(g,C,pts,X,z,L,Hh,dir,f){
   for(let i=0;i<n;i++){const nx=P[(i+1)%n];g.arcTo(P[i][0],P[i][1],(P[i][0]+nx[0])/2,(P[i][1]+nx[1])/2,Math.max(.5,pts[i][2]*Hh*C.ch*f))}
   g.closePath();
 }
-function mjtVeh(g,C,key,X,zc,dir,h,asp,t){
+function mjtVehDraw(g,C,key,X,zc,dir,h,asp,t,cache){
   const sp=MJT_VEH[key];if(!sp)return false;
   const Hh=h*.885,L=Hh*asp,d=Math.min(.5,L*.2),z0=zc-d/2,z1=zc+d/2,ch=C.ch,f0=C.zb/z0;
   const NS=8;
@@ -3843,10 +3849,33 @@ function mjtVeh(g,C,key,X,zc,dir,h,asp,t){
     g.fillStyle='#4b505c';g.beginPath();g.arc(x,y,R*.16,0,6.283);g.fill();
   });
   // gyrophares
-  if(key==='B36_pompiers'||key==='B36_deneigeuse'){
+  if(!cache&&(key==='B36_pompiers'||key==='B36_deneigeuse')){
     const on=Math.floor(t*6)%2===0,pm=key==='B36_pompiers',lx=px(pm?.87:.7),ly=py(pm?.9:.97);
     const rr=ch*.14*f0,col=pm?(on?'80,150,255':'255,60,60'):'255,190,40',gr=g.createRadialGradient(lx,ly,0,lx,ly,rr*3);
     gr.addColorStop(0,'rgba('+col+',.9)');gr.addColorStop(1,'rgba('+col+',0)');g.fillStyle=gr;g.fillRect(lx-rr*3,ly-rr*3,rr*6,rr*6)}
+  return true;
+}
+
+/* Cache : chaque véhicule (modèle + sens) est dessiné UNE fois dans une image à l'échelle de référence, puis seulement réduit/placé à chaque image (gros gain de fluidité). */
+const MJT_VC={};
+function mjtVehCache(C,key,dir,h,asp){
+  const ck=key+'|'+dir+'|'+Math.round(C.ch)+'|'+h,Hh=h*.885,L=Hh*asp,ch=C.ch,zb=C.zb;let e=MJT_VC[ck];
+  if(!e){
+    const cw=Math.ceil(L*ch+ch*.5),chh=Math.ceil(Hh*ch+ch*.9),gy=chh-ch*.1,camH=C.camH,cv=document.createElement('canvas');cv.width=cw;cv.height=chh;
+    const C0={ch,zb,camH,X:(x,z)=>cw/2+x*ch*zb/z,Y:(y,z)=>gy+(camH-y*ch)*zb/z-camH};
+    mjtVehDraw(cv.getContext('2d'),C0,key,0,zb,dir,h,asp,0,true);
+    e=MJT_VC[ck]={cv,cw,chh,gy};
+  }
+  return e;
+}
+function mjtVeh(g,C,key,X,zc,dir,h,asp,t){
+  const sp=MJT_VEH[key];if(!sp)return false;
+  const Hh=h*.885,L=Hh*asp,ch=C.ch,zb=C.zb,e=mjtVehCache(C,key,dir,h,asp);
+  const f=zb/zc,xs=C.X(X,zc),yg=C.Y(0,zc);
+  g.drawImage(e.cv,xs-e.cw/2*f,yg-e.gy*f,e.cw*f,e.chh*f);
+  if(key==='B36_pompiers'||key==='B36_deneigeuse'){
+    const pm=key==='B36_pompiers',on=Math.floor(t*6)%2===0,l=pm?.87:.7,lx=xs+(l-.5)*L*dir*ch*f,ly=yg-(pm?.9:.97)*Hh*ch*f,rr=ch*.14*f,col=pm?(on?'80,150,255':'255,60,60'):'255,190,40';
+    const gr=g.createRadialGradient(lx,ly,0,lx,ly,rr*3);gr.addColorStop(0,'rgba('+col+',.9)');gr.addColorStop(1,'rgba('+col+',0)');g.fillStyle=gr;g.fillRect(lx-rr*3,ly-rr*3,rr*6,rr*6)}
   return true;
 }
 
