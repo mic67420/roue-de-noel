@@ -4,16 +4,16 @@
    (planche B33), pour passer sous les ponts, la passerelle, l'arche, la banderole, les branches, les oiseaux et le cerf-volant (planche B32).
    Obstacles au sol : sauter. Obstacles en l'air : glisser. Alix : saut seulement.
    Paysage : 6 décors (B24 à B29) raccordés en fondu dans un long panorama qui défile lentement (parallaxe),
-   sol dessiné en code qui défile à la vitesse du jeu. 45 s. Adultes : 2 cœurs, vitesse croissante, obstacles aériens.
+   sol dessiné en code qui défile à la vitesse du jeu. 60 s. Adultes : 2 cœurs, vitesse croissante, obstacles aériens.
    Alix : 3 cœurs, vitesse lente et constante, obstacles bas seulement. Unités : H = 720 px ; vitesses en px/s. */
-const MJR_G=2400,MJR_V0=1000,MJR_RX=.22,MJR_GY=.84,MJR_D=45;
+const MJR_G=2400,MJR_V0=1000,MJR_RX=.22,MJR_GY=.84,MJR_D=60;
 // [clé, hauteur (en H), largeur/hauteur, hauteur du bas au-dessus du sol (air), hauteur de la boîte]
 const MJR_SOL=[['B23_tas_petit',.075,2.713],['B23_tas_grand',.12,1.821],['B23_souche',.105,1.542],['B23_sapin',.17,0.764],['B23_sapins3',.16,1.221],['B23_rocher',.115,1.393],['B23_bonhomme',.19,0.768],['B23_guirlande',.12,2.351]];
 const MJR_FACILE=[0,1,2,5];
 MJR_SOL.push(['B32_tronc',.17,1.62]);   // 8 : tronc sur des rochers (adultes)   // tas petit, tas grand, souche, rocher
 // obstacles à passer EN GLISSANT : [image, hauteur (H), largeur/hauteur, bas libre (H), haut (H), x0, x1 (part de la largeur qui touche), volant]
 // bas libre ≈ .155 H : le renne debout (.17 H) s'y cogne, le renne en glissade (.13 H) passe
-const MJR_AIR=[['B3D_pont',.30,1,.155,.28,0,1,0],['B32_passerelle',.41,1.31,.156,.40,.12,.9,0],['B32_arche_glace',.345,1.32,.155,.335,.18,.85,0],
+const MJR_AIR=[['B3D_pont',.30,1,.155,.30,0,1,0],['B3D_passerelle',.30,1.13,.155,.30,0,1,0],['B3D_arche',.30,1,.155,.30,0,1,0],['B3D_portique',.30,1.27,.155,.30,0,1,0],
   ['B32_banderole',.31,1.13,.155,.30,.15,.88,0],['B32_branche_sapin',.37,1.37,.155,.36,.4,.98,0],
   ['B32_corbeau',.10,1.145,.155,.245,.15,.85,1],['B32_oie',.105,1.41,.155,.25,.15,.85,1],['B32_chouette',.11,1.57,.155,.255,.15,.85,1],['B32_cerf_volant',.2,1.02,.155,.34,.25,.85,1]];
 const MJR_ASP={c:1.076,bas:1.554};
@@ -27,7 +27,7 @@ function mjrSpawn(s){
     const v=mjrVit(s),gapBase=s.easy?v*(1.5+Math.random()*1.1):v*(.85+Math.random()*.7);
     if(s.t>s.D-5){s.next=s.d+s.W+4000;break}
     const air=!s.easy&&Math.random()<.45,H=s.H;
-    if(air){const a=Math.random()<.5?MJR_AIR[0]:MJR_AIR[Math.floor(Math.random()*MJR_AIR.length)];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],yb:a[3],yt:a[4],x0:a[5],x1:a[6],fly:a[7],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+a[1]*a[2]*H*.7}
+    if(air){const a=Math.random()<.6?MJR_AIR[Math.floor(Math.random()*4)]:MJR_AIR[4+Math.floor(Math.random()*(MJR_AIR.length-4))];s.obs.push({air:true,key:a[0],h:a[1],asp:a[2],yb:a[3],yt:a[4],x0:a[5],x1:a[6],fly:a[7],wx:s.next,hit:false,fl:Math.random()*6});s.next+=gapBase+a[1]*a[2]*H*.7}
     else{const lst=s.easy?MJR_FACILE:[0,1,2,3,4,5,6,7,8],i=lst[Math.floor(Math.random()*lst.length)],a=MJR_SOL[i];
       s.obs.push({air:false,key:a[0],h:a[1]*(s.easy?.9:1),asp:a[2],wx:s.next,hit:false});s.next+=gapBase+a[1]*a[2]*H}
   }
@@ -114,38 +114,95 @@ function mjrPano(){
   return c;
 }
 
-/* ---- décor 3D (v3.44) : petite projection en perspective maison, sans moteur 3D ----
-   x = pixels écran (au plan du renne), y = hauteur au-dessus du sol (px), z = profondeur (px, + = vers nous). Le renne est en z = 0. */
+/* ---- décor 3D (v3.44-45) : petite projection en perspective maison, sans moteur 3D ----
+   x = pixels écran (au plan du renne), y = hauteur au-dessus du sol (px), z = profondeur (px, + = vers nous). Le renne est en z = 0.
+   Chaque structure a une partie « far » (dessinée AVANT le renne) et une partie « near » (APRÈS : il passe dessous). Textures : planche B34 (tex_*). */
 function mjr3dP(W,H,gy,x,y,z){const cx=W/2,hor=gy-.5*H,f=1/(1-z/(H*1.2));return[cx+(x-cx)*f,hor+(gy-y-hor)*f]}
-function mjr3dPoly(g,pts,fill,lw){g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();g.fillStyle=fill;g.fill();if(lw){g.lineWidth=lw;g.strokeStyle='#2a2838';g.stroke()}}
-function mjr3dBox(g,W,H,gy,x0,x1,y0,y1,z0,z1,dark){
-  const P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z),cx=W/2,lw=Math.max(2,H*.006);g.lineJoin='round';
-  const cF=dark?'#6f7690':'#a3a9bb',cS=dark?'#5a6078':'#7e849a',cT=dark?'#dfe8f6':'#f0f5fd';
+function mjr3dFace(g,H,pts,Lu,Lv,key,shade,ts){      // face texturée : pts[0]→pts[1] = axe u (Lu px), pts[0]→pts[3] = axe v (Lv px)
+  g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();
+  const im=MJ.img[key];
+  if(im&&im.naturalWidth){
+    MJ.pat=MJ.pat||{};const pt=MJ.pat[key]||(MJ.pat[key]=g.createPattern(im,'repeat')),k=(ts||.22)*H/256;
+    if(pt&&pt.setTransform)pt.setTransform(new DOMMatrix([(pts[1][0]-pts[0][0])/Lu*k,(pts[1][1]-pts[0][1])/Lu*k,(pts[3][0]-pts[0][0])/Lv*k,(pts[3][1]-pts[0][1])/Lv*k,pts[0][0],pts[0][1]]));
+    g.fillStyle=pt||'#999';
+  }else g.fillStyle='#999';
+  g.fill();
+  if(shade){g.fillStyle='rgba(10,15,45,'+shade+')';g.fill()}
+  g.lineWidth=Math.max(2,H*.005);g.strokeStyle='#2a2838';g.lineJoin='round';g.stroke();
+}
+// boîte texturée. o = {f,s,t : textures face avant / côté / dessus ; sh : ombrage ; ts : taille d'une tuile (part de H)}
+function mjr3dBox(g,W,H,gy,x0,x1,y0,y1,z0,z1,o){
+  const P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z),cx=W/2,sh=o.sh||0,ts=o.ts;
   const sx=x0>cx?x0:x1<cx?x1:null;
-  if(sx!==null)mjr3dPoly(g,[P(sx,y0,z0),P(sx,y0,z1),P(sx,y1,z1),P(sx,y1,z0)],cS,lw);
-  mjr3dPoly(g,[P(x0,y1,z0),P(x1,y1,z0),P(x1,y1,z1),P(x0,y1,z1)],cT,lw);
-  const a=P(x0,y1,z1),b=P(x1,y0,z1);
-  mjr3dPoly(g,[P(x0,y0,z1),P(x1,y0,z1),P(x1,y1,z1),P(x0,y1,z1)],cF,lw);
-  // joints de pierre
-  g.save();g.beginPath();g.rect(a[0],a[1],b[0]-a[0],b[1]-a[1]);g.clip();g.strokeStyle='rgba(30,30,50,.4)';g.lineWidth=1.5;
-  const rh=H*.03,n=Math.max(1,Math.round((b[1]-a[1])/rh)),hh=(b[1]-a[1])/n;
-  g.beginPath();for(let i=1;i<n;i++){g.moveTo(a[0],a[1]+i*hh);g.lineTo(b[0],a[1]+i*hh)}
-  for(let i=0;i<n;i++){const st=(i%2)*H*.04;for(let x=a[0]+st+H*.04;x<b[0];x+=H*.08){g.moveTo(x,a[1]+i*hh);g.lineTo(x,a[1]+(i+1)*hh)}}
-  g.stroke();g.restore();
+  if(sx!==null)mjr3dFace(g,H,[P(sx,y1,z0),P(sx,y1,z1),P(sx,y0,z1),P(sx,y0,z0)],z1-z0,y1-y0,o.s||o.f,sh+.3,ts);
+  mjr3dFace(g,H,[P(x0,y1,z0),P(x1,y1,z0),P(x1,y1,z1),P(x0,y1,z1)],x1-x0,z1-z0,o.t||o.f,sh,ts);
+  mjr3dFace(g,H,[P(x0,y1,z1),P(x1,y1,z1),P(x1,y0,z1),P(x0,y0,z1)],x1-x0,y1-y0,o.f,sh,ts);
 }
-const MJ3D={D:.10,p:.03,xw:.15};
-function mjr3dFar(g,W,H,gy,sx){          // ce qui est DERRIÈRE le renne : ombre au sol et mur du fond
-  const P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z),d=MJ3D.D*H,p=MJ3D.p*H,xw=MJ3D.xw*H;
-  mjr3dPoly(g,[P(sx-xw,0,-d),P(sx+xw,0,-d),P(sx+xw*1.1,0,d),P(sx-xw*1.1,0,d)],'rgba(15,25,70,.3)',0);
-  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,0,.20*H,-d-p,-d+p,true);
-}
-function mjr3dNear(g,W,H,gy,sx){         // ce qui est DEVANT le renne : tablier, poteaux, rambardes
-  const d=MJ3D.D*H,xw=MJ3D.xw*H,cw=.035*H,t=.03*H;
-  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.155*H,.20*H,-d,d,false);
-  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.20*H,.28*H,-d,-d+t,false);
-  mjr3dBox(g,W,H,gy,sx-xw,sx-xw+cw,0,.155*H,d-t,d,false);
-  mjr3dBox(g,W,H,gy,sx+xw-cw,sx+xw,0,.155*H,d-t,d,false);
-  mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.20*H,.28*H,d-t,d,false);
+const MJ3D={D:.10,p:.03};
+function mjr3dOmbre(g,W,H,gy,sx,xw){const d=MJ3D.D*H,P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z);
+  g.beginPath();[P(sx-xw,0,-d),P(sx+xw,0,-d),P(sx+xw*1.1,0,d),P(sx-xw*1.1,0,d)].forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.closePath();g.fillStyle='rgba(15,25,70,.3)';g.fill()}
+const MJ3D_S={
+ pont:{  // pont de pierre : mur de pierre au fond, tablier, rambardes, deux poteaux devant
+  far(g,W,H,gy,sx){const d=MJ3D.D*H,p=MJ3D.p*H,xw=.15*H;mjr3dOmbre(g,W,H,gy,sx,xw);
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,0,.20*H,-d-p,-d+p,{f:'tex_pierre',t:'tex_poudre',sh:.35,ts:.26})},
+  near(g,W,H,gy,sx){const d=MJ3D.D*H,xw=.15*H,cw=.035*H,t=.03*H,o={f:'tex_pierre',t:'tex_poudre',ts:.26};
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.155*H,.20*H,-d,d,o);
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.20*H,.30*H,-d,-d+t,o);
+    mjr3dBox(g,W,H,gy,sx-xw,sx-xw+cw,0,.155*H,d-t,d,o);mjr3dBox(g,W,H,gy,sx+xw-cw,sx+xw,0,.155*H,d-t,d,o);
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.20*H,.30*H,d-t,d,o)}},
+ passerelle:{ // passerelle en bois : poteaux, planches, cordes
+  far(g,W,H,gy,sx){const d=MJ3D.D*H,xw=.17*H,pw=.03*H,q=.015*H,o={f:'tex_boisvieux',t:'tex_pin',ts:.2};mjr3dOmbre(g,W,H,gy,sx,xw);
+    mjr3dBox(g,W,H,gy,sx-xw,sx-xw+pw,0,.30*H,-d-q,-d+q,o);mjr3dBox(g,W,H,gy,sx+xw-pw,sx+xw,0,.30*H,-d-q,-d+q,o);
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.205*H,.22*H,-d-.008*H,-d+.008*H,{f:'tex_corde',ts:.1});
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.26*H,.275*H,-d-.008*H,-d+.008*H,{f:'tex_corde',ts:.1})},
+  near(g,W,H,gy,sx){const d=MJ3D.D*H,xw=.17*H,pw=.03*H,q=.015*H,o={f:'tex_boisvieux',t:'tex_pin',ts:.2};
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.155*H,.19*H,-d,d,{f:'tex_boisvieux',t:'tex_pin',ts:.16});
+    mjr3dBox(g,W,H,gy,sx-xw,sx-xw+pw,0,.30*H,d-q,d+q,o);mjr3dBox(g,W,H,gy,sx+xw-pw,sx+xw,0,.30*H,d-q,d+q,o);
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.205*H,.22*H,d-.008*H,d+.008*H,{f:'tex_corde',ts:.1});
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.26*H,.275*H,d-.008*H,d+.008*H,{f:'tex_corde',ts:.1})}},
+ arche:{ // bloc de glace avec stalactites
+  far(g,W,H,gy,sx){const d=MJ3D.D*H,p=MJ3D.p*H,xw=.15*H;mjr3dOmbre(g,W,H,gy,sx,xw);
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,0,.20*H,-d-p,-d+p,{f:'tex_glace2',t:'tex_givre',sh:.25,ts:.26})},
+  near(g,W,H,gy,sx,tm){const d=MJ3D.D*H,xw=.15*H,cw=.035*H,t=.03*H,P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z);
+    mjr3dBox(g,W,H,gy,sx-xw,sx-xw+cw,0,.155*H,d-t,d,{f:'tex_glace2',t:'tex_givre',ts:.26});mjr3dBox(g,W,H,gy,sx+xw-cw,sx+xw,0,.155*H,d-t,d,{f:'tex_glace2',t:'tex_givre',ts:.26});
+    mjr3dBox(g,W,H,gy,sx-xw,sx+xw,.155*H,.22*H,-d,d,{f:'tex_glace1',t:'tex_givre',ts:.26});
+    mjr3dBox(g,W,H,gy,sx-xw+.01*H,sx+xw-.01*H,.22*H,.30*H,-d+.01*H,d-.01*H,{f:'tex_poudre',t:'tex_poudre',ts:.26});
+    for(let i=0;i<7;i++){const x=sx-xw+(i+.5)*(2*xw/7),a=P(x-.014*H,.155*H,d),b=P(x+.014*H,.155*H,d),c=P(x,(.145-(i%3)*.004)*H,d);
+      g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.lineTo(c[0],c[1]);g.closePath();g.fillStyle='#d7efff';g.fill();g.lineWidth=Math.max(2,H*.004);g.strokeStyle='#2a2838';g.stroke()}}},
+ portique:{ // portique de Noël : poteaux en canne à sucre, guirlandes qui clignotent
+  far(g,W,H,gy,sx,tm){const d=MJ3D.D*H,xw=.19*H,pw=.035*H,o={f:'tex_cane',t:'tex_cane',ts:.16};mjr3dOmbre(g,W,H,gy,sx,xw);
+    mjr3dBox(g,W,H,gy,sx-xw,sx-xw+pw,0,.30*H,-d-pw/2,-d+pw/2,o);mjr3dBox(g,W,H,gy,sx+xw-pw,sx+xw,0,.30*H,-d-pw/2,-d+pw/2,o);
+    mjr3dGuirlande(g,W,H,gy,sx-xw+pw/2,sx+xw-pw/2,-d,tm)},
+  near(g,W,H,gy,sx,tm){const d=MJ3D.D*H,xw=.19*H,pw=.035*H,o={f:'tex_cane',t:'tex_cane',ts:.16};
+    mjr3dBox(g,W,H,gy,sx-xw,sx-xw+pw,.26*H,.30*H,-d,d,o);mjr3dBox(g,W,H,gy,sx+xw-pw,sx+xw,.26*H,.30*H,-d,d,o);
+    mjr3dGuirlande(g,W,H,gy,sx-xw+pw/2,sx+xw-pw/2,0,tm);
+    mjr3dBox(g,W,H,gy,sx-xw,sx-xw+pw,0,.30*H,d-pw/2,d+pw/2,o);mjr3dBox(g,W,H,gy,sx+xw-pw,sx+xw,0,.30*H,d-pw/2,d+pw/2,o);
+    mjr3dGuirlande(g,W,H,gy,sx-xw+pw/2,sx+xw-pw/2,d,tm)}},
+ tronc:{ // tronc d'arbre posé sur deux pieux
+  far(g,W,H,gy,sx){const d=MJ3D.D*H,w=.05*H,o={f:'tex_boisvieux',t:'tex_pin',ts:.18};mjr3dOmbre(g,W,H,gy,sx,.07*H);
+    mjr3dBox(g,W,H,gy,sx-w,sx+w,0,.16*H,-d-w/2,-d+w/2,o);mjr3dBox(g,W,H,gy,sx-w*1.5,sx+w*1.5,0,.03*H,-d-w,-d+w,{f:'tex_poudre',ts:.2})},
+  near(g,W,H,gy,sx){const d=MJ3D.D*H,w=.05*H,o={f:'tex_boisvieux',t:'tex_pin',ts:.18},P=(x,y,z)=>mjr3dP(W,H,gy,x,y,z),r=.065*H,yc=.22*H,z0=-d-.05*H,z1=d+.05*H;
+    const a=P(sx,yc,z0),b=P(sx,yc,z1),fa=1/(1-z0/(H*1.2)),fb=1/(1-z1/(H*1.2)),ra=r*fa,rb=r*fb;
+    g.beginPath();g.arc(a[0],a[1],ra,0,6.283);g.fillStyle='#4a3524';g.fill();
+    g.beginPath();g.moveTo(a[0]-ra,a[1]);g.lineTo(a[0]+ra,a[1]);g.lineTo(b[0]+rb,b[1]);g.lineTo(b[0]-rb,b[1]);g.closePath();
+    const im=MJ.img.tex_ecorce;
+    if(im&&im.naturalWidth){MJ.pat=MJ.pat||{};const pt=MJ.pat.tex_ecorce||(MJ.pat.tex_ecorce=g.createPattern(im,'repeat')),k=.2*H/256;if(pt.setTransform)pt.setTransform(new DOMMatrix([k,0,0,k,a[0],a[1]]));g.fillStyle=pt}else g.fillStyle='#6b4a2e';
+    g.fill();g.fillStyle='rgba(10,15,45,.18)';g.fill();g.lineWidth=Math.max(2,H*.005);g.strokeStyle='#2a2838';g.lineJoin='round';g.stroke();
+    // dessus éclairé
+    g.beginPath();g.moveTo(a[0]-ra*.5,a[1]-ra*.9);g.lineTo(a[0]+ra*.5,a[1]-ra*.9);g.lineTo(b[0]+rb*.5,b[1]-rb*.9);g.lineTo(b[0]-rb*.5,b[1]-rb*.9);g.closePath();g.fillStyle='rgba(255,255,255,.18)';g.fill();
+    // bout coupé, face à nous : disque de bois clair avec cernes
+    g.beginPath();g.arc(b[0],b[1],rb,0,6.283);g.fillStyle='#e0b985';g.fill();g.lineWidth=Math.max(2,H*.005);g.strokeStyle='#2a2838';g.stroke();
+    g.strokeStyle='rgba(120,80,40,.7)';g.lineWidth=Math.max(1.5,H*.003);for(let k2=1;k2<4;k2++){g.beginPath();g.arc(b[0],b[1],rb*k2*.23,0,6.283);g.stroke()}
+    mjr3dBox(g,W,H,gy,sx-w,sx+w,0,.16*H,d-w/2,d+w/2,o);mjr3dBox(g,W,H,gy,sx-w*1.5,sx+w*1.5,0,.03*H,d-w,d+w,{f:'tex_poudre',ts:.2})}}
+};
+function mjr3dGuirlande(g,W,H,gy,xa,xb,z,tm){    // fil qui s'affaisse entre deux poteaux, ampoules colorées qui clignotent
+  const P=(x,y,z2)=>mjr3dP(W,H,gy,x,y,z2),N=14,pts=[];
+  for(let i=0;i<=N;i++){const u=i/N;pts.push(P(xa+(xb-xa)*u,(.26-.095*4*u*(1-u))*H,z))}
+  g.beginPath();pts.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.lineWidth=Math.max(2,H*.005);g.strokeStyle='#17361f';g.lineJoin='round';g.stroke();
+  const C=['#ff3b3b','#ffd23a','#3bd16f','#46a8ff'],f=1/(1-z/(H*1.2));
+  for(let i=1;i<N;i++){const q=pts[i],on=.55+.45*Math.sin(tm*5+i*1.7),r=H*.011*f;
+    g.globalAlpha=.3*on;g.fillStyle=C[i%4];g.beginPath();g.arc(q[0],q[1]+r,r*2.2,0,6.283);g.fill();
+    g.globalAlpha=1;g.fillStyle=C[i%4];g.beginPath();g.arc(q[0],q[1]+r,r,0,6.283);g.fill();g.lineWidth=1.5;g.strokeStyle='#2a2838';g.stroke()}
 }
 function mjrSpr(g,key,cx,by,h,flip,alpha){
   const im=MJ.img[key];if(!im||!im.naturalWidth)return;
@@ -174,7 +231,7 @@ function mjrDraw(g,s,W,H,tm){
     const sx=o.wx-s.d+rx;if(sx<-H*.4||sx>W+H*.4)continue;
     const hp=o.h*H;
     if(o.bonus){const bob=Math.sin(tm*5+o.wx)*H*.01;mjrSpr(g,o.key,sx,gy-o.b*H-bob,hp,false,o.hit?0:1);continue}
-    if(o.key==='B3D_pont'){mjr3dFar(g,W,H,gy,sx);proches.push(sx);continue}
+    if(o.key.indexOf('B3D_')===0){const S3=MJ3D_S[o.key.slice(4)];S3.far(g,W,H,gy,sx,tm);proches.push([S3,sx]);continue}
     if(o.air){
       if(o.fly){const bob=Math.sin(tm*4+o.fl)*H*.012;g.fillStyle='rgba(20,30,80,.14)';g.beginPath();g.ellipse(sx,gy+H*.012,hp*o.asp*.3,H*.01,0,0,6.283);g.fill();
         mjrSpr(g,o.key,sx,gy-o.yb*H-bob,hp,false)}
@@ -198,7 +255,7 @@ function mjrDraw(g,s,W,H,tm){
   if(key.indexOf('B33_')===0){      // poses de glissade : même échelle que le galop (210 px = .2 H), calées sur le museau
     const ig=im[key];if(ig&&ig.naturalWidth){const k=sh/210,w=ig.naturalWidth*k,hh=ig.naturalHeight*k;g.save();g.globalAlpha=blink;g.drawImage(ig,rx+H*.108-w,gy+H*.012-hh,w,hh);g.restore()}
   }else mjrSpr(g,key,rx,gy+H*.012-s.fy,sh,false,blink);
-  for(const x of proches)mjr3dNear(g,W,H,gy,x);
+  for(const q of proches)q[0].near(g,W,H,gy,q[1],tm);
   // neige qui tombe
   g.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<40;i++){const x=(((i*83.7-tm*(60+i%4*20)+s.d*.05)%W)+W)%W,y=((i*57.3+tm*(40+i%5*14))%H);g.beginPath();g.arc(x,y,1.3+i%3*.8,0,6.283);g.fill()}
   const P1=s.easy?7:4.5,P2=s.easy?0:10;

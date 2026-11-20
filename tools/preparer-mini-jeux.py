@@ -21,5 +21,27 @@ for n in range(6):
     fr = fr.resize((1280, 720), Image.LANCZOS)
     buf = io.BytesIO(); fr.save(buf, 'JPEG', quality=72, optimize=True)
     out['fond_run%d' % (n + 1)] = {'u': 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode(), 'w': 1280, 'h': 720}
+
+# textures du décor 3D (planche B34 : 12 carrés)
+import numpy as np
+tb = Image.open(os.path.join(ROOT, 'assets', 'planches-sources', 'B34.jpg')).convert('RGB')
+a = np.array(tb).astype(int); nonw = (a.sum(axis=2) < 740)
+def runs(v):
+    r = []; st = None
+    for i, x in enumerate(v):
+        if x and st is None: st = i
+        if not x and st is not None:
+            if i - st > 100: r.append((st, i))
+            st = None
+    if st is not None and len(v) - st > 100: r.append((st, len(v)))
+    return r
+cols = runs(nonw.mean(axis=0) > .1); rows = runs(nonw.mean(axis=1) > .1)
+TEX = ['pierre','rocher','pin','boisvieux','ecorce','glace1','glace2','poudre','givre','corde','cane','fer']
+assert len(cols) == 4 and len(rows) == 3, (cols, rows)
+for k, nm in enumerate(TEX):
+    (x0, x1), (y0, y1) = cols[k % 4], rows[k // 4]
+    t = tb.crop((x0 + 3, y0 + 3, x1 - 3, y1 - 3)).resize((256, 256), Image.LANCZOS)
+    buf = io.BytesIO(); t.save(buf, 'JPEG', quality=82, optimize=True)
+    out['tex_' + nm] = {'u': 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode(), 'w': 256, 'h': 256}
 json.dump(out, open(os.path.join(ROOT, 'assets', 'mini-jeux.json'), 'w'))
 print(len(out), 'images,', round(os.path.getsize(os.path.join(ROOT, 'assets', 'mini-jeux.json')) / 1024), 'Ko')

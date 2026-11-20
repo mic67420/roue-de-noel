@@ -215,7 +215,7 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
 {
   function partieRenne(easy, bot) {
     const s = T.mjrNew(easy); const dt = 1 / 60;
-    for (let i = 0; i < 60 * 60 && !s.done; i++) {
+    for (let i = 0; i < 70 * 60 && !s.done; i++) {
       if (bot) {
         const rx = s.W * .22; let saut = false, bas = false;
         for (const o of s.obs) {
