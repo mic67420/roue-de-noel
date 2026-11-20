@@ -214,3 +214,6 @@ Planche `B35` (traîneau vu de derrière, 12 poses ; découpée par `detourage-p
 
 ## v3.54 : traîneau — 6 vies, grandes maisons, Père Noël de dos uniquement
 Demande de Mic. **6 cœurs** pour tout le monde (`mjNew` : `lives:6,max:6` ; cœurs plus petits dans `mjHud`). **Grandes maisons enneigées** = nouvel obstacle fixe `MAISON` (`MJ_OBST`, hw .42, hf .55 ; dessin `mj3Maison` : murs colorés au hasard, toit à deux pans couvert de neige, cheminée, fenêtres jaunes lumineuses et porte sur la façade, fenêtres sur les côtés) ; elles servent aussi de décor sur les bords (`s.sc`). Le traîneau n'utilise plus que les poses de dos `B35_t1`/`B35_t4` (alternance 7 img/s, léger penchement du sprite selon la vitesse latérale) : les poses de virage (`l*`/`r*`) ne sont plus tirées, « la perspective ne fonctionne pas bien ».
+
+## v3.55 : traîneau, vitesse adulte +20 %
+`base` adultes .60 → .72 dans `mjNew` (Alix inchangé .30).

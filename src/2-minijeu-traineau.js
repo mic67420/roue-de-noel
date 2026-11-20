@@ -33,7 +33,7 @@ function mjNew(easy){
   return{
     easy:e,t:0,D:30,lives:6,max:6,inv:0,
     x:0,tx:0,vel:0,hw:e?.18:.22,maxV:e?3.5:2.1,   // position du traîneau (-1 = bord gauche de la piste, +1 = bord droit) ; maxV = vitesse latérale maximale
-    base:e?.30:.60,spd:0,dist:0,
+    base:e?.30:.72,spd:0,dist:0,
     i0:e?1.0:.68,i1:e?.75:.38,nextSpawn:.6,nextScen:0,nextArch:3.5,
     obj:[],sc:[],ev:[],score:0,stars:0,done:null,hits:0
   };
