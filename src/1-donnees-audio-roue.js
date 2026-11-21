@@ -1,7 +1,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='3.62';
+const VERSION='3.63';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -614,6 +614,7 @@ const AE=(()=>{
       nb=ctx.createBuffer(1,ctx.sampleRate*3,ctx.sampleRate);
       const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
       apply();if(ctx.state==='suspended')ctx.resume();
+      loadSfx();startBgMusic();
     }catch(e){ctx=null}
   }
   function tone(o){
@@ -643,49 +644,50 @@ const AE=(()=>{
   function bell(f,t=0,v=.18,d=1.6){[[1,1],[2.01,.45],[2.76,.3],[5.4,.15]].forEach(([m,a],i)=>tone({f:f*m,t,d:d/(1+i*.6),v:v*a,a:.002}))}
   function brass(f,t,d,v=.17){tone({f,t,d,type:'sawtooth',v,a:.03,lp:1800});tone({f:f*1.007,t,d,type:'square',v:v*.5,a:.03,lp:1400})}
   function shaker(t=0,n=5){for(let i=0;i<n;i++)noise({t:t+i*.045,d:.04,v:.1,type:'highpass',f:6000+rnd(1500),q:.7})}
+  // ---- v3.63 : effets sonores = vrais échantillons (instruments), plus de sons synthétisés ----
+  const SFXB={};let sfxLoaded=false,bgStarted=false,userMusic=false;
+  function b64buf(u){const b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a.buffer}
+  function loadSfx(){
+    if(!ctx||sfxLoaded)return;sfxLoaded=true;const D=window.SANTA_SFX||{};
+    Object.keys(D).forEach(k=>{try{const p=ctx.decodeAudioData(b64buf(D[k]),b=>{SFXB[k]=b},()=>{});if(p&&p.catch)p.catch(()=>{})}catch(e){}});
+  }
+  function play(name,rate=1,v=1,t=0){
+    if(!ctx||!SFXB[name])return;
+    const s=ctx.createBufferSource();s.buffer=SFXB[name];s.playbackRate.value=rate;
+    const g=ctx.createGain();g.gain.value=v;s.connect(g);g.connect(fx);s.start(ctx.currentTime+t);
+  }
+  function startBgMusic(){
+    if(bgStarted)return;bgStarted=true;
+    fetch('musique_noel.mp3').then(r=>r.ok?r.blob():Promise.reject()).then(b=>{if(!userMusic)sfx.setMusic(b,true)}).catch(()=>{});
+  }
   const sfx={
     init,vol,
     tick(speed){
       if(!ctx)return;const now=ctx.currentTime;if(now-lastTick<.011)return;lastTick=now;
-      const s=Math.min(1,speed/900),v=.55-.25*s;
-      noise({d:.03,v:v*.8,type:'bandpass',f:2200+Math.random()*900,q:3});
-      tone({f:1100+Math.random()*200,slide:420,d:.05,type:'triangle',v:v*.55});
-      if(s<.35){const w=1-s/.35;tone({f:230+Math.random()*30,slide:90,d:.11,type:'sine',v:.38*w});noise({d:.08,v:.25*w,type:'lowpass',f:700,q:.8})}
+      const s=Math.min(1,speed/900);play('tick',.9+Math.random()*.25,.55-.3*s);
     },
-    launch(){shaker(0,6);[784,988,1175,1568].forEach((f,i)=>bell(f,i*.09,.12,.9));noise({d:.5,v:.12,type:'bandpass',f:400,fe:2200,q:1.2,a:.3})},
-    bells(){[784,988,1175,1568,1976].forEach((f,i)=>bell(f,i*.11,.14,1.4));shaker(.1,8)},
-    fanfare(){
-      [[262,0,.15],[330,.16,.15],[392,.32,.15],[523,.48,.55],[392,1.1,.18],[523,1.3,1.1]].forEach(([f,t,d])=>brass(f,t,d));
-      [[330,.48,.55],[392,.48,.55],[330,1.3,1.1],[392,1.3,1.1],[262,1.3,1.1]].forEach(([f,t,d])=>brass(f,t,d,.1));
-      noise({t:.48,d:1.2,v:.18,type:'highpass',f:5000});noise({t:1.3,d:1.6,v:.22,type:'highpass',f:4500});bell(1047,1.3,.12,2);
-    },
-    fanSmall(){[[392,0,.14],[523,.16,.14],[659,.32,.7]].forEach(([f,t,d])=>brass(f,t,d,.15));bell(1319,.35,.12,1.6);noise({t:.32,d:.7,v:.12,type:'highpass',f:5000})},
-    zoom(){noise({d:.8,v:.28,type:'bandpass',f:200,fe:2400,q:1.1,a:.5});tone({f:70,slide:190,d:.7,type:'sine',v:.22,a:.4})},
-    twinkle(){for(let i=0;i<7;i++)bell(1500+rnd(1800),i*.28,.05,1.1)},
-    pop(i=0){tone({f:500+i*90,slide:1000+i*120,d:.12,v:.2});bell(1200+i*110,.05,.06,.6)},
-    rumble(d=1.5){noise({d,v:.55,type:'lowpass',f:70,fe:320,q:.8,a:d*.95});tone({f:38,slide:95,d,type:'sawtooth',v:.22,a:d*.95,lp:220})},
-    boom(){tone({f:120,slide:28,d:1,v:1,a:.003});noise({d:1.1,v:.9,type:'lowpass',f:500,fe:60,q:.7,a:.003});noise({d:.5,v:.5,type:'highpass',f:2500})},
-    pops(n=10,span=1.4){for(let i=0;i<n;i++){const t=Math.random()*span;noise({t,d:.07,v:.18,type:'highpass',f:2500+Math.random()*3000,q:.6});if(i%3===0)tone({f:600+rnd(500),slide:2400,t:Math.max(0,t-.3),d:.3,v:.04})}},
-    steal(){
-      noise({d:.5,v:.25,type:'bandpass',f:300,fe:2500,q:1.2,a:.2});
-      tone({f:600,slide:150,t:.9,d:.18,type:'square',v:.12,lp:1500});
-      [262,311,370,392,370,311].forEach((f,i)=>tone({f,t:1.1+i*.16,d:.12,type:'triangle',v:.16}));
-    },
-    lock(){
-      noise({d:.5,v:.12,type:'bandpass',f:300,fe:1500,q:1.2,a:.3});
-      noise({t:.45,d:.09,v:.8,type:'highpass',f:2500,q:.8});tone({f:1400,slide:700,t:.45,d:.12,v:.35});
-      tone({f:95,slide:55,t:.45,d:.3,v:.9});
-      bell(2093,.7,.1,1.4);bell(2637,.8,.09,1.4);
-    },
-    sad(){[[392,0,.36],[370,.38,.36],[349,.76,.36],[330,1.14,1.1]].forEach(([f,t,d],i)=>tone({f,t,d,type:'sawtooth',v:.14,a:.04,lp:900,slide:i===3?290:0}))},
-    swap(){tone({f:400,slide:900,d:.3,v:.2});tone({f:900,slide:400,t:.3,d:.3,v:.2});bell(1047,.7,.1,1.2)},
-    nope(){tone({f:440,slide:330,d:.18,type:'square',v:.1,lp:1500});tone({f:330,slide:220,t:.2,d:.25,type:'square',v:.1,lp:1500})},
-    mystere(){bell(523,0,.14,2.4);bell(622,.18,.12,2.2);bell(784,.36,.12,2.2);bell(1047,.6,.14,2.2);noise({d:1.4,v:.08,type:'highpass',f:6000,a:.8});tone({f:130,d:1.5,v:.14,a:.6})},
-    drum(d=2.6){let t=0,k=0,step=.13;while(t<d){noise({t,d:.07,v:.05+.35*(t/d),type:'bandpass',f:260,q:1.4});t+=step;step=Math.max(.035,step*.93);k++}}
+    launch(){play('launch')},
+    bells(){play('bells')},
+    fanfare(){play('fanfare')},
+    fanSmall(){play('fanSmall')},
+    zoom(){play('zoom')},
+    twinkle(){play('twinkle')},
+    pop(i=0){play('pop',1+.1*i,.8)},
+    rumble(){play('rumble')},
+    boom(){play('boom')},
+    pops(n=10,span=1.4){for(let i=0;i<n;i++)play('pop',.8+Math.random()*.9,.5,Math.random()*span)},
+    steal(){play('steal')},
+    lock(){play('lock')},
+    sad(){play('sad')},
+    swap(){play('swap')},
+    nope(){play('nope')},
+    mystere(){play('bells')},
+    drum(){play('rumble')}
   };
   sfx.set=(k,v)=>{vol[k]=v;apply();store.set(KEYSON,vol)};
-  sfx.setMusic=file=>{
+  sfx.setMusic=(file,isDefault)=>{
     init();if(!ctx)return false;
+    if(isDefault&&userMusic)return false;if(!isDefault)userMusic=true;
     try{
       if(!el){
         el=new Audio();el.loop=true;el.preload='auto';

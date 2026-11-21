@@ -32,6 +32,7 @@ const videos = {
 let embed = '<script id="santaData">' + Object.entries(videos).map(([k, f]) => `window.${k}="${b64(f)}";`).join('') + '</script>\n';
 embed += '<script id="iconData">window.SANTA_ICONS=' + JSON.stringify(JSON.parse(rd('assets/icones.json'))) + ';</script>\n';
 
+embed += '<script id="sfxData">window.SANTA_SFX=' + JSON.stringify(JSON.parse(rd('assets/sons.json'))) + ';</script>\n';
 embed += '<script id="mjData">window.MJ_IMGS=' + JSON.stringify(JSON.parse(rd('assets/mini-jeux.json'))) + ';</script>\n';
 
 const html = conv(head) + embed + conv(code);
