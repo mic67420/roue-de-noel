@@ -1,7 +1,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='3.61';
+const VERSION='3.62';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -617,6 +617,7 @@ const AE=(()=>{
     }catch(e){ctx=null}
   }
   function tone(o){
+    return;   // v3.62 : plus aucun effet sonore (seule la musique reste)
     if(!ctx)return;
     const f=o.f||440,t=o.t||0,d=o.d||.3,type=o.type||'sine',v=o.v||.3,a=Math.min(o.a||.004,d*.95);
     const T=ctx.currentTime+t,os=ctx.createOscillator();
@@ -628,6 +629,7 @@ const AE=(()=>{
     g.connect(fx);os.start(T);os.stop(T+d+.05);
   }
   function noise(o){
+    return;   // v3.62 : plus aucun effet sonore
     if(!ctx)return;
     const t=o.t||0,d=o.d||.1,v=o.v||.3,a=Math.min(o.a||.002,d*.95);
     const T=ctx.currentTime+t,s=ctx.createBufferSource();s.buffer=nb;

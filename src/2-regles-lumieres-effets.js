@@ -188,6 +188,7 @@ function drawPool(p,I,boost){
 }
 function drawLights(dt){
   lg.setTransform(lqScale(),0,0,lqScale(),0,0);lg.clearRect(0,0,BW,BH);   // résolution réduite : lumières floues, bien moins de pixels à calculer
+  return;   // v3.62 : lyres et faisceaux supprimés
   if(LQ.q===0)return;
   const K=clamp((bgT-3.4)/2,0,1);if(K<=.01)return;
   const u=BH*.012,fl=LGT.flash,boost=1+fl*.7;
@@ -258,7 +259,7 @@ function firework(x,y){
 }
 function fxStep(dt){
   fg.setTransform(DPR,0,0,DPR,0,0);fg.clearRect(0,0,BW,BH);
-  {const sa=clamp((bgT-2)/2,0,1);if(sa>0)snowDraw(fg,true,sa)}   // gros flocons flous au premier plan (profondeur de champ)
+  // v3.62 : plus de gros flocons flous devant la roue (ils la faisaient paraître transparente)
   for(let i=P.length-1;i>=0;i--){
     const p=P[i];p.age+=dt;
     if(p.age>p.life||p.y>BH+40){P.splice(i,1);continue}

@@ -37,19 +37,15 @@ $('musicFile').addEventListener('change',e=>{
 });
 function volPanel(){
   const m=modal(`<div class="panel"><h2>🔊 Son</h2>
-    <div class="vrow">Effets<input type="range" id="vFx" min="0" max="100" value="${Math.round(AE.vol.fx*100)}"></div>
     <div class="vrow">Musique<input type="range" id="vMu" min="0" max="100" value="${Math.round(AE.vol.mus*100)}"></div>
-    <div class="btnRow"><button class="btn" id="vMute"></button><button class="btn g" id="vFile">🎵 Choisir la musique</button><button class="btn" id="vPlay">⏯️ Pause / Lecture</button><button class="btn" id="vVid">🎬 Père Noël (vidéo)</button><button class="btn" id="vLum"></button></div>
+    <div class="btnRow"><button class="btn" id="vMute"></button><button class="btn g" id="vFile">🎵 Choisir la musique</button><button class="btn" id="vPlay">⏯️ Pause / Lecture</button><button class="btn" id="vVid">🎬 Père Noël (vidéo)</button></div>
     <div class="btnRow"><button class="btn r" id="vClose">Fermer</button></div></div>`);
   const mu=()=>m.querySelector('#vMute').textContent=AE.vol.mute?'🔇 Son coupé':'🔊 Son activé';mu();
-  m.querySelector('#vFx').oninput=e=>AE.set('fx',e.target.value/100);
   m.querySelector('#vMu').oninput=e=>AE.set('mus',e.target.value/100);
   m.querySelector('#vMute').onclick=()=>{AE.set('mute',!AE.vol.mute);mu();hud()};
   m.querySelector('#vFile').onclick=()=>$('musicFile').click();
   m.querySelector('#vPlay').onclick=()=>{if(AE.hasMusic())AE.toggleMusic();else toast('Choisis d’abord un fichier musique')};
   m.querySelector('#vVid').onclick=()=>{m.remove();videoPanel()};
-  const LN=['éteintes','faisceaux seuls','légères','complètes'],lum=()=>m.querySelector('#vLum').textContent='💡 Lumières : '+LN[LQ.q];lum();
-  m.querySelector('#vLum').onclick=()=>{LQ.q=(LQ.q+3)%4;store.set(LUMKEY,LQ.q);sizeCanvases();lum();toast('💡 Lumières '+LN[LQ.q])};
   m.querySelector('#vClose').onclick=()=>{m.remove();hud()};
 }
 function askNew(){

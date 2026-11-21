@@ -252,7 +252,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.61';
+const VERSION='3.62';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -868,6 +868,7 @@ const AE=(()=>{
     }catch(e){ctx=null}
   }
   function tone(o){
+    return;   // v3.62 : plus aucun effet sonore (seule la musique reste)
     if(!ctx)return;
     const f=o.f||440,t=o.t||0,d=o.d||.3,type=o.type||'sine',v=o.v||.3,a=Math.min(o.a||.004,d*.95);
     const T=ctx.currentTime+t,os=ctx.createOscillator();
@@ -879,6 +880,7 @@ const AE=(()=>{
     g.connect(fx);os.start(T);os.stop(T+d+.05);
   }
   function noise(o){
+    return;   // v3.62 : plus aucun effet sonore
     if(!ctx)return;
     const t=o.t||0,d=o.d||.1,v=o.v||.3,a=Math.min(o.a||.002,d*.95);
     const T=ctx.currentTime+t,s=ctx.createBufferSource();s.buffer=nb;
@@ -4067,6 +4069,7 @@ function drawPool(p,I,boost){
 }
 function drawLights(dt){
   lg.setTransform(lqScale(),0,0,lqScale(),0,0);lg.clearRect(0,0,BW,BH);   // résolution réduite : lumières floues, bien moins de pixels à calculer
+  return;   // v3.62 : lyres et faisceaux supprimés
   if(LQ.q===0)return;
   const K=clamp((bgT-3.4)/2,0,1);if(K<=.01)return;
   const u=BH*.012,fl=LGT.flash,boost=1+fl*.7;
@@ -4137,7 +4140,7 @@ function firework(x,y){
 }
 function fxStep(dt){
   fg.setTransform(DPR,0,0,DPR,0,0);fg.clearRect(0,0,BW,BH);
-  {const sa=clamp((bgT-2)/2,0,1);if(sa>0)snowDraw(fg,true,sa)}   // gros flocons flous au premier plan (profondeur de champ)
+  // v3.62 : plus de gros flocons flous devant la roue (ils la faisaient paraître transparente)
   for(let i=P.length-1;i>=0;i--){
     const p=P[i];p.age+=dt;
     if(p.age>p.life||p.y>BH+40){P.splice(i,1);continue}
@@ -4424,19 +4427,15 @@ $('musicFile').addEventListener('change',e=>{
 });
 function volPanel(){
   const m=modal(`<div class="panel"><h2>🔊 Son</h2>
-    <div class="vrow">Effets<input type="range" id="vFx" min="0" max="100" value="${Math.round(AE.vol.fx*100)}"></div>
     <div class="vrow">Musique<input type="range" id="vMu" min="0" max="100" value="${Math.round(AE.vol.mus*100)}"></div>
-    <div class="btnRow"><button class="btn" id="vMute"></button><button class="btn g" id="vFile">🎵 Choisir la musique</button><button class="btn" id="vPlay">⏯️ Pause / Lecture</button><button class="btn" id="vVid">🎬 Père Noël (vidéo)</button><button class="btn" id="vLum"></button></div>
+    <div class="btnRow"><button class="btn" id="vMute"></button><button class="btn g" id="vFile">🎵 Choisir la musique</button><button class="btn" id="vPlay">⏯️ Pause / Lecture</button><button class="btn" id="vVid">🎬 Père Noël (vidéo)</button></div>
     <div class="btnRow"><button class="btn r" id="vClose">Fermer</button></div></div>`);
   const mu=()=>m.querySelector('#vMute').textContent=AE.vol.mute?'🔇 Son coupé':'🔊 Son activé';mu();
-  m.querySelector('#vFx').oninput=e=>AE.set('fx',e.target.value/100);
   m.querySelector('#vMu').oninput=e=>AE.set('mus',e.target.value/100);
   m.querySelector('#vMute').onclick=()=>{AE.set('mute',!AE.vol.mute);mu();hud()};
   m.querySelector('#vFile').onclick=()=>$('musicFile').click();
   m.querySelector('#vPlay').onclick=()=>{if(AE.hasMusic())AE.toggleMusic();else toast('Choisis d’abord un fichier musique')};
   m.querySelector('#vVid').onclick=()=>{m.remove();videoPanel()};
-  const LN=['éteintes','faisceaux seuls','légères','complètes'],lum=()=>m.querySelector('#vLum').textContent='💡 Lumières : '+LN[LQ.q];lum();
-  m.querySelector('#vLum').onclick=()=>{LQ.q=(LQ.q+3)%4;store.set(LUMKEY,LQ.q);sizeCanvases();lum();toast('💡 Lumières '+LN[LQ.q])};
   m.querySelector('#vClose').onclick=()=>{m.remove();hud()};
 }
 function askNew(){
