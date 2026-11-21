@@ -277,6 +277,7 @@ function drawSanta(g,P){
   g.restore();
 }
 function santaDraw(){
+  if(NOSANTA)return;
   sgx.setTransform(DPR,0,0,DPR,0,0);sgx.clearRect(0,0,BW+4,BH);
   const wb=$('wheelBox').getBoundingClientRect();if(!wb.width||wb.width<10)return;
   const cx=wb.left+wb.width/2,cy=wb.top+wb.height/2,R=wb.width*.385,k=BH*.56/100;
@@ -457,6 +458,7 @@ function vidProcess(){
   VID.dirty=false;
 }
 function vidTick(dt){
+  if(NOSANTA)return;
   if(!VID.ready)return;
   if(VID.fade){VID.fade.t+=dt;if(VID.fade.t>=VID.fade.dur)VID.fade=null}
   const v=VID.clips[VID.cur].el;if(!v)return;
@@ -467,6 +469,7 @@ function vidTick(dt){
   if(VID.dirty||(playing&&v.currentTime!==VID.lastT&&VID.acc>=[1/30,1/20,1/15][PERF]-.002)){VID.acc=0;VID.lastT=v.currentTime;vidProcess()}   // seulement quand l'image de la vidéo a changé
 }
 function vidLaunch(){
+  if(NOSANTA)return 0;
   if(!VID.clips.thr.ready)return 0;
   vidSwitch('thr',0);
   return Math.round(VID.cfg.push*1000);
@@ -485,6 +488,7 @@ function vidDrawTo(g,H,cx,cy,R){
   if(VID.fade){const u=clamp(VID.fade.t/VID.fade.dur,0,1);one(VID.fc,1-u);one(VID.wc,u)}else one(VID.wc,1);
 }
 function vidPreview(){
+  if(NOSANTA)return;
   const c=VID.prev;if(!c||!c.isConnected)return;
   const g=c.getContext('2d'),W=c.width,H=c.height;
   const bgG=g.createLinearGradient(0,0,0,H);bgG.addColorStop(0,'#0a1038');bgG.addColorStop(1,'#1b2a6b');g.fillStyle=bgG;g.fillRect(0,0,W,H);
@@ -612,7 +616,7 @@ function init(){
   small.setSegs(PLAYERS);
   saved=loadSave();
   if(saved)applyAv(saved.S.av);
-  vidEmbedded();
+  if(!NOSANTA)vidEmbedded();
   ICON.load(()=>{if(big)big.build()});   // icônes de la roue (images intégrées)
   buildIntro();
   requestAnimationFrame(loop);

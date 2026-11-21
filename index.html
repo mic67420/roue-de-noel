@@ -253,7 +253,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.64';
+const VERSION='3.65';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -267,6 +267,7 @@ const store={
 };
 $('ver').textContent='v'+VERSION;
 // Fluidité : 0 = qualité max, 1 = moyen, 2 = léger. PERFMODE : 'auto' (le jeu baisse tout seul s'il rame) ou 0/1/2 fixé par Mic.
+const NOSANTA=true;   // v3.65 : Père Noël (vidéo + détourage) désactivé pour la fluidité ; mettre false pour le remettre
 const PERFKEY='roue_perf';
 const PERFCFG=(()=>{const v=store.get(PERFKEY);return v&&(v.mode==='auto'||v.mode===0||v.mode===1||v.mode===2)?v:{mode:'auto',lv:0}})();
 let PERFAUTO=PERFCFG.mode==='auto';
@@ -3944,6 +3945,7 @@ function snowDraw(g,fgLayer,sa){
     if((f.kind==='fg')!==fgLayer)return;
     if(PERF>=2&&(ix%5>2))return;   // niveau léger : 3 flocons sur 5
     g.globalAlpha=sa*(f.kind==='fg'?.5:f.a);
+    {const d=f.kind==='dot'?f.sz:Math.min(14,2+f.sz*.28);g.drawImage(SNOWDOT,f.x-d/2,f.y-d/2,d,d);return}   // v3.65 : flocons remplacés par des ronds de tailles variées (plus léger)
     if(f.kind==='dot'){g.drawImage(SNOWDOT,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
     if(f.kind==='fg'){g.drawImage(SNOWBOKEH,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
     if(PERF>=1){g.drawImage(SNOWSP[f.type],f.x-f.sz/2,f.y-f.sz*.31,f.sz,f.sz*.62);return}   // sans rotation : bien plus rapide
@@ -4259,7 +4261,7 @@ function layoutWheels(){
 }
 function showScreen(id){
   ['intro','settings','avPick','game'].forEach(x=>$(x).classList.toggle('on',x===id));
-  $('santa').style.display=id==='game'?'block':'none';
+  $('santa').style.display=id==='game'&&!NOSANTA?'block':'none';
   if(id==='game'){bgT=Math.max(bgT,99);requestAnimationFrame(()=>requestAnimationFrame(layoutWheels))}
 }
 
@@ -4682,6 +4684,7 @@ function drawSanta(g,P){
   g.restore();
 }
 function santaDraw(){
+  if(NOSANTA)return;
   sgx.setTransform(DPR,0,0,DPR,0,0);sgx.clearRect(0,0,BW+4,BH);
   const wb=$('wheelBox').getBoundingClientRect();if(!wb.width||wb.width<10)return;
   const cx=wb.left+wb.width/2,cy=wb.top+wb.height/2,R=wb.width*.385,k=BH*.56/100;
@@ -4862,6 +4865,7 @@ function vidProcess(){
   VID.dirty=false;
 }
 function vidTick(dt){
+  if(NOSANTA)return;
   if(!VID.ready)return;
   if(VID.fade){VID.fade.t+=dt;if(VID.fade.t>=VID.fade.dur)VID.fade=null}
   const v=VID.clips[VID.cur].el;if(!v)return;
@@ -4872,6 +4876,7 @@ function vidTick(dt){
   if(VID.dirty||(playing&&v.currentTime!==VID.lastT&&VID.acc>=[1/30,1/20,1/15][PERF]-.002)){VID.acc=0;VID.lastT=v.currentTime;vidProcess()}   // seulement quand l'image de la vidéo a changé
 }
 function vidLaunch(){
+  if(NOSANTA)return 0;
   if(!VID.clips.thr.ready)return 0;
   vidSwitch('thr',0);
   return Math.round(VID.cfg.push*1000);
@@ -4890,6 +4895,7 @@ function vidDrawTo(g,H,cx,cy,R){
   if(VID.fade){const u=clamp(VID.fade.t/VID.fade.dur,0,1);one(VID.fc,1-u);one(VID.wc,u)}else one(VID.wc,1);
 }
 function vidPreview(){
+  if(NOSANTA)return;
   const c=VID.prev;if(!c||!c.isConnected)return;
   const g=c.getContext('2d'),W=c.width,H=c.height;
   const bgG=g.createLinearGradient(0,0,0,H);bgG.addColorStop(0,'#0a1038');bgG.addColorStop(1,'#1b2a6b');g.fillStyle=bgG;g.fillRect(0,0,W,H);
@@ -5017,7 +5023,7 @@ function init(){
   small.setSegs(PLAYERS);
   saved=loadSave();
   if(saved)applyAv(saved.S.av);
-  vidEmbedded();
+  if(!NOSANTA)vidEmbedded();
   ICON.load(()=>{if(big)big.build()});   // icônes de la roue (images intégrées)
   buildIntro();
   requestAnimationFrame(loop);

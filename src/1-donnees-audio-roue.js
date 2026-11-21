@@ -1,7 +1,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='3.64';
+const VERSION='3.65';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -15,6 +15,7 @@ const store={
 };
 $('ver').textContent='v'+VERSION;
 // Fluidité : 0 = qualité max, 1 = moyen, 2 = léger. PERFMODE : 'auto' (le jeu baisse tout seul s'il rame) ou 0/1/2 fixé par Mic.
+const NOSANTA=true;   // v3.65 : Père Noël (vidéo + détourage) désactivé pour la fluidité ; mettre false pour le remettre
 const PERFKEY='roue_perf';
 const PERFCFG=(()=>{const v=store.get(PERFKEY);return v&&(v.mode==='auto'||v.mode===0||v.mode===1||v.mode===2)?v:{mode:'auto',lv:0}})();
 let PERFAUTO=PERFCFG.mode==='auto';

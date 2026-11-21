@@ -54,6 +54,7 @@ function snowDraw(g,fgLayer,sa){
     if((f.kind==='fg')!==fgLayer)return;
     if(PERF>=2&&(ix%5>2))return;   // niveau léger : 3 flocons sur 5
     g.globalAlpha=sa*(f.kind==='fg'?.5:f.a);
+    {const d=f.kind==='dot'?f.sz:Math.min(14,2+f.sz*.28);g.drawImage(SNOWDOT,f.x-d/2,f.y-d/2,d,d);return}   // v3.65 : flocons remplacés par des ronds de tailles variées (plus léger)
     if(f.kind==='dot'){g.drawImage(SNOWDOT,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
     if(f.kind==='fg'){g.drawImage(SNOWBOKEH,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
     if(PERF>=1){g.drawImage(SNOWSP[f.type],f.x-f.sz/2,f.y-f.sz*.31,f.sz,f.sz*.62);return}   // sans rotation : bien plus rapide
@@ -369,7 +370,7 @@ function layoutWheels(){
 }
 function showScreen(id){
   ['intro','settings','avPick','game'].forEach(x=>$(x).classList.toggle('on',x===id));
-  $('santa').style.display=id==='game'?'block':'none';
+  $('santa').style.display=id==='game'&&!NOSANTA?'block':'none';
   if(id==='game'){bgT=Math.max(bgT,99);requestAnimationFrame(()=>requestAnimationFrame(layoutWheels))}
 }
 
