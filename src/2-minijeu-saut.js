@@ -5,7 +5,7 @@
    Planche B38 = obstacles (voiture, bouche d'incendie, ballon qui roule, boule de neige qui roule, cône, boîte aux lettres,
    tonneau, cadeaux, luge, caisse, bonhomme de neige, congère).
    Règles : 45 s pour tout le monde, 6 cœurs ; un choc = -1 cœur, le Père Noël est renversé puis protégé 1,6 s ; gagné si on tient 45 s.
-   Adultes : vitesse 520 → 950 px/s, obstacles seuls ou en petits groupes (un seul saut les passe s'il est bien placé), ballon et boule qui roulent
+   Adultes : vitesse 520 → 1250 px/s, obstacles seuls ou en petits groupes (un seul saut les passe s'il est bien placé), ballon et boule qui roulent
    plus vite que le sol. Alix : vitesse lente 360 → 500, obstacles bas seulement, un à la fois, bien espacés.
    Unités : H = 720 px, vitesses en px/s, y = hauteur des pieds au-dessus du sol (px). */
 const MJS_D=45,MJS_RX=.22,MJS_GY=.82;
@@ -26,7 +26,7 @@ function mjsNew(easy){
     obs:[],nxt:0,lives:6,max:6,inv:0,coup:0,slow:0,buf:0,rec:0,tAnim:0,hits:0,lastLand:0,passed:0,fx:[],lastF:-1};
   mjsSpawn(s);return s;
 }
-function mjsVit(s){const p=Math.min(1,s.t/s.D);return s.easy?360+140*p:520+430*p}
+function mjsVit(s){const p=Math.min(1,s.t/s.D);return s.easy?360+140*p:520+730*p}
 // largeur (px) d'une zone de ciel libre au-dessus d'une hauteur donnée : le Père Noël y reste hy..sommet pendant tw secondes
 function mjsFenetre(s,hy){const q=s.V0*s.V0-2*s.G*hy;return q<=0?0:2*Math.sqrt(q)/s.G}
 function mjsHW(k,H){const d=MJS_OBS[k];return d[1]*H*d[2]*.5}    // demi-largeur de l'image
@@ -52,7 +52,7 @@ function mjsSpawn(s){
     let x=x0,span=0;
     ks.forEach((k,i)=>{const o=mjsMake(s,k,0);if(i>0)x+=30+Math.random()*30;o.x=x+o.w/2;s.obs.push(o);x+=o.w;span=x-x0});
     // espace avant le prochain groupe : en secondes de jeu, il rétrécit un peu avec le temps
-    const g0=s.easy?1.7+Math.random()*1.0:(.95-.12*p)+Math.random()*(.85-.25*p);
+    const g0=s.easy?1.7+Math.random()*1.0:(.95-.2*p)+Math.random()*(.8-.3*p);
     s.nxt=s.d+span+g0*v;
   }
 }
@@ -69,7 +69,7 @@ function mjsUpdate(s,dt){
   let v=mjsVit(s);if(s.slow>0)v*=.62+.38*(1-s.slow/1.3);
   s.v=v;s.d+=v*dt;
   // poussière de neige soulevée par les pieds (donne la sensation de courir)
-  if(!s.air&&s.coup<=0){const f=Math.floor(s.tAnim*(7+6*(s.v/950)));if(f!==s.lastF){s.lastF=f;if(f%2===0)mjsPuff(s,3,.6)}}
+  if(!s.air&&s.coup<=0){const f=Math.floor(s.tAnim*(9+9*Math.min(1,Math.max(0,(s.v-360)/890))));if(f!==s.lastF){s.lastF=f;if(f%2===0)mjsPuff(s,3,.6)}}
   for(const p of s.fx){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt}
   s.fx=s.fx.filter(p=>p.t<p.life);
   // physique du saut
@@ -98,7 +98,7 @@ function mjsPose(s){
   if(s.coup>0||s.done==='lose')return'B40_recep';
   if(s.air){const f=s.vy/s.V0;return f>.75?'B40_decol':f>.3?'B40_monte':f>-.3?'B40_sommet':'B40_descend'}
   if(s.rec>0)return'B40_recep';
-  const cad=9+8*(s.v/950);return'B39_c'+(1+Math.floor(s.tAnim*cad)%4);
+  const cad=9+9*Math.min(1,Math.max(0,(s.v-360)/890));return'B39_c'+(1+Math.floor(s.tAnim*cad)%4);
 }
 function mjsDraw(g,s,W,H,tm){
   s.W=W;s.H=H;const u=H/720,gy=MJS_GY*H,rx=W*MJS_RX,im=MJ.img;
@@ -141,7 +141,7 @@ function mjsDraw(g,s,W,H,tm){
   // le Père Noël
   const key=mjsPose(s),p=im[key];
   if(p&&p.naturalWidth){
-    const k=H*.27*MJS_Z/255,w=p.naturalWidth*k,h=p.naturalHeight*k,by=gy+H*.008-s.y;
+    const k=H*.27*MJS_Z/340,w=p.naturalWidth*k,h=p.naturalHeight*k,by=gy+H*.008-s.y;
     g.fillStyle='rgba(20,30,80,'+(.28*(1-Math.min(1,s.y/(H*.35))*.6))+')';g.beginPath();g.ellipse(rx,gy+H*.008,H*.085*(1-Math.min(1,s.y/(H*.4))*.4),H*.012,0,0,6.283);g.fill();
     g.save();if(s.inv>0&&s.coup<=0)g.globalAlpha=.45+.55*Math.abs(Math.sin(tm*18));if(s.coup>0){g.translate(rx-w*.1,by);g.rotate(-.35*Math.min(1,(.55-s.coup)*6+.3));g.drawImage(p,-w/2,-h,w,h)}else g.drawImage(p,rx-w/2,by-h,w,h);g.restore();
   }
