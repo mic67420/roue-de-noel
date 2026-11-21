@@ -6,7 +6,7 @@ from PIL import Image, ImageFilter
 from scipy import ndimage as ndi
 ROOT=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..')
 SRC=os.path.join(ROOT,'assets','planches-sources');OUT=os.path.join(ROOT,'assets','mini-jeux')
-PLANCHES={'B39':(4,2,['c1','c2','c3','c4','c1b','c2b','c3b','c4b']),'B40':(3,2,['prep','decol','monte','sommet','descend','recep'])}
+PLANCHES={'B39':(4,2,['c1','c2','c3','c4','c1b','c2b','c3b','c4b']),'B42':(1,1,['soucoupe']),'B40':(3,2,['prep','decol','monte','sommet','descend','recep'])}
 def main():
     idx=json.load(open(os.path.join(OUT,'index.json')))
     for b,(nc,nl,noms) in PLANCHES.items():

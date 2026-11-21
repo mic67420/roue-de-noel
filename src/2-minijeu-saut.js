@@ -13,17 +13,21 @@ const MJS_D=45,MJS_RX=.22,MJS_GY=.82;
 const MJS_OBS={
   voiture:['B38_voiture',.140,1.741,0,.80],bouche:['B38_bouche',.115,.644,0,.70],ballon:['B38_ballon',.100,.994,.22,.85],
   boule:['B38_boule_neige',.130,1.005,.15,.85],cone:['B38_cone',.115,.809,0,.65],boite:['B38_boite',.170,.745,0,.55],
-  tonneau:['B38_tonneau',.140,.805,0,.75],cadeaux:['B38_cadeaux',.190,.767,0,.70],luge:['B38_luge',.075,2.505,0,.90],
-  caisse:['B38_caisse',.140,.928,0,.78],bonhomme:['B38_bonhomme',.170,.827,0,.60],congere:['B38_congere',.100,1.497,0,.85]
+  tonneau:['B38_tonneau',.140,.805,0,.75],luge:['B38_luge',.075,2.505,0,.90],
+  caisse:['B38_caisse',.140,.928,0,.78],bonhomme:['B38_bonhomme',.170,.827,0,.60],congere:['B38_congere',.100,1.497,0,.85],
+  // v3.71 : nouveaux objets (planche B41) + soucoupe (B42) et extra-terrestre, une seule fois chacun sur le parcours
+  voiture2:['B41_voiture_verte',.140,1.645,0,.80],buches:['B41_buches',.120,1.489,0,.85],lettres:['B41_boite_lettres',.165,.779,0,.55],
+  pot:['B41_pot',.105,.791,0,.70],taxi:['B41_taxi',.140,1.775,0,.80],luge2:['B41_luge_enfant',.115,1.005,0,.75],pelle:['B41_tas_pelle',.110,1.651,0,.85],
+  ballon2:['B41_ballon',.100,.97,.22,.85],ufo:['B42_soucoupe',.200,1.78,0,.72],alien:['B41_alien',.185,.642,0,.55]
 };
 const MJS_Z=1.15;Object.keys(MJS_OBS).forEach(k=>{MJS_OBS[k][1]*=MJS_Z});   // tout est un peu plus gros : lisible de loin sur la télé
-const MJS_ADULTES=['voiture','bouche','ballon','boule','cone','boite','tonneau','cadeaux','luge','caisse','bonhomme','congere','ballon','boule'];
-const MJS_ALIX=['bouche','ballon','cone','tonneau','boite','caisse','luge','congere'];
+const MJS_ADULTES=['voiture','bouche','ballon','boule','cone','boite','tonneau','luge','caisse','bonhomme','congere','ballon','boule','voiture2','buches','lettres','pot','taxi','luge2','pelle','ballon2'];
+const MJS_ALIX=['bouche','ballon','cone','tonneau','boite','caisse','luge','congere','pot','pelle','buches'];
 function mjsNew(easy){
   // saut : sommet ≈ .30 H (.32 pour Alix), durée en l'air ≈ .75 s (.95 pour Alix)
   const H=720,apex=H*(easy?.35:.33),T=easy?.95:.75;
   const s={D:MJS_D,t:0,done:null,ev:[],easy,W:1080,H,d:0,v:easy?360:520,y:0,vy:0,air:false,G:8*apex/(T*T),V0:4*apex/T,
-    obs:[],nxt:0,lives:6,max:6,inv:0,coup:0,slow:0,buf:0,rec:0,tAnim:0,hits:0,lastLand:0,passed:0,fx:[],lastF:-1};
+    obs:[],nxt:0,lives:6,max:6,inv:0,coup:0,slow:0,buf:0,rec:0,tAnim:0,hits:0,lastLand:0,passed:0,fx:[],lastF:-1,sp:0,tU:12+Math.random()*8};
   mjsSpawn(s);return s;
 }
 function mjsVit(s){const p=Math.min(1,s.t/s.D);return s.easy?360+140*p:520+980*Math.pow(p,1.7)}
@@ -39,9 +43,10 @@ function mjsSpawn(s){
     if(s.t>s.D-3.5){s.nxt=s.d+1e9;break}
     const H=s.H,v=mjsVit(s),p=Math.min(1,s.t/s.D),x0=Math.max(1800,v*1.5);   // toujours hors de l'écran, quelle que soit sa largeur
     
-    let ks=[s.easy?MJS_ALIX[Math.floor(Math.random()*MJS_ALIX.length)]:MJS_ADULTES[Math.floor(Math.random()*MJS_ADULTES.length)]];
+    const spe=(s.sp===0&&s.t>=s.tU)?'ufo':(s.sp===1?'alien':null);if(spe)s.sp++;   // soucoupe, puis extra-terrestre : une seule fois
+    let ks=spe?[spe]:[s.easy?MJS_ALIX[Math.floor(Math.random()*MJS_ALIX.length)]:MJS_ADULTES[Math.floor(Math.random()*MJS_ADULTES.length)]];
     // petit groupe (adultes) : deux obstacles côte à côte que UN saut bien placé passe
-    if(!s.easy&&MJS_OBS[ks[0]][3]===0&&s.t>6&&Math.random()<.06+.3*p){
+    if(!spe&&!s.easy&&MJS_OBS[ks[0]][3]===0&&s.t>6&&Math.random()<.06+.3*p){
       const k2=MJS_ADULTES[Math.floor(Math.random()*MJS_ADULTES.length)];
       if(MJS_OBS[k2][3]===0){
         const a=MJS_OBS[ks[0]],b=MJS_OBS[k2],gap=30+Math.random()*30,span=a[1]*H*a[2]+gap+b[1]*H*b[2],hmax=Math.max(a[1],b[1])*H*.86+10;   // (a[1] déjà multiplié par MJS_Z)
