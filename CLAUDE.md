@@ -247,3 +247,6 @@ Mic : « on n'a pas l'impression que le Père Noël court » → nouvelles planc
 
 ## v3.69 : le grand saut — Père Noël moins grand, vitesse qui monte de façon constante jusqu'à 1250 px/s (adultes)
 Échelle sprite `H*.27*MJS_Z/340` (v3.68 : /255, trop grand). Adultes : vitesse linéaire 520 → **1250** px/s sur 45 s (`mjsVit`), espace entre groupes (en secondes) `(.95−.2p)+rand·(.8−.3p)` (≈ .75–1,25 s à la fin), cadence de course et poussière suivent la vitesse. Obstacles générés à `max(1800, 1,5·v)` px. Alix inchangé (360 → 500).
+
+## v3.70 : le grand saut — vraie accélération croissante (adultes)
+Mic : « j'ai facilement réussi, il faut une vraie accélération croissante ». `mjsVit` adultes = `520 + 980·p^1,7` (p = temps/45 s) : 520 px/s au départ, ≈ 800 à mi-parcours, **1500 px/s** à la fin (courbe convexe : l'accélération augmente). Cadence de course normalisée sur 360→1500. Obstacles générés à `max(1800, 1,5·v)` px. Alix inchangé. Mic demande ensuite 12 nouveaux objets (obstacles, style réaliste, planche B38 à refaire).
