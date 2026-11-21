@@ -262,3 +262,6 @@ Mic : « toujours trop lent, on augmente de 20 % à la fin ». `mjsVit` adultes 
 
 ## v3.74 : le grand saut — 1 minute de parcours, vitesse adultes +20 %
 Demande de Mic : « 1 minute de parcours et on augmente de 20 % la vitesse ». `MJS_D` = 60 s (adultes et Alix, textes d'intro « 60 secondes »). `mjsVit` adultes = `1,2 × (520 + 1780·p^2,2)` : ≈ 620 px/s au départ, ≈ 1130 à mi-parcours, **≈ 2760 px/s** à la fin ; Alix inchangé (360 → 500). Cadence de course normalisée sur 360→2760. Test : boucle du robot portée à 70 s ; adultes précis 40/40, ±0,20 s 35/40 ; Alix 40/40.
+
+## v3.75 : le grand saut — encore +20 % de vitesse, 3 cœurs pour les adultes
+Demande de Mic. `mjsVit` adultes = `1,44 × (520 + 1780·p^2,2)` : ≈ 750 px/s au départ, ≈ 1360 à mi-parcours, **≈ 3310 px/s** à la fin ; Alix inchangé (360 → 500, 6 cœurs). Adultes : **3 cœurs** (`mjsNew`). Cadence de course normalisée sur 360→3360. Test : adultes précis 40/40, ±0,20 s 21/40.
