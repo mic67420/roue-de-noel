@@ -5,7 +5,7 @@ let BW=0,BH=0,DPR=1,bgT=-1,time=0;
 const stars=Array.from({length:170},()=>({x:Math.random(),y:Math.random()*.85,r:.6+Math.random()*1.7,ph:Math.random()*6.28,sp:1+Math.random()*3,t0:Math.random()*3}));
 function setVars(){document.documentElement.style.setProperty('--v',(window.innerHeight/100)+'px')}
 function sizeCanvases(){
-  DPR=Math.min(window.devicePixelRatio||1,2);BW=window.innerWidth;BH=window.innerHeight;
+  DPR=Math.min(window.devicePixelRatio||1,[2,1.25,1][PERF]);BW=window.innerWidth;BH=window.innerHeight;
   [bgc,fxc].forEach(c=>{c.width=Math.round(BW*DPR);c.height=Math.round(BH*DPR)});lc.width=Math.round(BW*lqScale());lc.height=Math.round(BH*lqScale());$('santa').width=Math.round(BW*DPR);$('santa').height=Math.round(BH*DPR);
 }
 /* ---- neige réaliste : vrais cristaux à 6 branches, 3 plans de profondeur + gros flocons flous au premier plan ---- */
@@ -50,17 +50,21 @@ function snowStep(dt){
   });
 }
 function snowDraw(g,fgLayer,sa){
-  snowF.forEach(f=>{
+  snowF.forEach((f,ix)=>{
     if((f.kind==='fg')!==fgLayer)return;
+    if(PERF>=2&&(ix%5>2))return;   // niveau léger : 3 flocons sur 5
     g.globalAlpha=sa*(f.kind==='fg'?.5:f.a);
     if(f.kind==='dot'){g.drawImage(SNOWDOT,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
     if(f.kind==='fg'){g.drawImage(SNOWBOKEH,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
+    if(PERF>=1){g.drawImage(SNOWSP[f.type],f.x-f.sz/2,f.y-f.sz*.31,f.sz,f.sz*.62);return}   // sans rotation : bien plus rapide
     g.save();g.translate(f.x,f.y);g.rotate(f.rot);g.scale(1,.62+.38*Math.abs(Math.cos(f.ph+time*f.vr*.6)));
     g.drawImage(SNOWSP[f.type],-f.sz/2,-f.sz/2,f.sz,f.sz);g.restore();
   });
   g.globalAlpha=1;
 }
+let frameN=0;
 function drawBg(dt){
+  frameN++;if(PERF>=2&&(frameN&1)&&bgT>=0){bgT+=dt;snowStep(dt);return}   // niveau léger : le décor n'est redessiné qu'une image sur deux
   bg.setTransform(DPR,0,0,DPR,0,0);bg.clearRect(0,0,BW,BH);
   if(bgT<0)return;
   bgT+=dt;
@@ -68,7 +72,7 @@ function drawBg(dt){
     const a=clamp((bgT-s.t0)/.7,0,1)*(.5+.5*Math.sin(time*s.sp+s.ph));if(a<=.02)return;
     const x=s.x*BW,y=s.y*BH;bg.globalAlpha=a;bg.fillStyle='#fff6d6';
     bg.beginPath();bg.arc(x,y,s.r,0,7);bg.fill();
-    if(s.r>1.8){bg.fillRect(x-s.r*2.4,y-.4,s.r*4.8,.8);bg.fillRect(x-.4,y-s.r*2.4,.8,s.r*4.8)}
+    if(s.r>1.8&&PERF<1){bg.fillRect(x-s.r*2.4,y-.4,s.r*4.8,.8);bg.fillRect(x-.4,y-s.r*2.4,.8,s.r*4.8)}
   });
   const sa=clamp((bgT-2)/2,0,1);
   snowStep(dt);if(sa>0)snowDraw(bg,false,sa);
@@ -257,7 +261,9 @@ function firework(x,y){
     P.push({k:'spark',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:220,life:1.1+Math.random()*.6,age:0,c:Math.random()<.6?base:'#fff2b0',r:2+Math.random()*2.5});
   }
 }
+let fxDirty=true;
 function fxStep(dt){
+  if(!P.length){if(!fxDirty)return;fxDirty=false}else fxDirty=true;   // rien à dessiner : on ne touche plus à l'écran des confettis
   fg.setTransform(DPR,0,0,DPR,0,0);fg.clearRect(0,0,BW,BH);
   // v3.62 : plus de gros flocons flous devant la roue (ils la faisaient paraître transparente)
   for(let i=P.length-1;i>=0;i--){

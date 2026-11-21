@@ -1,7 +1,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='3.63';
+const VERSION='3.64';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -14,6 +14,12 @@ const store={
   del(k){try{localStorage.removeItem(k)}catch(e){}}
 };
 $('ver').textContent='v'+VERSION;
+// Fluidité : 0 = qualité max, 1 = moyen, 2 = léger. PERFMODE : 'auto' (le jeu baisse tout seul s'il rame) ou 0/1/2 fixé par Mic.
+const PERFKEY='roue_perf';
+const PERFCFG=(()=>{const v=store.get(PERFKEY);return v&&(v.mode==='auto'||v.mode===0||v.mode===1||v.mode===2)?v:{mode:'auto',lv:0}})();
+let PERFAUTO=PERFCFG.mode==='auto';
+let PERF=PERFCFG.mode==='auto'?Math.max(0,Math.min(2,PERFCFG.lv|0)):PERFCFG.mode;
+
 
 /* ============ DONNEES ============ */
 // w = poids secret du tirage (jamais affiché)
@@ -763,7 +769,7 @@ class Roue{
   zoomTo(z){this.zt=z}
   resize(){
     const r=this.cv.getBoundingClientRect();if(r.width<10)return;
-    const S=Math.round(r.width*Math.min(window.devicePixelRatio||1,2.5));
+    const S=Math.round(r.width*Math.min(window.devicePixelRatio||1,[2.5,1.5,1][PERF]));
     if(S===this.S)return;this.S=S;this.cv.width=S;this.cv.height=S;this.R=S*this.o.rf;this.build();
   }
   setSegs(a){this.segs=a;this.n=a.length;this.s=360/this.n;this.w=Math.min(3.2,this.s*.45);this.lastK=null;this.rest();this.build()}
@@ -865,14 +871,14 @@ class Roue{
     g.beginPath();g.arc(c,c,R,0,7);g.fillStyle='#10152b';g.fill();
     if(this.bmp){const q=this.q;g.save();g.translate(c,c);g.rotate(-this.rot*Math.PI/180);g.drawImage(this.bmp,-this.bmp.width/(2*q),-this.bmp.height/(2*q),this.bmp.width/q,this.bmp.height/q);g.restore()}
     // reflets de lumière (fixes dans l'espace, la roue tourne dessous)
-    g.save();g.beginPath();g.arc(c,c,R,0,7);g.clip();g.globalCompositeOperation='lighter';
+    if(PERF<2){g.save();g.beginPath();g.arc(c,c,R,0,7);g.clip();g.globalCompositeOperation='lighter';
     const la=t*.8,lx=c+Math.cos(la)*R*.55,ly=c+Math.sin(la)*R*.55;
     const gl=g.createRadialGradient(lx,ly,0,lx,ly,R*.75);gl.addColorStop(0,`rgba(255,244,220,${.12+.1*LV})`);gl.addColorStop(1,'rgba(255,244,220,0)');
     g.fillStyle=gl;g.fillRect(c-R,c-R,R*2,R*2);
     const hue=(t*40)%360,lx2=c+Math.cos(la+Math.PI)*R*.6,ly2=c+Math.sin(la+Math.PI)*R*.6;
     const gl2=g.createRadialGradient(lx2,ly2,0,lx2,ly2,R*.7);gl2.addColorStop(0,`hsla(${hue},100%,60%,${.07+.12*LV})`);gl2.addColorStop(1,'hsla(0,0%,0%,0)');
     g.fillStyle=gl2;g.fillRect(c-R,c-R,R*2,R*2);
-    g.restore();
+    g.restore();}
     // chenillard sur la jante chromée
     if(this.o.bulbs){
       const B=48,mode=Math.floor(t/7)%3,rate=(10+22*LV)*(1+Math.min(1.5,(this.speed||0)/600)),head=(t*rate)%B;
@@ -889,7 +895,7 @@ class Roue{
       g.globalCompositeOperation='lighter';
       for(let i=0;i<B;i++){
         const x=posx(i),y=posy(i),I=Ia[i],col=BCl[(Math.floor(i/6)+Math.floor(t*.5))%4];
-        g.fillStyle=col;g.globalAlpha=.2*I;g.beginPath();g.arc(x,y,R*.075,0,7);g.fill();
+        g.fillStyle=col;if(PERF<1){g.globalAlpha=.2*I;g.beginPath();g.arc(x,y,R*.075,0,7);g.fill()}
         g.globalAlpha=.38*I;g.beginPath();g.arc(x,y,R*.042,0,7);g.fill();
         g.globalAlpha=.25+.75*I;g.beginPath();g.arc(x,y,R*.02,0,7);g.fill();
         g.fillStyle='#fff';g.globalAlpha=.85*I;g.beginPath();g.arc(x-R*.005,y-R*.005,R*.0075,0,7);g.fill();

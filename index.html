@@ -23,7 +23,7 @@ button{font-family:inherit;cursor:pointer}
 #bg,#fx{position:fixed;left:0;top:0;width:100vw;height:100%;pointer-events:none}
 #bg{z-index:0}#fx{z-index:90}
 body.mjOn #lights{display:none}
-#lights{position:fixed;left:0;top:0;width:100vw;height:100%;pointer-events:none;z-index:80}
+#lights{display:none!important;position:fixed;left:0;top:0;width:100vw;height:100%;pointer-events:none;z-index:80}
 #ver{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--v)*.8);font-size:calc(var(--v)*2.3);font-weight:700;z-index:99999;pointer-events:none;color:#ffe48a;background:rgba(7,13,42,.6);padding:calc(var(--v)*.2) calc(var(--v)*1);border-radius:calc(var(--v)*1);text-shadow:0 1px 2px #000}
 .screen{position:fixed;inset:0;display:none;z-index:10;flex-direction:column;align-items:center;justify-content:center}
 .screen.on{display:flex}
@@ -253,7 +253,7 @@ input[type=range]{width:calc(var(--v)*52);height:calc(var(--v)*5);accent-color:#
 <script>
 (()=>{
 'use strict';
-const VERSION='3.63';
+const VERSION='3.64';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -266,6 +266,12 @@ const store={
   del(k){try{localStorage.removeItem(k)}catch(e){}}
 };
 $('ver').textContent='v'+VERSION;
+// Fluidité : 0 = qualité max, 1 = moyen, 2 = léger. PERFMODE : 'auto' (le jeu baisse tout seul s'il rame) ou 0/1/2 fixé par Mic.
+const PERFKEY='roue_perf';
+const PERFCFG=(()=>{const v=store.get(PERFKEY);return v&&(v.mode==='auto'||v.mode===0||v.mode===1||v.mode===2)?v:{mode:'auto',lv:0}})();
+let PERFAUTO=PERFCFG.mode==='auto';
+let PERF=PERFCFG.mode==='auto'?Math.max(0,Math.min(2,PERFCFG.lv|0)):PERFCFG.mode;
+
 
 /* ============ DONNEES ============ */
 // w = poids secret du tirage (jamais affiché)
@@ -1015,7 +1021,7 @@ class Roue{
   zoomTo(z){this.zt=z}
   resize(){
     const r=this.cv.getBoundingClientRect();if(r.width<10)return;
-    const S=Math.round(r.width*Math.min(window.devicePixelRatio||1,2.5));
+    const S=Math.round(r.width*Math.min(window.devicePixelRatio||1,[2.5,1.5,1][PERF]));
     if(S===this.S)return;this.S=S;this.cv.width=S;this.cv.height=S;this.R=S*this.o.rf;this.build();
   }
   setSegs(a){this.segs=a;this.n=a.length;this.s=360/this.n;this.w=Math.min(3.2,this.s*.45);this.lastK=null;this.rest();this.build()}
@@ -1117,14 +1123,14 @@ class Roue{
     g.beginPath();g.arc(c,c,R,0,7);g.fillStyle='#10152b';g.fill();
     if(this.bmp){const q=this.q;g.save();g.translate(c,c);g.rotate(-this.rot*Math.PI/180);g.drawImage(this.bmp,-this.bmp.width/(2*q),-this.bmp.height/(2*q),this.bmp.width/q,this.bmp.height/q);g.restore()}
     // reflets de lumière (fixes dans l'espace, la roue tourne dessous)
-    g.save();g.beginPath();g.arc(c,c,R,0,7);g.clip();g.globalCompositeOperation='lighter';
+    if(PERF<2){g.save();g.beginPath();g.arc(c,c,R,0,7);g.clip();g.globalCompositeOperation='lighter';
     const la=t*.8,lx=c+Math.cos(la)*R*.55,ly=c+Math.sin(la)*R*.55;
     const gl=g.createRadialGradient(lx,ly,0,lx,ly,R*.75);gl.addColorStop(0,`rgba(255,244,220,${.12+.1*LV})`);gl.addColorStop(1,'rgba(255,244,220,0)');
     g.fillStyle=gl;g.fillRect(c-R,c-R,R*2,R*2);
     const hue=(t*40)%360,lx2=c+Math.cos(la+Math.PI)*R*.6,ly2=c+Math.sin(la+Math.PI)*R*.6;
     const gl2=g.createRadialGradient(lx2,ly2,0,lx2,ly2,R*.7);gl2.addColorStop(0,`hsla(${hue},100%,60%,${.07+.12*LV})`);gl2.addColorStop(1,'hsla(0,0%,0%,0)');
     g.fillStyle=gl2;g.fillRect(c-R,c-R,R*2,R*2);
-    g.restore();
+    g.restore();}
     // chenillard sur la jante chromée
     if(this.o.bulbs){
       const B=48,mode=Math.floor(t/7)%3,rate=(10+22*LV)*(1+Math.min(1.5,(this.speed||0)/600)),head=(t*rate)%B;
@@ -1141,7 +1147,7 @@ class Roue{
       g.globalCompositeOperation='lighter';
       for(let i=0;i<B;i++){
         const x=posx(i),y=posy(i),I=Ia[i],col=BCl[(Math.floor(i/6)+Math.floor(t*.5))%4];
-        g.fillStyle=col;g.globalAlpha=.2*I;g.beginPath();g.arc(x,y,R*.075,0,7);g.fill();
+        g.fillStyle=col;if(PERF<1){g.globalAlpha=.2*I;g.beginPath();g.arc(x,y,R*.075,0,7);g.fill()}
         g.globalAlpha=.38*I;g.beginPath();g.arc(x,y,R*.042,0,7);g.fill();
         g.globalAlpha=.25+.75*I;g.beginPath();g.arc(x,y,R*.02,0,7);g.fill();
         g.fillStyle='#fff';g.globalAlpha=.85*I;g.beginPath();g.arc(x-R*.005,y-R*.005,R*.0075,0,7);g.fill();
@@ -3889,7 +3895,7 @@ let BW=0,BH=0,DPR=1,bgT=-1,time=0;
 const stars=Array.from({length:170},()=>({x:Math.random(),y:Math.random()*.85,r:.6+Math.random()*1.7,ph:Math.random()*6.28,sp:1+Math.random()*3,t0:Math.random()*3}));
 function setVars(){document.documentElement.style.setProperty('--v',(window.innerHeight/100)+'px')}
 function sizeCanvases(){
-  DPR=Math.min(window.devicePixelRatio||1,2);BW=window.innerWidth;BH=window.innerHeight;
+  DPR=Math.min(window.devicePixelRatio||1,[2,1.25,1][PERF]);BW=window.innerWidth;BH=window.innerHeight;
   [bgc,fxc].forEach(c=>{c.width=Math.round(BW*DPR);c.height=Math.round(BH*DPR)});lc.width=Math.round(BW*lqScale());lc.height=Math.round(BH*lqScale());$('santa').width=Math.round(BW*DPR);$('santa').height=Math.round(BH*DPR);
 }
 /* ---- neige réaliste : vrais cristaux à 6 branches, 3 plans de profondeur + gros flocons flous au premier plan ---- */
@@ -3934,17 +3940,21 @@ function snowStep(dt){
   });
 }
 function snowDraw(g,fgLayer,sa){
-  snowF.forEach(f=>{
+  snowF.forEach((f,ix)=>{
     if((f.kind==='fg')!==fgLayer)return;
+    if(PERF>=2&&(ix%5>2))return;   // niveau léger : 3 flocons sur 5
     g.globalAlpha=sa*(f.kind==='fg'?.5:f.a);
     if(f.kind==='dot'){g.drawImage(SNOWDOT,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
     if(f.kind==='fg'){g.drawImage(SNOWBOKEH,f.x-f.sz/2,f.y-f.sz/2,f.sz,f.sz);return}
+    if(PERF>=1){g.drawImage(SNOWSP[f.type],f.x-f.sz/2,f.y-f.sz*.31,f.sz,f.sz*.62);return}   // sans rotation : bien plus rapide
     g.save();g.translate(f.x,f.y);g.rotate(f.rot);g.scale(1,.62+.38*Math.abs(Math.cos(f.ph+time*f.vr*.6)));
     g.drawImage(SNOWSP[f.type],-f.sz/2,-f.sz/2,f.sz,f.sz);g.restore();
   });
   g.globalAlpha=1;
 }
+let frameN=0;
 function drawBg(dt){
+  frameN++;if(PERF>=2&&(frameN&1)&&bgT>=0){bgT+=dt;snowStep(dt);return}   // niveau léger : le décor n'est redessiné qu'une image sur deux
   bg.setTransform(DPR,0,0,DPR,0,0);bg.clearRect(0,0,BW,BH);
   if(bgT<0)return;
   bgT+=dt;
@@ -3952,7 +3962,7 @@ function drawBg(dt){
     const a=clamp((bgT-s.t0)/.7,0,1)*(.5+.5*Math.sin(time*s.sp+s.ph));if(a<=.02)return;
     const x=s.x*BW,y=s.y*BH;bg.globalAlpha=a;bg.fillStyle='#fff6d6';
     bg.beginPath();bg.arc(x,y,s.r,0,7);bg.fill();
-    if(s.r>1.8){bg.fillRect(x-s.r*2.4,y-.4,s.r*4.8,.8);bg.fillRect(x-.4,y-s.r*2.4,.8,s.r*4.8)}
+    if(s.r>1.8&&PERF<1){bg.fillRect(x-s.r*2.4,y-.4,s.r*4.8,.8);bg.fillRect(x-.4,y-s.r*2.4,.8,s.r*4.8)}
   });
   const sa=clamp((bgT-2)/2,0,1);
   snowStep(dt);if(sa>0)snowDraw(bg,false,sa);
@@ -4141,7 +4151,9 @@ function firework(x,y){
     P.push({k:'spark',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:220,life:1.1+Math.random()*.6,age:0,c:Math.random()<.6?base:'#fff2b0',r:2+Math.random()*2.5});
   }
 }
+let fxDirty=true;
 function fxStep(dt){
+  if(!P.length){if(!fxDirty)return;fxDirty=false}else fxDirty=true;   // rien à dessiner : on ne touche plus à l'écran des confettis
   fg.setTransform(DPR,0,0,DPR,0,0);fg.clearRect(0,0,BW,BH);
   // v3.62 : plus de gros flocons flous devant la roue (ils la faisaient paraître transparente)
   for(let i=P.length-1;i>=0;i--){
@@ -4433,7 +4445,10 @@ function volPanel(){
     <div class="vrow">Effets<input type="range" id="vFx" min="0" max="100" value="${Math.round(AE.vol.fx*100)}"></div>
     <div class="vrow">Musique<input type="range" id="vMu" min="0" max="100" value="${Math.round(AE.vol.mus*100)}"></div>
     <div class="btnRow"><button class="btn" id="vMute"></button><button class="btn g" id="vFile">🎵 Choisir la musique</button><button class="btn" id="vPlay">⏯️ Pause / Lecture</button><button class="btn" id="vVid">🎬 Père Noël (vidéo)</button></div>
+    <div class="btnRow"><button class="btn g" id="vPerf"></button></div>
     <div class="btnRow"><button class="btn r" id="vClose">Fermer</button></div></div>`);
+  const pf=()=>{const c=store.get(PERFKEY)||{mode:'auto'};m.querySelector('#vPerf').textContent='⚡ Fluidité : '+(c.mode==='auto'?'Auto (niveau '+PERF+')':c.mode===0?'Qualité max':c.mode===1?'Moyenne':'Légère')};pf();
+  m.querySelector('#vPerf').onclick=()=>{const c=store.get(PERFKEY)||{mode:'auto'},o=['auto',0,1,2],n=o[(o.indexOf(c.mode)+1)%4];setPerf(n==='auto'?0:n,n==='auto');pf()};
   const mu=()=>m.querySelector('#vMute').textContent=AE.vol.mute?'🔇 Son coupé':'🔊 Son activé';mu();
   m.querySelector('#vFx').oninput=e=>AE.set('fx',e.target.value/100);
   m.querySelector('#vMu').oninput=e=>AE.set('mus',e.target.value/100);
@@ -4744,7 +4759,7 @@ function vidClipReady(name){
   if(!v||!v.videoWidth||(c.ready&&c.readyUrl===c.url))return;
   c.readyUrl=c.url;c.ready=true;
   if(!VID.wc){ // les deux séquences ont le même cadrage : on dimensionne le détourage sur la première prête
-    const vw=v.videoWidth,vh=v.videoHeight,sc=Math.min(1,480/Math.max(vw,vh));
+    const vw=v.videoWidth,vh=v.videoHeight,sc=Math.min(1,[480,360,288][PERF]/Math.max(vw,vh));
     VID.w=Math.max(16,Math.round(vw*sc));VID.h=Math.max(16,Math.round(vh*sc));
     VID.wc=document.createElement('canvas');VID.wc.width=VID.w;VID.wc.height=VID.h;VID.ctx=VID.wc.getContext('2d',{willReadFrequently:true});
     VID.fc=document.createElement('canvas');VID.fc.width=VID.w;VID.fc.height=VID.h;VID.fctx=VID.fc.getContext('2d');
@@ -4754,6 +4769,20 @@ function vidClipReady(name){
   if(name==='idle'){if(VID.cur==='idle'){try{const p=v.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}}
   else{if(!VID.clips.idle.ready)VID.cur='thr';try{v.currentTime=0}catch(e){}}
   if(!c.quiet)toast('🎬 Vidéo chargée');c.quiet=false;
+}
+function vidRealloc(){   // recalcule la taille du détourage après un changement de niveau de fluidité
+  if(!VID.wc)return;
+  const v=(VID.clips.idle.el&&VID.clips.idle.el.videoWidth)?VID.clips.idle.el:VID.clips.thr.el;if(!v||!v.videoWidth)return;
+  const sc=Math.min(1,[480,360,288][PERF]/Math.max(v.videoWidth,v.videoHeight));
+  const w=Math.max(16,Math.round(v.videoWidth*sc)),h=Math.max(16,Math.round(v.videoHeight*sc));
+  if(w===VID.w&&h===VID.h)return;
+  VID.w=w;VID.h=h;[VID.wc,VID.fc,VID.sc].forEach(c=>{c.width=w;c.height=h});
+  VID.A=null;VID.T=null;VID.bb=null;VID.fullNext=true;VID.fade=null;VID.dirty=true;
+}
+function setPerf(lv,auto){
+  PERF=lv;PERFAUTO=!!auto;store.set(PERFKEY,{mode:auto?'auto':lv,lv});
+  sizeCanvases();vidRealloc();bgT=Math.max(bgT,99);
+  if(big){big.S=0;small.S=0;if($('game').classList.contains('on')&&S)requestAnimationFrame(layoutWheels)}
 }
 function vidSwitch(name,t){
   const c=VID.clips[name];if(!c||!c.ready)return false;
@@ -4840,7 +4869,7 @@ function vidTick(dt){
   if(!visible&&!VID.dirty)return;
   VID.acc+=dt;
   const playing=!v.paused&&!v.ended;
-  if(VID.dirty||(playing&&v.currentTime!==VID.lastT&&VID.acc>=1/30)){VID.acc=0;VID.lastT=v.currentTime;vidProcess()}   // seulement quand l'image de la vidéo a changé
+  if(VID.dirty||(playing&&v.currentTime!==VID.lastT&&VID.acc>=[1/30,1/20,1/15][PERF]-.002)){VID.acc=0;VID.lastT=v.currentTime;vidProcess()}   // seulement quand l'image de la vidéo a changé
 }
 function vidLaunch(){
   if(!VID.clips.thr.ready)return 0;
@@ -4952,8 +4981,19 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ============ BOUCLE PRINCIPALE ============ */
 let last=performance.now();
+let pfN=0,pfSum=0,pfWait=0;
+function perfWatch(raw){   // mode auto : si le jeu tourne sous ~35 images/s pendant la partie, on passe au niveau de qualité inférieur
+
+  if(!PERFAUTO)return;
+  if(!S||!$('game').classList.contains('on')||PERF>=2||document.hidden){pfN=0;pfSum=0;pfWait=0;return}
+  if(raw>1||raw<=0)return;                                          // onglet endormi ou pause : on ignore
+  pfWait+=raw;if(pfWait<4)return;                                   // 4 s de chauffe (vidéo, calcul de la roue)
+  pfN++;pfSum+=Math.min(raw,.2);
+  if(pfN>=60||(pfSum>=3&&pfN>=6)){const avg=pfSum/pfN;pfN=0;pfSum=0;if(avg>.029){setPerf(PERF+1,true);pfWait=0;toast(PERF===1?'⚡ Qualité réduite pour plus de fluidité':'⚡ Qualité réduite au minimum pour plus de fluidité')}}
+}
 function loop(now){
-  const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;
+  const raw=(now-last)/1000;perfWatch(raw);
+  const dt=Math.min(.05,raw);last=now;time+=dt;
   if(MJ.active){fxStep(dt);requestAnimationFrame(loop);return}      // pendant un mini-jeu, le décor de la roue est mis en pause (plus de fluidité)
   lgtStep(dt);LV=LGT.lv;
   drawBg(dt);drawLights(dt);

@@ -40,7 +40,10 @@ function volPanel(){
     <div class="vrow">Effets<input type="range" id="vFx" min="0" max="100" value="${Math.round(AE.vol.fx*100)}"></div>
     <div class="vrow">Musique<input type="range" id="vMu" min="0" max="100" value="${Math.round(AE.vol.mus*100)}"></div>
     <div class="btnRow"><button class="btn" id="vMute"></button><button class="btn g" id="vFile">🎵 Choisir la musique</button><button class="btn" id="vPlay">⏯️ Pause / Lecture</button><button class="btn" id="vVid">🎬 Père Noël (vidéo)</button></div>
+    <div class="btnRow"><button class="btn g" id="vPerf"></button></div>
     <div class="btnRow"><button class="btn r" id="vClose">Fermer</button></div></div>`);
+  const pf=()=>{const c=store.get(PERFKEY)||{mode:'auto'};m.querySelector('#vPerf').textContent='⚡ Fluidité : '+(c.mode==='auto'?'Auto (niveau '+PERF+')':c.mode===0?'Qualité max':c.mode===1?'Moyenne':'Légère')};pf();
+  m.querySelector('#vPerf').onclick=()=>{const c=store.get(PERFKEY)||{mode:'auto'},o=['auto',0,1,2],n=o[(o.indexOf(c.mode)+1)%4];setPerf(n==='auto'?0:n,n==='auto');pf()};
   const mu=()=>m.querySelector('#vMute').textContent=AE.vol.mute?'🔇 Son coupé':'🔊 Son activé';mu();
   m.querySelector('#vFx').oninput=e=>AE.set('fx',e.target.value/100);
   m.querySelector('#vMu').oninput=e=>AE.set('mus',e.target.value/100);
@@ -351,7 +354,7 @@ function vidClipReady(name){
   if(!v||!v.videoWidth||(c.ready&&c.readyUrl===c.url))return;
   c.readyUrl=c.url;c.ready=true;
   if(!VID.wc){ // les deux séquences ont le même cadrage : on dimensionne le détourage sur la première prête
-    const vw=v.videoWidth,vh=v.videoHeight,sc=Math.min(1,480/Math.max(vw,vh));
+    const vw=v.videoWidth,vh=v.videoHeight,sc=Math.min(1,[480,360,288][PERF]/Math.max(vw,vh));
     VID.w=Math.max(16,Math.round(vw*sc));VID.h=Math.max(16,Math.round(vh*sc));
     VID.wc=document.createElement('canvas');VID.wc.width=VID.w;VID.wc.height=VID.h;VID.ctx=VID.wc.getContext('2d',{willReadFrequently:true});
     VID.fc=document.createElement('canvas');VID.fc.width=VID.w;VID.fc.height=VID.h;VID.fctx=VID.fc.getContext('2d');
@@ -361,6 +364,20 @@ function vidClipReady(name){
   if(name==='idle'){if(VID.cur==='idle'){try{const p=v.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}}
   else{if(!VID.clips.idle.ready)VID.cur='thr';try{v.currentTime=0}catch(e){}}
   if(!c.quiet)toast('🎬 Vidéo chargée');c.quiet=false;
+}
+function vidRealloc(){   // recalcule la taille du détourage après un changement de niveau de fluidité
+  if(!VID.wc)return;
+  const v=(VID.clips.idle.el&&VID.clips.idle.el.videoWidth)?VID.clips.idle.el:VID.clips.thr.el;if(!v||!v.videoWidth)return;
+  const sc=Math.min(1,[480,360,288][PERF]/Math.max(v.videoWidth,v.videoHeight));
+  const w=Math.max(16,Math.round(v.videoWidth*sc)),h=Math.max(16,Math.round(v.videoHeight*sc));
+  if(w===VID.w&&h===VID.h)return;
+  VID.w=w;VID.h=h;[VID.wc,VID.fc,VID.sc].forEach(c=>{c.width=w;c.height=h});
+  VID.A=null;VID.T=null;VID.bb=null;VID.fullNext=true;VID.fade=null;VID.dirty=true;
+}
+function setPerf(lv,auto){
+  PERF=lv;PERFAUTO=!!auto;store.set(PERFKEY,{mode:auto?'auto':lv,lv});
+  sizeCanvases();vidRealloc();bgT=Math.max(bgT,99);
+  if(big){big.S=0;small.S=0;if($('game').classList.contains('on')&&S)requestAnimationFrame(layoutWheels)}
 }
 function vidSwitch(name,t){
   const c=VID.clips[name];if(!c||!c.ready)return false;
@@ -447,7 +464,7 @@ function vidTick(dt){
   if(!visible&&!VID.dirty)return;
   VID.acc+=dt;
   const playing=!v.paused&&!v.ended;
-  if(VID.dirty||(playing&&v.currentTime!==VID.lastT&&VID.acc>=1/30)){VID.acc=0;VID.lastT=v.currentTime;vidProcess()}   // seulement quand l'image de la vidéo a changé
+  if(VID.dirty||(playing&&v.currentTime!==VID.lastT&&VID.acc>=[1/30,1/20,1/15][PERF]-.002)){VID.acc=0;VID.lastT=v.currentTime;vidProcess()}   // seulement quand l'image de la vidéo a changé
 }
 function vidLaunch(){
   if(!VID.clips.thr.ready)return 0;
@@ -559,8 +576,19 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ============ BOUCLE PRINCIPALE ============ */
 let last=performance.now();
+let pfN=0,pfSum=0,pfWait=0;
+function perfWatch(raw){   // mode auto : si le jeu tourne sous ~35 images/s pendant la partie, on passe au niveau de qualité inférieur
+
+  if(!PERFAUTO)return;
+  if(!S||!$('game').classList.contains('on')||PERF>=2||document.hidden){pfN=0;pfSum=0;pfWait=0;return}
+  if(raw>1||raw<=0)return;                                          // onglet endormi ou pause : on ignore
+  pfWait+=raw;if(pfWait<4)return;                                   // 4 s de chauffe (vidéo, calcul de la roue)
+  pfN++;pfSum+=Math.min(raw,.2);
+  if(pfN>=60||(pfSum>=3&&pfN>=6)){const avg=pfSum/pfN;pfN=0;pfSum=0;if(avg>.029){setPerf(PERF+1,true);pfWait=0;toast(PERF===1?'⚡ Qualité réduite pour plus de fluidité':'⚡ Qualité réduite au minimum pour plus de fluidité')}}
+}
 function loop(now){
-  const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;
+  const raw=(now-last)/1000;perfWatch(raw);
+  const dt=Math.min(.05,raw);last=now;time+=dt;
   if(MJ.active){fxStep(dt);requestAnimationFrame(loop);return}      // pendant un mini-jeu, le décor de la roue est mis en pause (plus de fluidité)
   lgtStep(dt);LV=LGT.lv;
   drawBg(dt);drawLights(dt);
