@@ -41,6 +41,8 @@ NOMS = {
  'B35': ['t1','t2','t3','t4','l1','l2','l3','l4','r1','r2','r3','r4'],
  'B36': ['voiture_rouge','berline_bleue','sport_jaune','break_vert','camionnette','camion_bache','citerne','demenagement','tracteur_rouge','tracteur_vert','pompiers','deneigeuse'],
  'B41': ['voiture_verte','bouche','ballon','buches','cone','boite_lettres','tonneau','pot','taxi','luge_enfant','alien','tas_pelle'],
+ 'B43': ['traineau_chien','machine_laver','cabine','flamant','piano','scooter','frigo','parasol','canne_peche','bidon','tracteur_pedales','lit'],
+ 'B44': ['pingouin','pot_peinture','seau','robot','tondeuse','fauteuil','coffre','valise','tv','bonhomme_tombe','palmes','bouee'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
 }
 LIGNES = {'B11': [5, 4, 4]}   # nombre d'objets par rangée quand ce n'est pas 4-4-4

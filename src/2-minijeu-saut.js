@@ -11,18 +11,25 @@
 const MJS_D=45,MJS_RX=.22,MJS_GY=.82;
 // [clé, hauteur à l'écran (part de H), largeur/hauteur, roule ? (vitesse en plus), part de la largeur qui touche]
 const MJS_OBS={
-  voiture:['B38_voiture',.140,1.741,0,.80],bouche:['B38_bouche',.115,.644,0,.70],ballon:['B38_ballon',.100,.994,.22,.85],
-  boule:['B38_boule_neige',.130,1.005,.15,.85],cone:['B38_cone',.115,.809,0,.65],boite:['B38_boite',.170,.745,0,.55],
-  tonneau:['B38_tonneau',.140,.805,0,.75],luge:['B38_luge',.075,2.505,0,.90],
-  caisse:['B38_caisse',.140,.928,0,.78],bonhomme:['B38_bonhomme',.170,.827,0,.60],congere:['B38_congere',.100,1.497,0,.85],
-  // v3.71 : nouveaux objets (planche B41) + soucoupe (B42) et extra-terrestre, une seule fois chacun sur le parcours
-  voiture2:['B41_voiture_verte',.140,1.645,0,.80],buches:['B41_buches',.120,1.489,0,.85],lettres:['B41_boite_lettres',.165,.779,0,.55],
-  pot:['B41_pot',.105,.791,0,.70],taxi:['B41_taxi',.140,1.775,0,.80],luge2:['B41_luge_enfant',.115,1.005,0,.75],pelle:['B41_tas_pelle',.110,1.651,0,.85],
-  ballon2:['B41_ballon',.100,.97,.22,.85],ufo:['B42_soucoupe',.200,1.78,0,.72],alien:['B41_alien',.185,.642,0,.55]
+  // planche B41
+  voiture:['B41_voiture_verte',.140,1.645,0,.80],bouche:['B41_bouche',.130,.616,0,.70],ballon:['B41_ballon',.100,.970,.22,.85],buches:['B41_buches',.120,1.489,0,.85],
+  cone:['B41_cone',.120,.793,0,.65],lettres:['B41_boite_lettres',.170,.779,0,.50],tonneau:['B41_tonneau',.140,.803,0,.75],pot:['B41_pot',.110,.791,0,.70],
+  taxi:['B41_taxi',.140,1.775,0,.80],luge2:['B41_luge_enfant',.120,1.005,0,.75],pelle:['B41_tas_pelle',.110,1.651,0,.85],
+  // planche B43
+  traineauchien:['B43_traineau_chien',.100,1.623,0,.85],machine:['B43_machine_laver',.170,1.197,0,.80],cabine:['B43_cabine',.200,.954,0,.80],flamant:['B43_flamant',.170,.702,0,.45],
+  piano:['B43_piano',.170,1.116,0,.85],scooter:['B43_scooter',.140,1.359,0,.75],frigo:['B43_frigo',.190,1.144,0,.80],parasol:['B43_parasol',.170,.722,0,.50],
+  canne:['B43_canne_peche',.170,1.098,0,.45],bidon:['B43_bidon',.150,.873,0,.70],tracteur:['B43_tracteur_pedales',.130,1.489,0,.80],lit:['B43_lit',.130,1.378,0,.85],
+  // planche B44
+  pingouin:['B44_pingouin',.160,.838,0,.60],peinture:['B44_pot_peinture',.100,1.359,0,.85],seau:['B44_seau',.120,.967,0,.75],robot:['B44_robot',.065,1.446,0,.90],
+  tondeuse:['B44_tondeuse',.140,1.264,0,.80],fauteuil:['B44_fauteuil',.170,.758,0,.65],coffre:['B44_coffre',.130,1.248,0,.80],valise:['B44_valise',.130,1.170,0,.80],
+  tv:['B44_tv',.150,1.315,0,.80],bonhommet:['B44_bonhomme_tombe',.090,1.688,0,.85],palmes:['B44_palmes',.150,1.272,0,.70],bouee:['B44_bouee',.150,1.458,0,.80],
+  // soucoupe (B42) puis extra-terrestre (B41), une seule fois chacun
+  ufo:['B42_soucoupe',.200,1.78,0,.72],alien:['B41_alien',.185,.642,0,.55]
 };
 const MJS_Z=1.15;Object.keys(MJS_OBS).forEach(k=>{MJS_OBS[k][1]*=MJS_Z});   // tout est un peu plus gros : lisible de loin sur la télé
-const MJS_ADULTES=['voiture','bouche','ballon','boule','cone','boite','tonneau','luge','caisse','bonhomme','congere','ballon','boule','voiture2','buches','lettres','pot','taxi','luge2','pelle','ballon2'];
-const MJS_ALIX=['bouche','ballon','cone','tonneau','boite','caisse','luge','congere','pot','pelle','buches'];
+const MJS_SPECIAUX=['ufo','alien'];
+const MJS_ADULTES=Object.keys(MJS_OBS).filter(k=>!MJS_SPECIAUX.includes(k)).concat(['ballon']);
+const MJS_ALIX=['bouche','ballon','cone','tonneau','pot','pelle','buches','peinture','seau','robot','bonhommet','traineauchien','tracteur','valise','coffre','luge2'];
 function mjsNew(easy){
   // saut : sommet ≈ .30 H (.32 pour Alix), durée en l'air ≈ .75 s (.95 pour Alix)
   const H=720,apex=H*(easy?.35:.33),T=easy?.95:.75;
@@ -30,7 +37,7 @@ function mjsNew(easy){
     obs:[],nxt:0,lives:6,max:6,inv:0,coup:0,slow:0,buf:0,rec:0,tAnim:0,hits:0,lastLand:0,passed:0,fx:[],lastF:-1,sp:0,tU:12+Math.random()*8};
   mjsSpawn(s);return s;
 }
-function mjsVit(s){const p=Math.min(1,s.t/s.D);return s.easy?360+140*p:520+980*Math.pow(p,1.7)}
+function mjsVit(s){const p=Math.min(1,s.t/s.D);return s.easy?360+140*p:520+1400*Math.pow(p,2.2)}
 // largeur (px) d'une zone de ciel libre au-dessus d'une hauteur donnée : le Père Noël y reste hy..sommet pendant tw secondes
 function mjsFenetre(s,hy){const q=s.V0*s.V0-2*s.G*hy;return q<=0?0:2*Math.sqrt(q)/s.G}
 function mjsHW(k,H){const d=MJS_OBS[k];return d[1]*H*d[2]*.5}    // demi-largeur de l'image
@@ -74,7 +81,7 @@ function mjsUpdate(s,dt){
   let v=mjsVit(s);if(s.slow>0)v*=.62+.38*(1-s.slow/1.3);
   s.v=v;s.d+=v*dt;
   // poussière de neige soulevée par les pieds (donne la sensation de courir)
-  if(!s.air&&s.coup<=0){const f=Math.floor(s.tAnim*(9+9*Math.min(1,Math.max(0,(s.v-360)/1140))));if(f!==s.lastF){s.lastF=f;if(f%2===0)mjsPuff(s,3,.6)}}
+  if(!s.air&&s.coup<=0){const f=Math.floor(s.tAnim*(9+9*Math.min(1,Math.max(0,(s.v-360)/1560))));if(f!==s.lastF){s.lastF=f;if(f%2===0)mjsPuff(s,3,.6)}}
   for(const p of s.fx){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt}
   s.fx=s.fx.filter(p=>p.t<p.life);
   // physique du saut
@@ -103,7 +110,7 @@ function mjsPose(s){
   if(s.coup>0||s.done==='lose')return'B40_recep';
   if(s.air){const f=s.vy/s.V0;return f>.75?'B40_decol':f>.3?'B40_monte':f>-.3?'B40_sommet':'B40_descend'}
   if(s.rec>0)return'B40_recep';
-  const cad=9+9*Math.min(1,Math.max(0,(s.v-360)/1140));return'B39_c'+(1+Math.floor(s.tAnim*cad)%4);
+  const cad=9+9*Math.min(1,Math.max(0,(s.v-360)/1560));return'B39_c'+(1+Math.floor(s.tAnim*cad)%4);
 }
 function mjsDraw(g,s,W,H,tm){
   s.W=W;s.H=H;const u=H/720,gy=MJS_GY*H,rx=W*MJS_RX,im=MJ.img;
