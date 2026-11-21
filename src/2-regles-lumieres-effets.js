@@ -278,28 +278,24 @@ function fxStep(dt){
 /* ============ ETAT DE LA PARTIE ============ */
 let S=null,H=[],busy=false,big=null,small=null,finalTimer=null,saved=null;
 function buildLayout(){
-  // roue FIXE de 13 cases, sans aucun doublon : 7 cases spéciales (une de chaque sorte) + 5 cases cadeaux + le cadeau mystère
+  // roue FIXE de 13 cases, sans aucun doublon de case spéciale : 7 cases spéciales (une de chaque sorte) + 6 cases « Mini-jeu » (= gagner un cadeau)
   const keys=['vol','echange','double','bouclier','choix','autre','pas'];
   const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
-  const ds=shuf(Array.from({length:11},(_,i)=>i));        // motifs de cadeau tirés parmi les 11 disponibles (jamais deux fois le même)
-  // 7 spéciales formant un cercle : 7 intervalles, dont 6 reçoivent une case cadeau (5 cadeaux + le mystère) => jamais deux cadeaux côte à côte
-  const sp=shuf(keys),gaps=shuf([0,1,2,3,4,5,6]).slice(0,6),gifts=shuf(['g','g','g','g','g','m']),order=[];
-  let gi=0;
-  for(let i=0;i<7;i++){order.push(sp[i]);if(gaps.includes(i))order.push(gifts[gi++])}
+  // 7 spéciales formant un cercle : 7 intervalles, dont 6 reçoivent une case Mini-jeu => jamais deux Mini-jeux côte à côte
+  const sp=shuf(keys),gaps=shuf([0,1,2,3,4,5,6]).slice(0,6),order=[];
+  for(let i=0;i<7;i++){order.push(sp[i]);if(gaps.includes(i))order.push('g')}
   const r0=rnd(order.length),rot=order.slice(r0).concat(order.slice(0,r0));      // la roue démarre à un endroit au hasard
-  let dI=0,gI=0;
-  const slots=rot.map(k=>k==='m'?{k:'mystery'}:k==='g'?{k:'gift',c:(gI++)%2,d:ds[dI++]}:{k,v:0});
+  const slots=rot.map(k=>k==='g'?{k:'gift'}:{k,v:0});
   slots.forEach((s,i)=>{s.id='s'+i+'_'+rnd(1e6)});
   return slots;
 }
 function newState(cfg){
-  const normal=cfg.total-1;
   return{ver:VERSION,set:{total:cfg.total,thr:cfg.thr,boost:cfg.boost},
-    players:PLAYERS.map(()=>({gifts:[]})),pool:Array.from({length:normal},(_,i)=>i+1),
-    mysteryDrawn:false,shields:[],layout:buildLayout(),current:-1,phase:'smallReady'};
+    players:PLAYERS.map(()=>({gifts:[]})),pool:Array.from({length:cfg.total},(_,i)=>i+1),
+    shields:[],layout:buildLayout(),current:-1,phase:'smallReady'};
 }
 function save(){store.set(KEY,{S,H:H.slice(-60)})}
-function loadSave(){const o=store.get(KEY);return(o&&o.S&&o.S.players&&o.S.layout&&o.S.layout.length===13)?o:null}   // une partie sauvegardée avec l'ancienne roue (24 cases) n'est pas reprise
+function loadSave(){const o=store.get(KEY);return(o&&o.S&&o.S.players&&o.S.layout&&o.S.layout.length===13&&!('mysteryDrawn' in o.S))?o:null}   // une partie sauvegardée avec l'ancienne roue (24 cases) n'est pas reprise
 const nm=i=>PLAYERS[i].name,av=i=>PLAYERS[i].av;
 const isShield=g=>S.shields.includes(g);
 const unprot=i=>S.players[i].gifts.filter(g=>!isShield(g));
@@ -312,14 +308,14 @@ function weightedPlayer(){
   return PLAYERS.length-1;
 }
 function pickSeg(){
-  const left=S.pool.length+(S.mysteryDrawn?0:1);
+  const left=S.pool.length;
   const boost=left<=S.set.thr?S.set.boost:1;
-  const w=S.layout.map(s=>(s.k==='gift'||s.k==='mystery')?1:boost),tot=w.reduce((a,b)=>a+b,0);
+  const w=S.layout.map(s=>s.k==='gift'?1:boost),tot=w.reduce((a,b)=>a+b,0);
   let r=Math.random()*tot;
   for(let i=0;i<w.length;i++){r-=w[i];if(r<0)return i}
   return w.length-1;
 }
-const gameOver=()=>S.pool.length===0&&S.mysteryDrawn;
+const gameOver=()=>S.pool.length===0;
 
 /* ============ AFFICHAGE ============ */
 const UI=$('ui'),MOD=$('modal');
@@ -428,17 +424,7 @@ async function resolveSeg(seg){
   const me=S.current,pl=S.players;
   lightHit(seg.k);
   switch(seg.k){
-    case'gift':
-    case'mystery':{
-      // le mystère est donné par sa case, ou par n'importe quelle case cadeau quand la réserve est vide (dernier cadeau)
-      const giveMyst=!S.mysteryDrawn&&(seg.k==='mystery'||!S.pool.length);
-      if(giveMyst){
-        S.mysteryDrawn=true;pl[me].gifts.push('M');
-        const ms=S.layout.find(x=>x.k==='mystery');if(ms){ms.k='gift';ms.d=11;ms.c=0}   // la case reste sur la roue, devenue une case cadeau normale
-        AE.mystere();confetti(80);
-        const el=ov(`<div class="burst"></div><div class="mystGift">🎁</div><h2>Cadeau mystère !</h2><div class="sub s">${av(me)} ${nm(me)} le garde, mais il ne s’ouvrira qu’à la toute fin…<br>On peut le voler, l’échanger ou le protéger 🔒</div>${tapHint()}`);
-        await waitTap(el,1200);return'ok';
-      }
+    case'gift':{
       if(!S.pool.length)return relaunch('🎁','Plus de cadeau à tirer…<br>on relance la roue !');
       // v3.7 : le cadeau se gagne en réussissant le mini-jeu du traîneau (2 essais)
       if(!await mjCase(me)){

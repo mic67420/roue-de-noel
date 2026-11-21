@@ -2,22 +2,12 @@
 /* ============ FIN DE PARTIE ============ */
 async function showFinal(){
   busy=true;S.phase='end';S.current=-1;save();hud();
-  const owner=S.players.findIndex(p=>p.gifts.includes('M'));
   AE.fanfare();confetti(200);
   finalTimer=setInterval(()=>confetti(45,{burst:false}),1500);
   const el=ov(`<h1>🎉 Fin de la partie ! 🎉</h1>
     <div class="finWrap"><div class="rows">${recapRows()}</div>
-    <div class="finBox" id="finBox"><div class="mystGift" style="font-size:17vh">🎁</div>
-      <div class="sub s">Le cadeau mystère est chez ${owner>=0?av(owner)+' '+nm(owner):'…'}</div>
-      <button class="btn" id="fOpen">Ouvrir le cadeau mystère</button></div></div>
+    </div>
     <div class="btnRow"><button class="btn g" id="fUndo">↩️ Annuler le dernier lancer</button><button class="btn r" id="fNew">🆕 Nouvelle partie</button></div>`,'final');
-  el.querySelector('#fOpen').onclick=async function(){
-    this.disabled=true;const box=el.querySelector('#finBox');
-    box.classList.add('shake');AE.drum(2.6);await sleep(2700);
-    box.classList.remove('shake');AE.boom();AE.fanfare();flash(el);confetti(220);
-    for(let i=0;i<8;i++)setTimeout(()=>firework(BW*(.1+.8*Math.random()),BH*(.1+.5*Math.random())),i*260);
-    box.innerHTML=`<div class="mystGift" style="font-size:17vh">🎁</div><div class="sub">✨ ${owner>=0?av(owner)+' '+nm(owner):'Quelqu’un'} peut ouvrir le cadeau mystère ! ✨</div>`;
-  };
   el.querySelector('#fUndo').onclick=()=>undo(true);
   el.querySelector('#fNew').onclick=()=>askNew();
 }
@@ -34,7 +24,7 @@ function undo(force){
 $('bUndo').onclick=()=>undo(false);
 $('bRecap').onclick=()=>{
   if(busy)return;
-  const m=modal(`<h2>📋 Récapitulatif</h2><div class="rows">${recapRows()}</div><div class="sub s">🔒 = cadeau protégé  ·  ? = cadeau mystère</div><button class="btn" id="rClose">Fermer</button>`);
+  const m=modal(`<h2>📋 Récapitulatif</h2><div class="rows">${recapRows()}</div><div class="sub s">🔒 = cadeau protégé</div><button class="btn" id="rClose">Fermer</button>`);
   m.querySelector('#rClose').onclick=()=>m.remove();
 };
 $('bSon').onclick=volPanel;
@@ -76,7 +66,7 @@ function showSettings(){
   const lim={total:[6,40],thr:[0,10],boost:[1,5]};
   const draw=()=>{
     el.innerHTML=`<div class="panel"><h2>Réglages de la partie</h2>
-      <div class="setRow"><div>Nombre de cadeaux<small>${cfg.total-1} cadeaux normaux + 1 cadeau mystère</small></div><div class="step"><button data-k="total" data-d="-1">−</button><b>${cfg.total}</b><button data-k="total" data-d="1">+</button></div></div>
+      <div class="setRow"><div>Nombre de cadeaux<small>tous numérotés, de 1 à ${cfg.total}</small></div><div class="step"><button data-k="total" data-d="-1">−</button><b>${cfg.total}</b><button data-k="total" data-d="1">+</button></div></div>
       <div class="setRow"><div>Fin de partie « chaude » à partir de<small>cadeaux restants (les cases spéciales deviennent plus fréquentes)</small></div><div class="step"><button data-k="thr" data-d="-1">−</button><b>${cfg.thr}</b><button data-k="thr" data-d="1">+</button></div></div>
       <div class="setRow"><div>Multiplicateur des cases spéciales<small>1 = aucun changement</small></div><div class="step"><button data-k="boost" data-d="-1">−</button><b>×${cfg.boost}</b><button data-k="boost" data-d="1">+</button></div></div>
       ${installEv&&!isStandalone()?'<div class="btnRow"><button class="btn r" id="sInstall">📲 Installer l’application</button></div>':''}${(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!isStandalone())?'<div class="sub s">📲 iPhone : touche Partager, puis « Sur l’écran d’accueil »</div>':''}

@@ -1,7 +1,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='3.59';
+const VERSION='3.60';
 const KEY='roueNoel_partie',KEYCFG='roueNoel_reglages',KEYSON='roueNoel_son';
 const $=id=>document.getElementById(id);
 const mod=(a,n)=>((a%n)+n)%n;
@@ -131,8 +131,7 @@ function drawGiftArt(g,s,d){
   g.restore();
 }
 function segView(s){
-  if(s.k==='gift')return{col:s.c?'#0b4f2e':'#7e0c20',draw:(g,z)=>ICON.draw(g,'gift',z*1.16,s.d)};
-  if(s.k==='mystery')return{col:'#17151f',draw:(g,z)=>ICON.draw(g,'mystery',z*1.16)};
+  if(s.k==='gift')return{col:'#0b4f2e',draw:(g,z)=>ICON.draw(g,'gift',z*1.16,0)};   // case « Mini-jeu » : une seule icône (tablette + cadeau)
   return{col:SPECIALS[s.k].col,draw:(g,z)=>ICON.draw(g,s.k,z*1.16)};
 }
 const playerView=p=>({col:p.col,ico:p.emo,img:avImg(p.avId),cream:true});
@@ -582,7 +581,7 @@ const mys2={
     fn(X);g.restore();
   }
   function draw(g,key,z,d){
-    const sk=key==='gift'?'g'+((d||0)%12):(key==='pas'?'pas':key);
+    const sk=key==='gift'?'minijeu':(key==='pas'?'pas':key);
     const im=SPR[sk==='pas'?'pas':sk];
     if(im&&im.complete&&im.naturalWidth){
       g.save();g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=z*.05;g.shadowOffsetY=z*.03;
