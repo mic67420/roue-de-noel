@@ -39,7 +39,8 @@ const snowF=[];
     sz:kind==='dot'?3+z*12:kind==='small'?10+(z-.3)*50:kind==='big'?24+(z-.6)*55:46+Math.random()*50,
     vy:kind==='dot'?20+z*40:kind==='small'?28+z*40:kind==='big'?38+z*40:70+Math.random()*40,
     sw:.4+Math.random()*1.1,ph:Math.random()*6.28,rot:Math.random()*6.28,vr:(Math.random()-.5)*1.4,type:rnd(3),a:.55+Math.random()*.4})}};
-  add(70,0,.3,'dot');add(60,.3,.6,'small');add(30,.6,.9,'big');add(14,.9,1,'fg');
+  add(140,0,.3,'dot');add(120,.3,.6,'small');add(60,.6,.9,'big');   // v3.66 : neige ×2 (test)
+  add(14,.9,1,'fg');
 })();
 function snowStep(dt){
   const wind=Math.sin(time*.23)*10+6;

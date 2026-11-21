@@ -63,7 +63,8 @@ function mjUpdate(s,dt){
   if(s.done)return;
   s.t+=dt;const prog=Math.min(1,s.t/s.D);
   s.spd=s.base*(1+(s.easy?.35:.5)*prog);s.dist+=s.spd*dt;
-  const ox=s.x,want=(s.tx-s.x)*Math.min(1,dt*12),mv=Math.max(-s.maxV*dt,Math.min(s.maxV*dt,want));s.x+=mv;s.x=Math.max(-1.05,Math.min(1.05,s.x));
+  const ox=s.x,mv=s.tx-s.x;s.x=s.tx;   // v3.66 : le traîneau suit le doigt instantanément (plus de lissage ni de limite de vitesse)
+  s.x=Math.max(-1.05,Math.min(1.05,s.x));
   s.vel+=((s.x-ox)/Math.max(dt,1e-3)-s.vel)*Math.min(1,dt*10);
   if(s.inv>0)s.inv-=dt;
   while(s.t>=s.nextSpawn&&s.t<s.D-2.6){mjSpawn(s,prog);s.nextSpawn+=s.i0+(s.i1-s.i0)*prog}
@@ -304,7 +305,8 @@ function mjRunner(me,cfg){
 function mjTraineau(me){
   return mjRunner(me,{
     nouveau:mjNew,maj:mjUpdate,dessin:mjDraw,hud:mjHud,
-    pointeur:(s,f,W)=>{const wx=((f*W)-W/2)/(W*.42*MJ_ZS);s.tx=Math.max(-1.05,Math.min(1.05,wx))},
+    pointeur:(s,f,W)=>{const wx=1.15*((f*W)-W/2)/(W*.42*MJ_ZS);   // ×1,15 : le doigt déplace un peu plus loin
+    s.tx=Math.max(-1.05,Math.min(1.05,wx))},
     cle:(s,d)=>{s.tx=Math.max(-1.05,Math.min(1.05,s.tx+d*.35))},
     evenement:(e,s,fx,cv)=>{
       if(e.k==='hit'){AE.nope&&AE.nope();fx.push({t:0,x:.5+s.x*.42*MJ_ZS,y:.62});cv.style.transform='translate('+(Math.random()*16-8)+'px,'+(Math.random()*10-5)+'px)'}

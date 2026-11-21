@@ -247,3 +247,6 @@ Niveau `PERF` (0 max, 1 moyen, 2 léger ; défini en tête du fichier 1, réglag
 
 ## v3.65 : Père Noël retiré et neige en ronds (demande de Mic : « ça rame toujours »)
 `const NOSANTA=true` (fichier 1) : la vidéo du Père Noël n'est ni chargée ni détourée ni dessinée (`vidEmbedded`, `vidTick`, `vidPreview`, `santaDraw`, `vidLaunch` sortent tout de suite, canvas `#santa` masqué) ; le lancer de roue part immédiatement (plus d'attente de 2,2 s). Pour remettre le Père Noël : `NOSANTA=false`. Neige : tous les flocons sont dessinés comme des ronds flous de 2 à 15 px (`snowDraw`, sprite `SNOWDOT`). Les mini-jeux fonctionnaient bien : le coût venait de l'écran de la roue (vidéo détourée en JS + canvas plein écran).
+
+## v3.66 : neige ×2 (test) et traîneau instantané
+Neige : 140 + 120 + 60 ronds (avant 70 + 60 + 30), à réduire si ça rame. Traîneau : `s.x=s.tx` (suit le doigt sans lissage ni limite de vitesse, `maxV` n'est plus utilisé) et déplacement du doigt ×1,15 (`pointeur`).
