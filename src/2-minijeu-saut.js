@@ -23,7 +23,7 @@ function mjsNew(easy){
   // saut : sommet ≈ .30 H (.32 pour Alix), durée en l'air ≈ .75 s (.95 pour Alix)
   const H=720,apex=H*(easy?.35:.33),T=easy?.95:.75;
   const s={D:MJS_D,t:0,done:null,ev:[],easy,W:1080,H,d:0,v:easy?360:520,y:0,vy:0,air:false,G:8*apex/(T*T),V0:4*apex/T,
-    obs:[],nxt:0,lives:6,max:6,inv:0,coup:0,slow:0,buf:0,rec:0,tAnim:0,hits:0,lastLand:0,passed:0};
+    obs:[],nxt:0,lives:6,max:6,inv:0,coup:0,slow:0,buf:0,rec:0,tAnim:0,hits:0,lastLand:0,passed:0,fx:[],lastF:-1};
   mjsSpawn(s);return s;
 }
 function mjsVit(s){const p=Math.min(1,s.t/s.D);return s.easy?360+140*p:520+430*p}
@@ -56,6 +56,7 @@ function mjsSpawn(s){
     s.nxt=s.d+span+g0*v;
   }
 }
+function mjsPuff(s,n,k){for(let i=0;i<n;i++)s.fx.push({x:0,y:0,vx:-(s.v*.35+Math.random()*90)*k,vy:-(30+Math.random()*90)*k,t:0,life:.35+Math.random()*.35,r:5+Math.random()*7})}
 function mjsJump(s){
   if(s.done||s.coup>0)return false;
   if(s.air){s.buf=.14;return false}              // saut mémorisé : il part à l'atterrissage si on a touché juste avant
@@ -67,10 +68,14 @@ function mjsUpdate(s,dt){
   s.slow=Math.max(0,s.slow-dt);
   let v=mjsVit(s);if(s.slow>0)v*=.62+.38*(1-s.slow/1.3);
   s.v=v;s.d+=v*dt;
+  // poussière de neige soulevée par les pieds (donne la sensation de courir)
+  if(!s.air&&s.coup<=0){const f=Math.floor(s.tAnim*(7+6*(s.v/950)));if(f!==s.lastF){s.lastF=f;if(f%2===0)mjsPuff(s,3,.6)}}
+  for(const p of s.fx){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt}
+  s.fx=s.fx.filter(p=>p.t<p.life);
   // physique du saut
   if(s.air){
     s.tAir+=dt;s.vy-=s.G*dt;s.y+=s.vy*dt;
-    if(s.y<=0){s.y=0;s.vy=0;s.air=false;s.rec=.14;s.ev.push({k:'pose'});if(s.buf>0){s.buf=0;mjsJump(s)}}
+    if(s.y<=0){s.y=0;s.vy=0;s.air=false;s.rec=.14;s.ev.push({k:'pose'});mjsPuff(s,7,1.1);if(s.buf>0){s.buf=0;mjsJump(s)}}
   }
   // obstacles
   const rx=s.W*MJS_RX,hw=26*MJS_Z;
@@ -89,27 +94,36 @@ function mjsUpdate(s,dt){
 }
 function mjsPano(){return typeof mjrPano==='function'?mjrPano():null}
 function mjsPose(s){
-  if(s.done==='win')return'B37_s_victoire';
-  if(s.coup>0||s.done==='lose')return'B37_s_touche';
-  if(s.air){const f=s.vy/s.V0;return f>.75?'B37_s_decol':f>.3?'B37_s_monte':f>-.3?'B37_s_sommet':'B37_s_descend'}
-  if(s.rec>0)return'B37_s_recep';
-  const cad=7+6*(s.v/950);return'B37_s_c'+(1+Math.floor(s.tAnim*cad)%4);
+  if(s.done==='win')return'B40_sommet';
+  if(s.coup>0||s.done==='lose')return'B40_recep';
+  if(s.air){const f=s.vy/s.V0;return f>.75?'B40_decol':f>.3?'B40_monte':f>-.3?'B40_sommet':'B40_descend'}
+  if(s.rec>0)return'B40_recep';
+  const cad=9+8*(s.v/950);return'B39_c'+(1+Math.floor(s.tAnim*cad)%4);
 }
 function mjsDraw(g,s,W,H,tm){
   s.W=W;s.H=H;const u=H/720,gy=MJS_GY*H,rx=W*MJS_RX,im=MJ.img;
   // paysage lointain : défile lentement sur la durée
   const pano=mjsPano();
-  if(pano){const L=pano.width,bx=Math.max(0,Math.min(L-W,(L-W)*Math.min(1,s.t/s.D)));g.drawImage(pano,bx,0,Math.min(W,L),720,0,0,W,H)}
+  if(pano){const L=pano.width,bx=Math.max(0,Math.min(L-W,s.d*.12));g.drawImage(pano,bx,0,Math.min(W,L),720,0,0,W,H)}
   else{g.fillStyle='#0b1a4a';g.fillRect(0,0,W,H)}
   // sol : neige tassée, avec petites bosses qui défilent à la vitesse du jeu
   const gr=g.createLinearGradient(0,gy-H*.06,0,H);gr.addColorStop(0,'rgba(215,228,250,0)');gr.addColorStop(.2,'rgba(224,235,253,.97)');gr.addColorStop(1,'rgba(184,201,232,1)');
   g.fillStyle=gr;g.fillRect(0,gy-H*.06,W,H-gy+H*.06);
   g.fillStyle='rgba(140,160,205,.4)';g.fillRect(0,gy+H*.004,W,H*.004);
   const off=s.d;
-  for(let i=0;i<22;i++){
-    const per=W+220,xx=(((i*263.7-off*(.55+.2*(i%4)))%per)+per)%per-110,yy=gy+H*(.035+((i*53)%8)*.017);
-    g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.ellipse(xx,yy,H*(.02+(i%4)*.012),H*.007,0,0,6.283);g.fill();
-    g.fillStyle='rgba(120,140,190,.2)';g.beginPath();g.ellipse(xx+4,yy+H*.008,H*(.018+(i%4)*.01),H*.004,0,0,6.283);g.fill();
+  // petits sapins et buissons enneigés derrière la ligne du sol (défilent à mi-vitesse)
+  {const per=W+500;for(let i=0;i<9;i++){
+    const xx=(((i*(per/9)+(i*97)%60-off*.5)%per)+per)%per-150,sz=H*(.07+((i*37)%5)*.012),by=gy-H*.004;
+    if(i%3===0){g.fillStyle='rgba(235,243,255,.95)';g.beginPath();g.ellipse(xx,by,sz*.55,sz*.28,0,Math.PI,0);g.fill();g.fillStyle='rgba(160,180,220,.55)';g.fillRect(xx-sz*.55,by-1,sz*1.1,H*.006)}
+    else{for(let k=0;k<3;k++){const w=sz*(.6-.14*k),y0=by-sz*.42*k;g.fillStyle=k%2?'#1f4a46':'#256057';g.beginPath();g.moveTo(xx-w/2,y0);g.lineTo(xx,y0-sz*.5);g.lineTo(xx+w/2,y0);g.fill();g.fillStyle='rgba(240,247,255,.9)';g.beginPath();g.moveTo(xx-w*.26,y0-sz*.3);g.lineTo(xx,y0-sz*.5);g.lineTo(xx+w*.26,y0-sz*.3);g.lineTo(xx,y0-sz*.24);g.fill()}
+      g.fillStyle='#5b3d28';g.fillRect(xx-sz*.04,by-sz*.02,sz*.08,sz*.07)}
+  }}
+  // traits de vitesse sur le sol : plus ils sont proches du bas de l'écran, plus ils filent vite (perspective)
+  for(let i=0;i<26;i++){
+    const dep=((i*0.6180339)%1),fy=gy+H*(.012+dep*(1-MJS_GY-.03)),sp=.8+dep*1.7,per=W+700,len=H*(.05+dep*.16);
+    const xx=(((i*331.7-off*sp)%per)+per)%per-200;
+    g.fillStyle='rgba(255,255,255,'+(.35+dep*.4)+')';g.fillRect(xx,fy,len,H*(.003+dep*.007));
+    g.fillStyle='rgba(110,130,185,'+(.14+dep*.12)+')';g.fillRect(xx+len*.1,fy+H*(.006+dep*.007),len*.8,H*.003);
   }
   // obstacles
   for(const o of s.obs){
@@ -123,12 +137,13 @@ function mjsDraw(g,s,W,H,tm){
     if(o.ex>0){g.save();g.translate(o.x,gy-o.hp/2+H*.004);g.rotate(o.rot);g.drawImage(i,-o.w/2,-o.hp/2,o.w,o.hp);g.restore()}
     else g.drawImage(i,o.x-o.w/2,gy-o.hp+H*.004,o.w,o.hp);
   }
+  for(const p of s.fx){const k=1-p.t/p.life;g.fillStyle='rgba(255,255,255,'+(.8*k)+')';g.beginPath();g.arc(rx-H*.03+p.x,gy+H*.004+p.y,p.r*(1.4-.6*k)*(H/720),0,6.283);g.fill()}
   // le Père Noël
   const key=mjsPose(s),p=im[key];
   if(p&&p.naturalWidth){
-    const k=H*.27*MJS_Z/204,w=p.naturalWidth*k,h=p.naturalHeight*k,by=gy+H*.008-s.y;
+    const k=H*.27*MJS_Z/255,w=p.naturalWidth*k,h=p.naturalHeight*k,by=gy+H*.008-s.y;
     g.fillStyle='rgba(20,30,80,'+(.28*(1-Math.min(1,s.y/(H*.35))*.6))+')';g.beginPath();g.ellipse(rx,gy+H*.008,H*.085*(1-Math.min(1,s.y/(H*.4))*.4),H*.012,0,0,6.283);g.fill();
-    g.save();if(s.inv>0&&s.coup<=0)g.globalAlpha=.45+.55*Math.abs(Math.sin(tm*18));g.drawImage(p,rx-w/2,by-h,w,h);g.restore();
+    g.save();if(s.inv>0&&s.coup<=0)g.globalAlpha=.45+.55*Math.abs(Math.sin(tm*18));if(s.coup>0){g.translate(rx-w*.1,by);g.rotate(-.35*Math.min(1,(.55-s.coup)*6+.3));g.drawImage(p,-w/2,-h,w,h)}else g.drawImage(p,rx-w/2,by-h,w,h);g.restore();
   }
 }
 function mjsHud(g,s,W,H,me,tm){
@@ -140,7 +155,7 @@ function mjsHud(g,s,W,H,me,tm){
   const bx=W*.58,bw=W*.28,by=26*u,pr=Math.min(1,s.t/s.D);
   g.fillStyle='rgba(8,14,46,.65)';rrect(g,bx,by,bw,22*u,11*u);g.fill();
   g.fillStyle='#ffd24a';rrect(g,bx+3*u,by+3*u,Math.max(16*u,(bw-6*u)*pr),16*u,8*u);g.fill();
-  const r=im.B37_s_c1;if(r&&r.naturalWidth){const h=40*u,x=bx+(bw-6*u)*pr;g.drawImage(r,x-12*u,by-14*u,h*r.naturalWidth/r.naturalHeight,h)}
+  const r=im.B39_c1;if(r&&r.naturalWidth){const h=40*u,x=bx+(bw-6*u)*pr;g.drawImage(r,x-12*u,by-14*u,h*r.naturalWidth/r.naturalHeight,h)}
 }
 function mjSaut(me){
   const alix=PLAYERS[me].name==='Alix';
