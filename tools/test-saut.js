@@ -6,7 +6,7 @@ const T = charger(null, 'mjsNew,mjsUpdate,mjsJump');
 {
   function partieSaut(easy, bot, bruit) {
     const s = T.mjsNew(easy), dt = 1 / 60, rx = s.W * .22;
-    for (let i = 0; i < 60 * 50 && !s.done; i++) {
+    for (let i = 0; i < 60 * 70 && !s.done; i++) {
       if (bot && !s.air) {
         const av = s.obs.filter(o => !o.hit && o.x + o.w / 2 > rx - 20).sort((a, b) => a.x - b.x);
         if (av.length) {
