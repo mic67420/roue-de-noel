@@ -17,20 +17,20 @@ fs.writeFileSync(tmp, parts[0] + code + parts[1]);
 const T = charger(tmp, 'newState,pickSeg,resolveSeg,gameOver,buildLayout,setS:v=>{S=v},getS:()=>S,PLAYERS');
 fs.unlinkSync(tmp);
 let erreurs = 0;
-const SPEC = ['vol', 'echange', 'double', 'bouclier', 'choix', 'autre', 'pas'];
+const SPEC = ['vol', 'echange', 'double', 'bouclier', 'autre', 'pas'];
 const ordres = new Set();
 for (let i = 0; i < 500; i++) {
   const L = T.buildLayout(), c = {}; L.forEach(x => c[x.k] = (c[x.k] || 0) + 1);
   const ds = L.filter(x => x.k === 'gift').map(x => x.d);
   let cotea = 0; for (let j = 0; j < L.length; j++) { const a = L[j].k, b = L[(j + 1) % L.length].k; if (!SPEC.includes(a) && !SPEC.includes(b)) cotea++; }
   const ids = new Set(L.map(x => x.id));
-  if (L.length !== 13 || c.mystery || c.gift !== 6 || SPEC.some(k => c[k] !== 1) || cotea || ids.size !== 13) {
+  if (L.length !== 10 || c.mystery || c.choix || c.gift !== 4 || SPEC.some(k => c[k] !== 1) || cotea || ids.size !== 10) {
     erreurs++; console.log('ERREUR roue', JSON.stringify(c), 'cadeaux côte à côte :', cotea);
   }
   ordres.add(L.map(x => x.k).join(','));
 }
 if (ordres.size < 200) { erreurs++; console.log('ERREUR : l’ordre des cases n’est pas assez mélangé', ordres.size); }
-console.log('Roue : 13 cases, sans doublon (7 spéciales + 6 mini-jeux), jamais deux cadeaux côte à côte, ordre mélangé (' + ordres.size + ' ordres sur 500 roues) :', erreurs ? 'ECHEC' : 'OK');
+console.log('Roue : 10 cases (6 spéciales + 4 cadeaux), jamais deux cadeaux côte à côte, ordre mélangé (' + ordres.size + ' ordres sur 500 roues) :', erreurs ? 'ECHEC' : 'OK');
 (async () => {
   const stats = {};
   for (const total of [6, 12, 25, 40]) {
@@ -39,7 +39,7 @@ console.log('Roue : 13 cases, sans doublon (7 spéciales + 6 mini-jeux), jamais 
       let n = 0, guard = 0;
       while (!T.gameOver() && guard < 5000) { guard++; S.current = Math.floor(Math.random() * 5); const r = await T.resolveSeg(S.layout[T.pickSeg()]); if (r !== 'relaunch') n++; }
       const all = S.players.flatMap(p => p.gifts), set = new Set(all);
-      if (guard >= 5000 || all.length !== total || set.size !== total || S.layout.length !== 13) { erreurs++; console.log('ERREUR partie', total); }
+      if (guard >= 5000 || all.length !== total || set.size !== total || S.layout.length !== 10) { erreurs++; console.log('ERREUR partie', total); }
       (stats[total] = stats[total] || []).push(guard);
     }
   }

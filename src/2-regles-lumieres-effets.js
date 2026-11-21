@@ -278,12 +278,12 @@ function fxStep(dt){
 /* ============ ETAT DE LA PARTIE ============ */
 let S=null,H=[],busy=false,big=null,small=null,finalTimer=null,saved=null;
 function buildLayout(){
-  // roue FIXE de 13 cases, sans aucun doublon de case spéciale : 7 cases spéciales (une de chaque sorte) + 6 cases « Mini-jeu » (= gagner un cadeau)
-  const keys=['vol','echange','double','bouclier','choix','autre','pas'];
+  // roue FIXE de 10 cases : 6 cases spéciales (une de chaque sorte) + 4 cases « Cadeau » (mini-jeu pour gagner un cadeau)
+  const keys=['vol','echange','double','bouclier','autre','pas'];
   const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
-  // 7 spéciales formant un cercle : 7 intervalles, dont 6 reçoivent une case Mini-jeu => jamais deux Mini-jeux côte à côte
-  const sp=shuf(keys),gaps=shuf([0,1,2,3,4,5,6]).slice(0,6),order=[];
-  for(let i=0;i<7;i++){order.push(sp[i]);if(gaps.includes(i))order.push('g')}
+  // 6 spéciales formant un cercle : 6 intervalles, dont 4 reçoivent une case Cadeau => jamais deux cadeaux côte à côte
+  const sp=shuf(keys),gaps=shuf([0,1,2,3,4,5]).slice(0,4),order=[];
+  for(let i=0;i<6;i++){order.push(sp[i]);if(gaps.includes(i))order.push('g')}
   const r0=rnd(order.length),rot=order.slice(r0).concat(order.slice(0,r0));      // la roue démarre à un endroit au hasard
   const slots=rot.map(k=>k==='g'?{k:'gift'}:{k,v:0});
   slots.forEach((s,i)=>{s.id='s'+i+'_'+rnd(1e6)});
@@ -295,7 +295,7 @@ function newState(cfg){
     shields:[],layout:buildLayout(),current:-1,phase:'smallReady'};
 }
 function save(){store.set(KEY,{S,H:H.slice(-60)})}
-function loadSave(){const o=store.get(KEY);return(o&&o.S&&o.S.players&&o.S.layout&&o.S.layout.length===13&&!('mysteryDrawn' in o.S))?o:null}   // une partie sauvegardée avec l'ancienne roue (24 cases) n'est pas reprise
+function loadSave(){const o=store.get(KEY);return(o&&o.S&&o.S.players&&o.S.layout&&o.S.layout.length===10&&!('mysteryDrawn' in o.S))?o:null}   // une partie sauvegardée avec l'ancienne roue (24 cases) n'est pas reprise
 const nm=i=>PLAYERS[i].name,av=i=>PLAYERS[i].av;
 const isShield=g=>S.shields.includes(g);
 const unprot=i=>S.players[i].gifts.filter(g=>!isShield(g));

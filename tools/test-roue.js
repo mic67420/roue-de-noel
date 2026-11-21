@@ -11,7 +11,7 @@ const T = charger(null, 'Roue,segView');
 let tout = 0, erreurs = 0;
 const rapport = [];
 (async () => {
-  for (const [nom, n, phys, dur, essais] of [['Grande roue (13 cases)', 13, {}, 8.8, 120 * (+process.env.ESSAIS || 1)], ['Petite roue (5 joueurs)', 5, { mu: 2.3 }, 5.2, 80 * (+process.env.ESSAIS || 1)]]) {
+  for (const [nom, n, phys, dur, essais] of [['Grande roue (10 cases)', 10, {}, 8.8, 120 * (+process.env.ESSAIS || 1)], ['Petite roue (5 joueurs)', 5, { mu: 2.3 }, 5.2, 80 * (+process.env.ESSAIS || 1)]]) {
     let amps = [], echecPlan = 0, hors = 0, tours = 0, durees = [], reculs = 0, pendule = 0, clics = 0, tMax = 0, tSomme = 0, rotMax = 0;
     for (let e = 0; e < essais; e++) {
       const el = { getBoundingClientRect: () => ({ width: 400 }), getContext: () => global.ctx, width: 400, height: 400 };
@@ -50,13 +50,13 @@ const rapport = [];
   for (let e = 0; e < 40; e++) {
     const el = { getBoundingClientRect: () => ({ width: 400 }), getContext: () => global.ctx, width: 400, height: 400 };
     const r = new T.Roue(el, { rf: .385, ir: .74, imax: .21, q: 2, view: T.segView, tick() {} });
-    r.S = 400; r.R = 154; r.setSegs(Array.from({ length: 13 }, () => ({ k: 'gift' })));
-    const cible = Math.floor(Math.random() * 13);
+    r.S = 400; r.R = 154; r.setSegs(Array.from({ length: 10 }, () => ({ k: 'gift' })));
+    const cible = Math.floor(Math.random() * 10);
     r.plan = () => Promise.resolve(null);
     r.spin(cible, { dur: 6, turns: 5 });
     await new Promise(res => setTimeout(res, 5));
     let t = 0; while (r.anim && t < 60) { r.update(1 / 60); t += 1 / 60; }
-    if (r.anim || Math.floor((((r.rot % 360) + 360) % 360) / (360 / 13)) !== cible) horsSecours++;
+    if (r.anim || Math.floor((((r.rot % 360) + 360) % 360) / (360 / 10)) !== cible) horsSecours++;
   }
   rapport.push(`Secours (ancienne animation) : ${40 - horsSecours}/40 lancers arrêtés dans la bonne case`);
   if (horsSecours) erreurs++;
