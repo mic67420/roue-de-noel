@@ -262,3 +262,4 @@ if (!ok) { console.error('ÉCHEC mini-jeu'); process.exit(1); }
     if (!ok) process.exitCode = 1;
   }
 }
+

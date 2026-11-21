@@ -320,7 +320,7 @@ function mjListe(){return[
   {id:'traineau',nom:'🛷 Traîneau',fn:mjTraineau,emo:'🛷'},
   {id:'cadeaux',nom:'🎁 Cadeaux qui tombent',fn:mjCadeaux,emo:'🎁'},
   {id:'catapulte',nom:'🎯 Catapulte à boules de neige',fn:mjCatapulte,emo:'🎯'},
-  {id:'course',nom:'🦌 La course du renne',fn:mjCourse,emo:'🦌'},
+  {id:'saut',nom:'🎅 Le grand saut',fn:mjSaut,emo:'🎅'},   // v3.67 : remplace « La course du renne » (code gardé dans 2-minijeu-course.js)
   {id:'traversee',nom:'🎅 La grande traversée',fn:mjTraversee,emo:'🎅'}
   // Bonhomme de neige retiré de la liste en v3.31 (ne fonctionnait pas bien) : le code reste dans 2-minijeu-bonhomme.js
   //,{id:'bonhomme',nom:'⛄ Bonhomme de neige',fn:mjBonhomme,emo:'⛄'}
@@ -359,4 +359,4 @@ async function mjMenu(){
     msg=ok?'✅ Réussi ! Tu veux rejouer ?':'❌ Raté. Tu veux réessayer ?';
   }
 }
-window.MJ_TEST={mjDraw,mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkLance,mjkPos,mjkDraw,mjCourse,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrDrag,mjrSlide,mjrKey,mjrBox,mjrPano,mjrDraw,mjLoad,MJ,MJR_AIR,mjMenu};
+window.MJ_TEST={mjDraw,mjChoisir,mjNew,mjUpdate,mjTraineau,mjCadeaux,mjlNew,mjlUpdate,mjlTap,mjLutins,mjBonhomme,mjbNew,mjbUpdate,mjbTap,mjbMove,mjbUp,mjbaNew,mjbaUpdate,mjbaTap,mjbaMove,mjbaUp,mjTraversee,mjtNew,mjtUpdate,mjtHop,mjtDraw,mjCatapulte,mjkNew,mjkUpdate,mjkTir,mjkLance,mjkPos,mjkDraw,mjCourse,mjSaut,mjsNew,mjsUpdate,mjsJump,mjsDraw,mjrNew,mjrUpdate,mjrJump,mjrDown,mjrUp,mjrDrag,mjrSlide,mjrKey,mjrBox,mjrPano,mjrDraw,mjLoad,MJ,MJR_AIR,mjMenu};

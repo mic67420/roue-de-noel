@@ -36,6 +36,8 @@ NOMS = {
  'B32': ['pont_pierre','passerelle','tronc','portique','branche_sapin','corbeau','oie','chouette','arche_glace','banderole','cerf_volant','pancarte'],
  'B33': ['g_debut1','g_debut2','g_debut3','g_debut4','g_plat1','g_neige','g_plat3','g_plat4','g_sortie1','g_sortie2','g_sortie3','g_sortie4'],
  'B16': ['immeuble_grand','immeuble_magasin','maison','eglise','grange','moulin','igloo','sapins3','rochers_glace','panneau','bosquet','lampadaire_village'],
+ 'B37': ['s_c1','s_c2','s_c3','s_c4','s_prep','s_decol','s_monte','s_sommet','s_descend','s_recep','s_touche','s_victoire'],
+ 'B38': ['voiture','bouche','ballon','boule_neige','cone','boite','tonneau','cadeaux','luge','caisse','bonhomme','congere'],
  'B35': ['t1','t2','t3','t4','l1','l2','l3','l4','r1','r2','r3','r4'],
  'B36': ['voiture_rouge','berline_bleue','sport_jaune','break_vert','camionnette','camion_bache','citerne','demenagement','tracteur_rouge','tracteur_vert','pompiers','deneigeuse'],
  'B6': ['coeur_plein','coeur_vide','etoile_score','pouce','croix','sablier','doigt','fleches','banniere','bouton_dore','trophee','nuage'],
@@ -77,8 +79,9 @@ def ordonner(objs, cfg=(4, 4, 4)):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    index = {}
+    index = json.load(open(os.path.join(OUT, 'index.json'))) if os.environ.get('SEULEMENT') and os.path.exists(os.path.join(OUT, 'index.json')) else {}
     for b in sorted(NOMS):
+        if os.environ.get('SEULEMENT') and b not in os.environ['SEULEMENT'].split(','): continue
         im, a, fg, grp, objs = decouper(b)
         if len(objs) != len(NOMS[b]):
             print(b, 'ATTENTION', len(objs), 'objets trouvés');
